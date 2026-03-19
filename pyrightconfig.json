@@ -1,0 +1,12 @@
+{
+  "venvPath": "/home/humunculey/ASPIRE/backend",
+  "venv": "venv",
+  "executionEnvironments": [
+    {
+      "root": "/home/humunculey/ASPIRE/backend",
+      "extraPaths": [
+        "/home/humunculey/ASPIRE/backend"
+      ]
+    }
+  ]
+}

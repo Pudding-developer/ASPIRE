@@ -1,24 +1,29 @@
 # ASPIRE
 
-ASPIRE is a modern web application built with a React (Vite) frontend and a robust FastAPI backend, utilizing PostgreSQL and SQLModel for the database.
+ASPIRE (Academic Student Performance and Intelligence for Retention and Enrollment) is a web application built with a React (Vite) frontend and a FastAPI backend, utilizing PostgreSQL and SQLModel for database management. It provides ML-powered academic forecasting and enrollment prediction tools for educational institutions.
 
-## 🚀 Tech Stack
+## Tech Stack
 
-- **Frontend:** React, Vite
-- **Backend:** FastAPI, Python 3
-- **Database:** PostgreSQL, SQLModel (SQLAlchemy)
+- **Frontend:** React 19, Vite, TailwindCSS v4, Framer Motion
+- **Backend:** FastAPI, Python 3.12, SQLModel (SQLAlchemy async)
+- **Database:** PostgreSQL with Alembic migrations
+- **Auth:** Local (email + bcrypt) and Google OAuth 2.0 (institution-only domain)
 - **Deployment Plan:** Vercel (Frontend) & Render (Backend)
 
-## 📦 Project Structure
+## Project Structure
 
-This is a monorepo containing both the frontend and backend applications:
-- `/frontend` - Contains the React user interface.
-- `/backend` - Contains the FastAPI application, API routes, and database models.
+```
+ASPIRE/
+├── frontend/        # React + Vite application
+└── backend/         # FastAPI application, API routes, models, migrations
+```
 
-## 🛠️ Local Development Setup
+## Local Development Setup
 
 ### 1. Database Setup
-Ensure PostgreSQL is installed and running locally. Open your `psql` console and set up the database:
+
+Ensure PostgreSQL is installed and running. Open your `psql` console:
+
 ```sql
 CREATE DATABASE aspire_db;
 CREATE USER aspire_user WITH ENCRYPTED PASSWORD 'aspire123';
@@ -27,120 +32,103 @@ ALTER DATABASE aspire_db OWNER TO aspire_user;
 ```
 
 ### 2. Backend (FastAPI)
-Navigate to the backend directory, activate your virtual environment, and install dependencies:
+
 ```bash
 cd backend
+python -m venv venv
 source venv/bin/activate
-pip install sqlmodel asyncpg psycopg2-binary python-dotenv fastapi uvicorn
+pip install -r requirements.txt
 ```
-Create a `.env` file in the `/backend` directory:
+
+Create a `.env` file in `/backend`:
+
 ```env
 DATABASE_URL=postgresql+asyncpg://aspire_user:aspire123@localhost/aspire_db
+SECRET_KEY=your-secret-key-here
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:8000/auth/callback
+ALLOWED_EMAIL_DOMAIN=g.batstate-u.edu.ph
 ```
+
+Run database migrations:
+
+```bash
+alembic upgrade head
+```
+
 Start the backend server:
+
 ```bash
 uvicorn main:app --reload
 ```
-The backend will automatically create the required database tables on startup. The API runs on `http://localhost:8000`.
+
+API runs at `http://localhost:8000`. Swagger docs at `http://localhost:8000/docs`.
 
 ### 3. Frontend (React)
-Open a totally separate terminal tab, navigate to the frontend directory, and start the Vite development server:
+
+In a separate terminal:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-The visual frontend dashboard runs on `http://localhost:5173`.
 
-## 📦 Frontend Dependencies
+Frontend runs at `http://localhost:5173`.
 
-### Production
-| Package | Version | Purpose |
+## Auth Endpoints
+
+| Method | Endpoint | Description |
 |---|---|---|
-| `react` | ^19.2.4 | UI library |
-| `react-dom` | ^19.2.4 | React DOM renderer |
-| `react-router-dom` | ^7.13.1 | Client-side routing |
-| `lucide-react` | ^0.577.0 | Icon library |
-| `motion` | ^12.38.0 | Animations (Framer Motion) |
+| `POST` | `/auth/register` | Register with email + password |
+| `POST` | `/auth/login` | Login with SR code + password |
+| `GET` | `/auth/login/google` | Initiate Google OAuth |
+| `GET` | `/auth/callback` | Google OAuth callback |
 
-### Dev Dependencies
-| Package | Version | Purpose |
-|---|---|---|
-| `tailwindcss` | ^4.2.2 | Utility-first CSS framework |
-| `@tailwindcss/postcss` | ^4.2.2 | TW v4 PostCSS plugin |
-| `postcss` | ^8.5.8 | CSS post-processing |
-| `autoprefixer` | ^10.4.27 | CSS vendor prefixes |
-| `vite` | ^8.0.0 | Build tool / dev server |
-| `@vitejs/plugin-react` | ^6.0.0 | React plugin for Vite |
-| `eslint` | ^9.39.4 | Linting |
-| `eslint-plugin-react-hooks` | ^7.0.1 | React Hooks lint rules |
-| `eslint-plugin-react-refresh` | ^0.5.2 | React Refresh lint rules |
+## Frontend Dependencies
 
----
+| Package | Purpose |
+|---|---|
+| `react` + `react-dom` | UI library |
+| `react-router-dom` | Client-side routing |
+| `lucide-react` | Icons |
+| `motion` | Animations |
+| `tailwindcss` | Utility-first CSS |
+| `vite` | Build tool / dev server |
 
-## 🔀 Git Workflow
+## Git Workflow
 
 **Remote:** `https://github.com/Pudding-developer/ASPIRE.git`
 
 ### Branches
+
 | Branch | Purpose |
 |---|---|
 | `main` | Production / stable branch |
-| `v2-with-frontend` | Frontend development branch |
+| `landingpage-and-instructor-dashboard` | Current dev branch |
 | `ML-MODEL` | Machine learning model branch |
 
-### Pulling Changes
+### Common Commands
+
 ```bash
-# Pull the latest from the current branch
-git pull origin main
+# Push current branch (first time)
+git push --set-upstream origin your-branch-name
 
-# Pull from a specific branch
-git pull origin v2-with-frontend
-
-# Switch to a branch and pull
-git checkout v2-with-frontend
-git pull
-```
-
-### Pushing Changes
-```bash
-# Stage all changes
+# Stage, commit, and push
 git add .
+git commit -m "feat: your message here"
+git push origin
 
-# Commit with a descriptive message
-git commit -m "feat: your commit message here"
-
-# Push to the current branch
-git push origin main
-
-# Push to a specific branch
-git push origin v2-with-frontend
-```
-
-### Creating & Switching Branches
-```bash
-# Create a new branch and switch to it
+# Create and switch to a new branch
 git checkout -b your-branch-name
 
-# Switch to an existing branch
+# Merge into main
 git checkout main
-
-# List all branches (local + remote)
-git branch -a
-
-# Delete a local branch
-git branch -d your-branch-name
-```
-
-### Merging Branches
-```bash
-# Merge another branch into your current branch
-git checkout main
-git merge v2-with-frontend
-
-# Push after merging
+git merge your-branch-name
 git push origin main
 ```
 
 ---
-*This repository is configured for easy zero-downtime deployment to Vercel and Render.*
+
+*Configured for zero-downtime deployment to Vercel and Render.*

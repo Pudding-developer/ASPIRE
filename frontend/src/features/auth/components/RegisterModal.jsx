@@ -1,13 +1,16 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { X, CreditCard } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { useNavigate } from 'react-router';
 import aspireLogo from '../../../assets/aspire-logo.png';
 
-export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
-  const navigate = useNavigate();
+const GOOGLE_AUTH_URL = 'http://localhost:8000/auth/login/google';
 
+export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   if (!isOpen) return null;
+
+  const handleGoogleSignUp = () => {
+    window.location.href = GOOGLE_AUTH_URL;
+  };
 
   return (
     <AnimatePresence>
@@ -43,25 +46,6 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
             </div>
 
             <form className="flex flex-col gap-4" onSubmit={(e) => e.preventDefault()}>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm text-gray-200">First Name</label>
-                  <input
-                    type="text"
-                    placeholder="Juan"
-                    className="bg-[#050000] border border-white/10 rounded-md px-3 py-[10.5px] text-white focus:outline-none focus:border-[#bc1313] transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm text-gray-200">Last Name</label>
-                  <input
-                    type="text"
-                    placeholder="Dela Cruz"
-                    className="bg-[#050000] border border-white/10 rounded-md px-3 py-[10.5px] text-white focus:outline-none focus:border-[#bc1313] transition-colors"
-                  />
-                </div>
-              </div>
-
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm text-gray-200">Email</label>
                 <input
@@ -69,24 +53,6 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                   placeholder="22-12345@g.batstate-u.edu.ph"
                   className="bg-[#050000] border border-white/10 rounded-md px-3 py-[10.5px] text-white focus:outline-none focus:border-[#bc1313] transition-colors"
                 />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-3">
-                  <label className="text-sm text-gray-200">SR Code</label>
-                  <span className="text-[10px] border border-white/20 px-1.5 py-0.5 rounded text-gray-400 tracking-wider">STUDENT RECORD</span>
-                </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="E.g. 22-12345"
-                    className="w-full bg-[#050000] border border-white/10 rounded-md px-3 py-[10.5px] pr-10 text-white focus:outline-none focus:border-[#bc1313] transition-colors"
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                    <CreditCard size={18} />
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-0.5">Enter the SR code provided by your institution.</p>
               </div>
 
               <div className="flex flex-col gap-1.5 mt-1">
@@ -118,7 +84,10 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
               <div className="flex-1 h-px bg-white/10"></div>
             </div>
 
-            <Button className="w-full bg-[#050000] hover:bg-[#110202] border border-white/10 text-gray-200 py-6 text-base rounded-md flex items-center justify-center">
+            <Button 
+              onClick={handleGoogleSignUp}
+              className="w-full bg-[#050000] hover:bg-[#110202] border border-white/10 text-gray-200 py-6 text-base rounded-md flex items-center justify-center"
+            >
               <svg viewBox="0 0 24 24" className="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />

@@ -50,8 +50,8 @@ export default function Sidebar({ activeView, setActiveView, onLogout }) {
           </div>
           {!isMinimized && (
             <div className="overflow-hidden min-w-[160px]">
-              <p className="text-[#e2e2e2] text-[15px] leading-tight font-medium truncate">Professor</p>
-              <p className="text-[#737373] text-[13px] truncate">instructor@aspire.edu</p>
+              <p className="text-[#e2e2e2] text-[15px] leading-tight font-medium truncate">instructor</p>
+              <p className="text-[#737373] text-[13px] truncate">instructor@g.batstate-u.edu.ph</p>
             </div>
           )}
         </div>

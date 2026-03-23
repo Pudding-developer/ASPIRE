@@ -1,11 +1,11 @@
-import { motion } from 'motion/react'; // eslint-disable-line no-unused-vars
+import { motion } from 'framer-motion';
 import instructorDashboard from '../../../assets/instructor-dashboard.png';
 import studentDashboard from '../../../assets/student-dashboard.png';
 
 export default function DashboardPreview() {
   return (
     <section id="dashboard-preview" className="py-12 px-6 overflow-hidden">
-      <div className="relative h-[500px] md:h-[900px] mt-8 w-full">
+      <div className="relative h-125 md:h-225 mt-8 w-full"> 
         
         {/* Instructor Dashboard (Back Left) */}
         <motion.div
@@ -61,7 +61,7 @@ export default function DashboardPreview() {
         <motion.div
           animate={{ y: [0, -12, 0] }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-          className="absolute bottom-24 md:bottom-32 left-[15%] backdrop-blur-md bg-gradient-to-br from-[#890E0E] to-[#bc1313] border border-white/10 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.3)] z-20 text-center"
+          className="absolute bottom-24 md:bottom-32 left-[15%] backdrop-blur-md bg-linear-to-br from-[#890E0E] to-[#bc1313] border border-white/10 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.3)] z-20 text-center"
         >
           <div className="text-2xl md:text-3xl font-bold mb-1">95%</div>
           <div className="text-xs opacity-90">Accuracy Rate</div>

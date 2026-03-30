@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Copy, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
@@ -7,6 +7,13 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
   const [year, setYear] = useState('1');
   const [semester, setSemester] = useState('1');
   const [section, setSection] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -84,6 +91,13 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
 export function ClassCodeModal({ isOpen, onClose, classCode = 'CS201-2026-A-XY7Z' }) {
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleCopy = () => {
@@ -124,6 +138,13 @@ export function ClassCodeModal({ isOpen, onClose, classCode = 'CS201-2026-A-XY7Z
 }
 
 export function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirm', variant = 'danger' }) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (

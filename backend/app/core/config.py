@@ -19,3 +19,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 # Allowed institution email domain
 ALLOWED_EMAIL_DOMAIN = os.getenv("ALLOWED_EMAIL_DOMAIN", "")
+
+# Resend Email Configuration
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "ASPIRE <onboarding@resend.dev>")
+

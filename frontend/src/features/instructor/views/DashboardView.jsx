@@ -1,15 +1,18 @@
 import { motion } from 'motion/react';
 import { Plus } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import useAuth from '../../auth/hooks/useAuth';
 
 export default function DashboardView({ onCreateClass }) {
+  const { user } = useAuth();
+
   return (
     <div className="p-8">
       {/* Header Row */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Instructor Portal</h1>
-          <p className="text-gray-600 mt-1">Welcome back, Professor</p>
+          <p className="text-gray-600 mt-1">Welcome back, {user?.full_name?.split(' ')[0] || 'Professor'}</p>
         </div>
         <Button 
           onClick={onCreateClass}

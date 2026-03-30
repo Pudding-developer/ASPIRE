@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useAuth from '../../features/auth/hooks/useAuth';
 import InstructorLayout from '../../features/instructor/components/InstructorLayout';
 import DashboardView from '../../features/instructor/views/DashboardView';
 import MyClassesView from '../../features/instructor/views/MyClassesView';
@@ -17,7 +19,28 @@ const mockArchived = [
 ];
 
 const InstructorDashboard = () => {
+  const { token, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeView, setActiveView] = useState('instructor-portal');
+
+  // Validate session against DB (catches deactivated accounts)
+  useEffect(() => {
+    if (!token) {
+      navigate('/');
+      return;
+    }
+    fetch('http://localhost:8000/api/instructor/profile', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(r => {
+      // 403 Forbidden -> e.g., INSTRUCTOR_DEACTIVATED logic in deps.py
+      if (r.status === 401 || r.status === 403) {
+        logout();
+        navigate('/');
+      }
+    })
+    .catch(console.error);
+  }, [token, logout, navigate]);
 
   // Modal States
   const [isCreateOpen, setIsCreateOpen] = useState(false);

@@ -1,51 +1,99 @@
 /**
- * AuthCallbackPage — The frontend route that Google redirects to after OAuth.
- * 
- * URL will be: /auth/callback?token=eyJ... or /auth/callback?error=...
- * 
- * This page:
- * 1. Reads the token from the URL
- * 2. Stores it via useAuth
- * 3. Redirects to the appropriate dashboard based on user role
+ * AuthCallbackPage — Handles Google OAuth redirect.
+ *
+ * Success: reads role from JWT → routes to /admin/dashboard, /instructor/dashboard, or /student/dashboard
+ * Error codes:
+ *   INSTRUCTOR_DEACTIVATED   → 403 message
+ *   ACCOUNT_NOT_FOUND        → 404 message
+ *   ACCOUNT_ALREADY_EXISTS   → 409 message
  */
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import useAuth from '../../features/auth/hooks/useAuth';
 import aspireLogo from '../../assets/aspire-logo.png';
 
+const ERROR_MESSAGES = {
+  INSTRUCTOR_DEACTIVATED:
+    'Your instructor account has been deactivated. Contact your administrator.',
+  ACCOUNT_NOT_FOUND:
+    'No account found. Please use Get Started to register.',
+  ACCOUNT_ALREADY_EXISTS:
+    'Account already registered. Please use Log In instead.',
+};
+
+const ROLE_REDIRECTS = {
+  admin: '/admin/dashboard',
+  instructor: '/instructor/dashboard',
+  student: '/student/dashboard',
+};
+
 export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [error, setError] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [countdown, setCountdown] = useState(null);
 
   useEffect(() => {
     const token = searchParams.get('token');
     const errorParam = searchParams.get('error');
+    const redirectParam = searchParams.get('redirect');
 
     if (errorParam) {
-      setError(decodeURIComponent(errorParam));
-      setTimeout(() => navigate('/'), 4000);
-      return;
+      const message =
+        ERROR_MESSAGES[errorParam] ||
+        decodeURIComponent(errorParam).replace(/_/g, ' ');
+      setErrorMessage(message);
+
+      let secs = 3;
+      setCountdown(secs);
+      const interval = setInterval(() => {
+        secs -= 1;
+        setCountdown(secs);
+        if (secs <= 0) {
+          clearInterval(interval);
+          navigate('/');
+        }
+      }, 1000);
+      return () => clearInterval(interval);
     }
 
     if (token) {
+      // Determine redirect from query param first, fallback to JWT role
+      if (redirectParam === '/auth/select-role') {
+        navigate('/', { state: { showRoleSelection: true, token }, replace: true });
+        return;
+      }
+
       login(token);
 
-      // Decode role to redirect to the right dashboard
+      if (redirectParam) {
+        setTimeout(() => navigate(redirectParam, { replace: true }), 500);
+        return;
+      }
+
       try {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const payload = JSON.parse(atob(base64));
-
-        const redirectTo = payload.role === 'instructor' ? '/instructor' : '/student';
-        setTimeout(() => navigate(redirectTo, { replace: true }), 500);
+        const jsonPayload = decodeURIComponent(
+          atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+        );
+        const payload = JSON.parse(jsonPayload);
+        const dest = ROLE_REDIRECTS[payload.role] || '/student/dashboard';
+        setTimeout(() => navigate(dest, { replace: true }), 500);
       } catch {
-        navigate('/instructor', { replace: true });
+        navigate('/student/dashboard', { replace: true });
       }
     } else {
-      setError('No token received.');
-      setTimeout(() => navigate('/'), 3000);
+      setErrorMessage('No token received.');
+      setCountdown(3);
+      const interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) { clearInterval(interval); navigate('/'); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
     }
   }, [searchParams, login, navigate]);
 
@@ -53,12 +101,10 @@ export default function AuthCallbackPage() {
     <div className="fixed inset-0 z-[100] bg-[#0a0101] flex flex-col items-center justify-center p-6">
       <div className="flex flex-col items-center justify-center">
         <img src={aspireLogo} alt="ASPIRE" className="h-[200px] w-auto mb-6" />
-
-        {error ? (
+        {errorMessage ? (
           <div className="text-center">
-            <div className="text-red-400 text-lg font-medium mb-2">Authentication Failed</div>
-            <p className="text-gray-500 text-sm max-w-md">{error}</p>
-            <p className="text-gray-600 text-xs mt-4">Redirecting to home...</p>
+            <div className="text-red-400 text-lg font-medium mb-2">{errorMessage}</div>
+            <p className="text-gray-600 text-xs mt-4">Redirecting back in {countdown}s...</p>
           </div>
         ) : (
           <div className="text-center">

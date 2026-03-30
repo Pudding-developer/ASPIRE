@@ -2,15 +2,21 @@ import { useState } from 'react';
 import { LayoutDashboard, BookOpen, Archive, LogOut, ChevronUp, ChevronDown, PanelLeftClose, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import aspireLogo from '../../../assets/aspire-logo.png';
+import useAuth from '../../auth/hooks/useAuth';
 
 export default function Sidebar({ activeView, setActiveView, onLogout }) {
   const [classesOpen, setClassesOpen] = useState(true);
   const [isPinned, setIsPinned] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // The sidebar is effectively minimized only if it's both unpinned AND not currently being hovered.
   const isMinimized = !isPinned && !isHovered;
+
+  const fullName = user?.full_name || 'Instructor';
+  const email = user?.email || 'instructor@g.batstate-u.edu.ph';
+  const initial = fullName.charAt(0).toUpperCase();
 
   // Mock list of classes
   const mockClasses = [
@@ -25,33 +31,35 @@ export default function Sidebar({ activeView, setActiveView, onLogout }) {
       className={`${isMinimized ? 'w-[88px]' : 'w-[280px]'} min-h-screen bg-[#0d0101] border-r border-[#261010] flex flex-col flex-shrink-0 transition-all duration-300 relative z-20`}
     >
       {/* Top section: Logo & Toggle */}
-      <div className={`p-6 pb-5 flex ${isMinimized ? 'justify-center' : 'items-start justify-between'} overflow-hidden h-[104px]`}>
+      <div className={`px-4 pt-4 pb-1 flex ${isMinimized ? 'justify-center' : 'items-center justify-between'} overflow-visible min-h-[104px]`}>
         {!isMinimized && (
-          <div className="flex flex-col items-start min-w-[150px]">
-            <img src={aspireLogo} alt="ASPIRE" className="h-[26px] w-auto mb-3" />
+          <div className="flex flex-col items-start flex-1 -ml-2">
+            <img src={aspireLogo} alt="ASPIRE" className="h-[125px] w-auto drop-shadow-lg" />
           </div>
         )}
         <button
           onClick={() => setIsPinned(!isPinned)}
-          className={`text-[#6a7a90] hover:text-white transition-colors flex-shrink-0 mt-1 ${isMinimized ? '' : '-mr-2'}`}
+          className={`text-[#6a7a90] hover:text-white transition-colors flex-shrink-0 self-start mt-2 ${isMinimized ? '' : '-mr-1'}`}
           title={isPinned ? "Unpin Sidebar" : "Pin Sidebar"}
         >
           {isPinned ? <PanelLeftClose size={20} /> : <Menu size={24} />}
         </button>
       </div>
 
-      <div className="border-b border-[#261010] w-full mb-6 shrink-0"></div>
-
       {/* Profile Box */}
-      <div className={`mb-8 shrink-0 ${isMinimized ? 'px-4' : 'px-5'}`}>
+      <div className={`mb-4 shrink-0 ${isMinimized ? 'px-4' : 'px-5'}`}>
         <div className={`p-3 rounded-2xl border border-[#2a1212] bg-[#140202] flex items-center ${isMinimized ? 'justify-center' : 'gap-3'} transition-all`}>
-          <div className="w-10 h-10 rounded-full flex-shrink-0 bg-[#bc1313] flex items-center justify-center text-white font-medium text-sm">
-            P
-          </div>
+          {user?.avatar_url ? (
+            <img src={user.avatar_url} alt={fullName} className="w-10 h-10 rounded-full flex-shrink-0 object-cover" referrerPolicy="no-referrer" />
+          ) : (
+            <div className="w-10 h-10 rounded-full flex-shrink-0 bg-[#bc1313] flex items-center justify-center text-white font-medium text-sm">
+              {initial}
+            </div>
+          )}
           {!isMinimized && (
             <div className="overflow-hidden min-w-[160px]">
-              <p className="text-[#e2e2e2] text-[15px] leading-tight font-medium truncate">instructor</p>
-              <p className="text-[#737373] text-[13px] truncate">instructor@g.batstate-u.edu.ph</p>
+              <p className="text-[#e2e2e2] text-[15px] leading-tight font-medium truncate">{fullName}</p>
+              <p className="text-[#737373] text-[13px] truncate">{email}</p>
             </div>
           )}
         </div>
@@ -59,7 +67,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout }) {
 
       {/* Menu Label */}
       {!isMinimized && (
-        <div className="px-7 mb-3 shrink-0">
+        <div className="px-7 mb-2 shrink-0">
           <span className="text-[11px] font-semibold text-[#4e5b6e] tracking-widest uppercase mb-1">Menu</span>
         </div>
       )}

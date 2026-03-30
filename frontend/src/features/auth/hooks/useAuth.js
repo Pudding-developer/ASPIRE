@@ -59,7 +59,7 @@ export default function useAuth() {
 
   const isAuthenticated = !!token;
 
-  // Check if token is expired
+  // Check if mathematical JWT token is expired
   useEffect(() => {
     if (token) {
       const payload = decodeJwtPayload(token);
@@ -67,6 +67,29 @@ export default function useAuth() {
         logout();
       }
     }
+  }, [token, logout]);
+
+  // Inactivity (Idle) Timeout: Log out after 20 minutes of no user interaction
+  useEffect(() => {
+    if (!token) return;
+
+    let timeoutId;
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        logout();
+        window.location.href = '/'; // Force back to login screen
+      }, 20 * 60 * 1000); // 20 minutes
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+    resetTimer(); // Start timer immediately upon hook mount
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
   }, [token, logout]);
 
   return { user, token, login, logout, isAuthenticated };

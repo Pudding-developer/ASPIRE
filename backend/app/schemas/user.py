@@ -29,6 +29,12 @@ class UserLogin(BaseModel):
     password: str
 
 
+
+class RoleSelectionRequest(BaseModel):
+    """Schema for selecting a role when multiple roles are available."""
+    role: str
+
+
 # ---------------------------------------------------------------------------
 # Response schemas
 # ---------------------------------------------------------------------------

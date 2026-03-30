@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../features/landing/components/Navbar';
 import HeroSection from '../../features/landing/components/HeroSection';
 import DashboardPreview from '../../features/landing/components/DashboardPreview';
@@ -9,10 +10,25 @@ import FaqSection from '../../features/landing/components/FaqSection';
 import Footer from '../../features/landing/components/Footer';
 import RegisterModal from '../../features/auth/components/RegisterModal';
 import LoginModal from '../../features/auth/components/LoginModal';
+import SelectRoleModal from '../../features/auth/components/SelectRoleModal';
 
 export default function LandingPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSelectRoleModalOpen, setIsSelectRoleModalOpen] = useState(false);
+  const [roleSelectionToken, setRoleSelectionToken] = useState(null);
+
+  useEffect(() => {
+    if (location.state?.showRoleSelection && location.state?.token) {
+      setRoleSelectionToken(location.state.token);
+      setIsSelectRoleModalOpen(true);
+      // Clear the state so it doesn't reopen on refresh
+      navigate('/', { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
 
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
@@ -65,6 +81,11 @@ export default function LandingPage() {
           setIsLoginModalOpen(false);
           setIsRegisterModalOpen(true);
         }}
+      />
+      <SelectRoleModal
+        isOpen={isSelectRoleModalOpen}
+        onClose={() => setIsSelectRoleModalOpen(false)}
+        token={roleSelectionToken}
       />
     </div>
   );

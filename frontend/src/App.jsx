@@ -7,7 +7,9 @@ import './App.css';
 const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
 const AuthCallbackPage = lazy(() => import('./pages/auth/AuthCallbackPage'));
 const InstructorDashboard = lazy(() => import('./pages/instructor/InstructorDashboardPage'));
+const InstructorRegisterPage = lazy(() => import('./pages/instructor/InstructorRegisterPage'));
 const StudentDashboard = lazy(() => import('./pages/student/StudentDashboardPage'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 
 function App() {
   return (
@@ -15,17 +17,25 @@ function App() {
       <div style={{ backgroundColor: '#0a0101', minHeight: '100vh' }}>
         <Suspense fallback={<PageLoadingSkeleton />}>
           <Routes>
-            {/* Landing page where users select their role */}
+            {/* Landing page */}
             <Route path="/" element={<LandingPage />} />
-            
+
             {/* OAuth callback — receives JWT from Google redirect */}
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            
-            {/* Dashboard Routes */}
+
+            {/* Instructor registration (public — token validated on mount) */}
+            <Route path="/instructor/register" element={<InstructorRegisterPage />} />
+
+            {/* Instructor dashboard */}
             <Route path="/instructor/*" element={<InstructorDashboard />} />
+
+            {/* Admin dashboard */}
+            <Route path="/admin/*" element={<AdminDashboardPage />} />
+
+            {/* Student dashboard */}
             <Route path="/student/*" element={<StudentDashboard />} />
-            
-            {/* Fallback route */}
+
+            {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

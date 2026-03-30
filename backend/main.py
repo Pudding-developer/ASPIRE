@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import student_routes, instructor_routes, auth_routes
+from app.api import instructor_auth_routes, admin_routes
 from app.core.database import init_db
 import app.models  # noqa: F401 — ensures all models are registered with SQLModel metadata
 
@@ -28,8 +29,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Auth routes (local + Google OAuth)
+# Auth routes (Google OAuth + local fallback)
 app.include_router(auth_routes.router, prefix="/auth", tags=["Auth"])
+
+# Instructor registration (token-gated, public)
+app.include_router(instructor_auth_routes.router, prefix="/instructor", tags=["Instructor Auth"])
+
+# Admin management (protected)
+app.include_router(admin_routes.router, prefix="/admin", tags=["Admin"])
 
 # Protected domain routes
 app.include_router(student_routes.router, prefix="/api/student", tags=["Student"])

@@ -1,11 +1,19 @@
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import aspireLogo from '../../../assets/aspire-logo.png';
 
-const GOOGLE_AUTH_URL = 'http://localhost:8000/auth/login/google';
+const GOOGLE_AUTH_URL = 'http://localhost:8000/auth/login/google?flow=login';
 
 export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleGoogleLogin = () => {
@@ -40,42 +48,12 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
               <X size={20} />
             </button>
 
-            <div className="flex flex-col items-center mb-6">
+            <div className="flex flex-col items-center mb-8">
               <img src={aspireLogo} alt="ASPIRE" className="h-[145px] w-auto -mt-6 -mb-3" />
               <h2 className="text-xl font-medium text-white">Welcome back!</h2>
             </div>
 
-            <form className="flex flex-col gap-4" onSubmit={(e) => e.preventDefault()}>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm text-gray-200">Email</label>
-                <input
-                  type="email"
-                  placeholder="22-12345@g.batstate-u.edu.ph"
-                  className="bg-[#050000] border border-white/10 rounded-md px-3 py-[10.5px] text-white focus:outline-none focus:border-[#bc1313] transition-colors"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5 mt-1">
-                <label className="text-sm text-gray-200">Password</label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="bg-[#050000] border border-white/10 rounded-md px-3 py-[10.5px] text-white tracking-widest focus:outline-none focus:border-[#bc1313] transition-colors"
-                />
-              </div>
-
-              <Button className="w-full bg-[#bc1313] hover:bg-[#890E0E] text-white py-6 text-base mt-4 rounded-md">
-                Log in
-              </Button>
-            </form>
-
-            <div className="flex items-center gap-4 my-6">
-              <div className="flex-1 h-px bg-white/10"></div>
-              <span className="text-xs text-gray-500 tracking-wider uppercase">Or continue with</span>
-              <div className="flex-1 h-px bg-white/10"></div>
-            </div>
-
-            <Button 
+            <Button
               onClick={handleGoogleLogin}
               className="w-full bg-[#050000] hover:bg-[#110202] border border-white/10 text-gray-200 py-6 text-base rounded-md flex items-center justify-center"
             >

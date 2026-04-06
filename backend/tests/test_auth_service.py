@@ -13,6 +13,8 @@ from app.services.auth_service import (
     validate_email_domain,
     register_local_user,
     login_local_user,
+)
+from app.services.oauth_service import (
     build_google_auth_url,
     pop_state,
 )
@@ -65,7 +67,7 @@ def test_build_google_auth_url_login_flow():
 
 def test_pop_state_valid():
     _, state = build_google_auth_url(flow="register")
-    valid, flow = pop_state(state)
+    valid, flow, _ = pop_state(state)
     assert valid is True
     assert flow == "register"
 
@@ -74,12 +76,12 @@ def test_pop_state_consumed_once():
     """State must be single-use."""
     _, state = build_google_auth_url(flow="login")
     pop_state(state)
-    valid, _ = pop_state(state)
+    valid, _, _ = pop_state(state)
     assert valid is False
 
 
 def test_pop_state_invalid():
-    valid, flow = pop_state("completely-fake-state")
+    valid, flow, _ = pop_state("completely-fake-state")
     assert valid is False
     assert flow == "login"  # default fallback
 

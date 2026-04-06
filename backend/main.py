@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.api import student_routes, instructor_routes, auth_routes
-from app.api import instructor_auth_routes, admin_routes
+from app.api import instructor_auth_routes, admin_routes, github_routes
 from app.core.database import init_db
 import app.models  # noqa: F401 — ensures all models are registered with SQLModel metadata
 
@@ -41,6 +42,20 @@ app.include_router(admin_routes.router, prefix="/admin", tags=["Admin"])
 # Protected domain routes
 app.include_router(student_routes.router, prefix="/api/student", tags=["Student"])
 app.include_router(instructor_routes.router, prefix="/api/instructor", tags=["Instructor"])
+
+# GitHub integration
+app.include_router(github_routes.router, prefix="/api/github", tags=["GitHub"])
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": exc.detail,
+            "code": getattr(exc, "code", "ERROR"),
+        },
+    )
 
 
 @app.get("/health", tags=["Health"])

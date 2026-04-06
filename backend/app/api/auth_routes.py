@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.api.deps import security_scheme
-from app.schemas.user import UserRegister, UserLogin, TokenResponse, UserRead, RoleSelectionRequest
+from app.schemas.user import TokenResponse, UserRead, RoleSelectionRequest
 from app.services.token_service import build_jwt, verify_access_token
 from app.services.oauth_service import (
     build_google_auth_url,
@@ -19,8 +19,6 @@ from app.services.oauth_service import (
     fetch_google_userinfo,
 )
 from app.services.auth_service import (
-    register_local_user,
-    login_local_user,
     google_login_flow,
     check_register_conflict,
     register_instructor_google,
@@ -33,19 +31,6 @@ router = APIRouter()
 FRONTEND_CALLBACK_URL = "http://localhost:5173/auth/callback"
 FRONTEND_REGISTER_URL = "http://localhost:5173/instructor/register"
 
-
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(data: UserRegister, session: AsyncSession = Depends(get_session)):
-    user = await register_local_user(session, data)
-    token = build_jwt(user, "user")
-    return TokenResponse(access_token=token, user=UserRead.model_validate(user))
-
-
-@router.post("/login", response_model=TokenResponse)
-async def login(data: UserLogin, session: AsyncSession = Depends(get_session)):
-    user = await login_local_user(session, data.sr_code, data.password)
-    token = build_jwt(user, "user")
-    return TokenResponse(access_token=token, user=UserRead.model_validate(user))
 
 
 @router.get("/login/google")

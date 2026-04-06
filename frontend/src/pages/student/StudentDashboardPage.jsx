@@ -1,43 +1,38 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useAuth from '../../features/auth/hooks/useAuth';
+import StudentSidebar from '../../features/student/components/StudentSidebar';
+import StudentDashboardView from '../../features/student/views/StudentDashboardView';
 
-import { useState, useEffect } from 'react';
+/* ─── Placeholder views ─── */
+function PlaceholderView({ title }) {
+  return (
+    <div className="p-8 flex items-center justify-center h-64">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>
+        <p className="text-gray-400 text-sm">This section is coming soon.</p>
+      </div>
+    </div>
+  );
+}
 
-const StudentDashboard = () => {
-  const [profileData, setProfileData] = useState(null);
+/* ─── Page Root ─── */
+export default function StudentDashboardPage() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [activeView, setActiveView] = useState('dashboard');
 
-  useEffect(() => {
-    // Ping the backend API!
-    fetch("http://localhost:8000/api/student/profile")
-      .then(res => res.json())
-      .then(data => setProfileData(data.message))
-      .catch(err => console.error("Failed to connect to backend", err));
-  }, []);
+  const handleLogout = () => { logout(); navigate('/'); };
 
   return (
-    <div>
-      <nav style={{ padding: '15px 20px', backgroundColor: '#28a745', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0 }}>ASPIRE Student Portal</h2>
-        <div>
-          <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold' }}>Change Role</Link>
-        </div>
-      </nav>
-      
-      <main style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-        <h1>Student Dashboard</h1>
-        <p>Welcome, Student. This is your personal dashboard.</p>
-
-        {/* Display the backend data */}
-        <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-          <h3>Backend Connection Profile 🔌</h3>
-          {profileData 
-            ? <p style={{ color: 'green', fontWeight: 'bold' }}>Success! Backend says: "{profileData}"</p> 
-            : <p style={{ color: 'orange' }}>⏳ Fetching data from the FastAPI backend...</p>
-          }
-        </div>
+    <div className="h-screen flex bg-[#f8f9fb] font-sans overflow-hidden">
+      <StudentSidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} user={user} />
+      <main className="flex-1 overflow-y-auto bg-[#f8f9fb] h-full">
+        {activeView === 'dashboard'        && <StudentDashboardView user={user} />}
+        {activeView === 'my-performance'   && <PlaceholderView title="My Performance" />}
+        {activeView === 'github-analytics' && <PlaceholderView title="GitHub Analytics" />}
+        {activeView === 'career-coach'     && <PlaceholderView title="Career Coach" />}
       </main>
     </div>
   );
-};
-
-export default StudentDashboard;
+}

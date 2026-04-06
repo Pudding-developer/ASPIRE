@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.api import student_routes, instructor_routes, auth_routes
 from app.api import instructor_auth_routes, admin_routes, github_routes
+from app.api import instructor_class_routes
 from app.core.database import init_db
 import app.models  # noqa: F401 — ensures all models are registered with SQLModel metadata
 
@@ -45,6 +46,9 @@ app.include_router(instructor_routes.router, prefix="/api/instructor", tags=["In
 
 # GitHub integration
 app.include_router(github_routes.router, prefix="/api/github", tags=["GitHub"])
+
+# Instructor class management (routes have full paths baked in)
+app.include_router(instructor_class_routes.router, tags=["Instructor Classes"])
 
 
 @app.exception_handler(HTTPException)

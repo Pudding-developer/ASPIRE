@@ -5,7 +5,7 @@ Uses repositories for all DB access. No direct queries.
 """
 import asyncio
 from datetime import datetime
-from passlib.context import CryptContext
+
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +13,6 @@ from app.core.config import ALLOWED_EMAIL_DOMAIN
 from app.repositories import user_repository, instructor_repository, admin_repository, token_repository
 from app.services.token_service import build_jwt, create_temp_token
 from app.services.email_service import send_student_welcome, send_instructor_welcome
-from app.schemas.user import UserRegister
 
 
 # ---------------------------------------------------------------------------
@@ -25,20 +24,6 @@ class InstructorRegisterError(Exception):
         self.code = code
         super().__init__(code)
 
-
-# ---------------------------------------------------------------------------
-# Password hashing
-# ---------------------------------------------------------------------------
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
 
 
 # ---------------------------------------------------------------------------
@@ -57,46 +42,6 @@ def validate_email_domain(email: str) -> None:
             detail=f"Only @{domain} email addresses are allowed.",
         )
 
-
-# ---------------------------------------------------------------------------
-# Local registration (student)
-# ---------------------------------------------------------------------------
-
-async def register_local_user(session: AsyncSession, data: UserRegister) -> "User":
-    if data.password != data.confirm_password:
-        raise HTTPException(status_code=400, detail="Passwords do not match.")
-
-    if await user_repository.get_by_email(session, data.email.lower()):
-        raise HTTPException(status_code=409, detail="An account with this email already exists.")
-
-    sr_code = extract_sr_code(data.email)
-    if await user_repository.get_by_sr_code(session, sr_code):
-        raise HTTPException(status_code=409, detail="An account with this SR code already exists.")
-
-    return await user_repository.create(
-        session,
-        email=data.email.lower(),
-        sr_code=sr_code,
-        full_name=data.full_name,
-        hashed_password=hash_password(data.password),
-        role="student",
-        auth_provider="local",
-    )
-
-
-# ---------------------------------------------------------------------------
-# Local login (student)
-# ---------------------------------------------------------------------------
-
-async def login_local_user(session: AsyncSession, sr_code: str, password: str) -> "User":
-    user = await user_repository.get_by_sr_code(session, sr_code)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid SR code or password.")
-    if user.auth_provider == "google":
-        raise HTTPException(status_code=400, detail="This account was created with Google.")
-    if not user.hashed_password or not verify_password(password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid SR code or password.")
-    return user
 
 
 # ---------------------------------------------------------------------------

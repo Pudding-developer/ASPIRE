@@ -21,16 +21,16 @@ export default function ArchivedClassesView({ classes = [], onRestore, onDelete 
             className="bg-gray-50 border border-gray-200 rounded-xl p-6 relative overflow-hidden"
           >
             <div className="absolute top-4 right-4 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded font-medium">
-              Archived on {cls.archivedDate}
+              Archived on {cls.archived_at ? new Date(cls.archived_at).toLocaleDateString() : '—'}
             </div>
             <div className="mb-8 mt-2">
-              <h3 className="text-xl font-bold text-gray-400 mb-1">{cls.subjectName}</h3>
-              <p className="text-gray-500 text-sm">{cls.courseCode} — Section {cls.section}</p>
+              <h3 className="text-xl font-bold text-gray-400 mb-1">{cls.subject_name}</h3>
+              <p className="text-gray-500 text-sm">{cls.course_code} — Section {cls.section}</p>
             </div>
             <div className="flex justify-between items-center pt-4 border-t border-gray-200">
               <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
                 <Users size={16} />
-                <span>{cls.studentCount} Students</span>
+                <span>{cls.student_count ?? 0} Students</span>
               </div>
               <div className="flex gap-2">
                 <button 

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import aspireLogo from '../../../assets/aspire-logo.png';
 import useAuth from '../../auth/hooks/useAuth';
 
-export default function Sidebar({ activeView, setActiveView, onLogout }) {
+export default function Sidebar({ activeView, setActiveView, onLogout, classes = [] }) {
   const [classesOpen, setClassesOpen] = useState(true);
   const [isPinned, setIsPinned] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
@@ -17,12 +17,6 @@ export default function Sidebar({ activeView, setActiveView, onLogout }) {
   const fullName = user?.full_name || 'Instructor';
   const email = user?.email || 'instructor@g.batstate-u.edu.ph';
   const initial = fullName.charAt(0).toUpperCase();
-
-  // Mock list of classes
-  const mockClasses = [
-    { id: 'class-cs201', label: 'CS201 \u2013 A' },
-    { id: 'class-cs301', label: 'CS301 \u2013 B' },
-  ];
 
   return (
     <div
@@ -110,7 +104,9 @@ export default function Sidebar({ activeView, setActiveView, onLogout }) {
             </div>
             {!isMinimized && (
               <div className="flex items-center gap-3 shrink-0">
-                <span className="flex items-center justify-center bg-white/20 text-white text-[11px] w-5 h-5 rounded-full font-bold">2</span>
+                {classes.length > 0 && (
+                  <span className="flex items-center justify-center bg-white/20 text-white text-[11px] w-5 h-5 rounded-full font-bold">{classes.length}</span>
+                )}
                 {classesOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </div>
             )}
@@ -119,22 +115,23 @@ export default function Sidebar({ activeView, setActiveView, onLogout }) {
           {/* Sub-items block (collapsible class list) */}
           <div className={`overflow-hidden transition-all duration-300 ${classesOpen && !isMinimized ? 'max-h-40 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
             <div className="relative py-1">
-              <div className="absolute left-[26px] top-0 bottom-3 w-px bg-[#261010]" />
+              <div className="absolute left-[16px] top-0 bottom-3 w-px bg-[#261010]" />
 
               <div className="flex flex-col gap-1.5 relative z-10 w-full">
-                {mockClasses.map((cls) => {
-                  const isActive = activeView === cls.id;
+                {classes.map((cls) => {
+                  const viewId = `class-${cls.id}`;
+                  const isActive = activeView === viewId;
                   return (
                     <button
                       key={cls.id}
-                      onClick={() => setActiveView(cls.id)}
-                      className={`w-[calc(100%-38px)] ml-[38px] flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px] transition-all text-left ${isActive
+                      onClick={() => setActiveView(viewId)}
+                      className={`w-[calc(100%-24px)] ml-[24px] flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px] transition-all text-left ${isActive
                         ? 'text-white bg-[#7a0f0f]'
                         : 'text-[#6a7a90] hover:text-[#a0acc0] hover:bg-white/5'
                         }`}
                     >
                       <div className={`w-[5px] h-[5px] rounded-full flex-shrink-0 ${isActive ? 'bg-white' : 'bg-[#4a5568]'}`} />
-                      <span className="font-medium truncate">{cls.label}</span>
+                      <span className="font-medium truncate">{cls.course_code} - {cls.section}</span>
                     </button>
                   );
                 })}

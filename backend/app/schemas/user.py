@@ -6,27 +6,6 @@ from typing import Optional
 # Request schemas
 # ---------------------------------------------------------------------------
 
-class UserRegister(BaseModel):
-    """Schema for local (email/password) registration."""
-    email: str
-    full_name: str
-    password: str
-    confirm_password: str
-
-    @field_validator("email")
-    @classmethod
-    def email_must_be_institution(cls, v: str) -> str:
-        from app.core.config import ALLOWED_EMAIL_DOMAIN
-        domain = ALLOWED_EMAIL_DOMAIN or "g.batstate-u.edu.ph"
-        if not v.endswith(f"@{domain}"):
-            raise ValueError(f"Only @{domain} email addresses are allowed.")
-        return v.lower()
-
-
-class UserLogin(BaseModel):
-    """Schema for local (sr_code/password) login."""
-    sr_code: str
-    password: str
 
 
 

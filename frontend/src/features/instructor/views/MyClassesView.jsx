@@ -35,17 +35,17 @@ export default function MyClassesView({ classes = [], onSelectClass, onCreateCla
           <motion.div
             key={cls.id}
             whileHover={{ scale: 1.02, y: -4 }}
-            onClick={() => onSelectClass(cls.id)}
+            onClick={() => onSelectClass(`class-${cls.id}`)}
             className="bg-white border border-gray-200 rounded-xl p-6 hover:border-[#bc1313] hover:shadow-lg cursor-pointer transition-colors"
           >
             <div className="mb-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-1">{cls.subjectName}</h3>
-              <p className="text-gray-600 text-sm">{cls.courseCode} — Section {cls.section}</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-1">{cls.subject_name}</h3>
+              <p className="text-gray-600 text-sm">{cls.course_code} — Section {cls.section}</p>
             </div>
             <div className="flex justify-between items-center pt-4 border-t border-gray-100">
               <div className="flex items-center gap-2 text-gray-600 text-sm font-medium">
                 <Users size={16} />
-                <span>{cls.studentCount} Students</span>
+                <span>{cls.student_count ?? 0} Students</span>
               </div>
               <ArrowRightCircle size={20} className="text-[#bc1313]" />
             </div>

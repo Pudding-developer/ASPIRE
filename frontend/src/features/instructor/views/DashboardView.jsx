@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import useAuth from '../../auth/hooks/useAuth';
 
-export default function DashboardView({ onCreateClass }) {
+export default function DashboardView({ onCreateClass, stats, loading }) {
   const { user } = useAuth();
 
   return (
@@ -43,10 +43,10 @@ export default function DashboardView({ onCreateClass }) {
       {/* Stats Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { label: 'Total Students', value: '142' },
-          { label: 'Active Courses', value: '4' },
-          { label: 'School Year', value: '2025-2026' },
-          { label: 'Avg Performance', value: '87.5%' },
+          { label: 'Total Students', value: loading ? '—' : stats?.total_students ?? '0' },
+          { label: 'Active Courses', value: loading ? '—' : stats?.active_courses ?? '0' },
+          { label: 'School Year', value: loading ? '—' : stats?.school_year ?? '—' },
+          { label: 'Avg Performance', value: loading ? '—' : stats?.avg_performance ? `${stats.avg_performance.toFixed(1)}%` : 'N/A' },
         ].map((stat, idx) => (
           <motion.div 
             key={idx}
@@ -64,39 +64,24 @@ export default function DashboardView({ onCreateClass }) {
         {/* Top Performing */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col h-full">
           <h3 className="font-bold text-gray-900 mb-4 shrink-0">Top Performing Students</h3>
-          <div className="overflow-y-auto max-h-64 pr-2 space-y-3">
-            {[1,2,3,4,5].map(i => (
-              <div key={`top-${i}`} className="bg-green-50 border border-green-200 rounded-lg p-3 flex justify-between items-center">
-                <span className="font-medium text-gray-800">Alice Smith {i}</span>
-                <span className="text-green-600 font-bold">9{i}%</span>
-              </div>
-            ))}
+          <div className="overflow-y-auto max-h-64 pr-2 space-y-3 flex flex-col items-center justify-center flex-1">
+            <p className="text-gray-400 text-sm text-center">No data yet.</p>
           </div>
         </div>
 
         {/* At Risk */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col h-full">
           <h3 className="font-bold text-gray-900 mb-4 shrink-0">Students at Risk</h3>
-          <div className="overflow-y-auto max-h-64 pr-2 space-y-3">
-            {[1,2,3].map(i => (
-              <div key={`risk-${i}`} className="bg-red-50 border border-red-200 rounded-lg p-3 flex justify-between items-center">
-                <span className="font-medium text-gray-800">Bob Johnson {i}</span>
-                <span className="text-red-600 font-bold">6{i}%</span>
-              </div>
-            ))}
+          <div className="overflow-y-auto max-h-64 pr-2 space-y-3 flex flex-col items-center justify-center flex-1">
+            <p className="text-gray-400 text-sm text-center">No data yet.</p>
           </div>
         </div>
 
         {/* Class Representatives */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col h-full">
           <h3 className="font-bold text-gray-900 mb-4 shrink-0">Class Representatives</h3>
-          <div className="overflow-y-auto max-h-64 pr-2 space-y-3">
-            {[1,2,3,4].map(i => (
-              <div key={`rep-${i}`} className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex justify-between items-center">
-                <span className="font-medium text-gray-800">Charlie Davis {i}</span>
-                <span className="text-gray-500 text-sm">CS20{i}-A</span>
-              </div>
-            ))}
+          <div className="overflow-y-auto max-h-64 pr-2 space-y-3 flex flex-col items-center justify-center flex-1">
+            <p className="text-gray-400 text-sm text-center">No data yet.</p>
           </div>
         </div>
       </div>

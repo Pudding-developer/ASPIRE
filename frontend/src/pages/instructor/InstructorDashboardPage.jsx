@@ -7,21 +7,14 @@ import MyClassesView from '../../features/instructor/views/MyClassesView';
 import ArchivedClassesView from '../../features/instructor/views/ArchivedClassesView';
 import ClassDetailView from '../../features/instructor/views/ClassDetailView';
 import { CreateClassModal, ClassCodeModal, ConfirmationModal } from '../../features/instructor/components/InstructorModals';
-
-const mockClasses = [
-  { id: 'class-cs201', subjectName: 'Data Structures', courseCode: 'CS 201', section: 'A', studentCount: 35 },
-  { id: 'class-math101', subjectName: 'Calculus I', courseCode: 'MATH 101', section: 'B', studentCount: 42 },
-  { id: 'class-eng102', subjectName: 'Communications', courseCode: 'ENG 102', section: 'C', studentCount: 28 },
-];
-
-const mockArchived = [
-  { id: 'class-hist101', subjectName: 'World History', courseCode: 'HIST 101', section: 'A', studentCount: 30, archivedDate: 'Mar 15, 2025' }
-];
+import { useInstructorClasses } from '../../hooks/useInstructorClasses';
 
 const InstructorDashboard = () => {
   const { token, logout } = useAuth();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('instructor-portal');
+
+  const { classes, archivedClasses, stats, loading, error, createClass, archiveClass, deleteClass, refetch } = useInstructorClasses();
 
   // Validate session against DB (catches deactivated accounts)
   useEffect(() => {
@@ -33,7 +26,6 @@ const InstructorDashboard = () => {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(r => {
-      // 403 Forbidden -> e.g., INSTRUCTOR_DEACTIVATED logic in deps.py
       if (r.status === 401 || r.status === 403) {
         logout();
         navigate('/');
@@ -45,11 +37,13 @@ const InstructorDashboard = () => {
   // Modal States
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCodeOpen, setIsCodeOpen] = useState(false);
+  const [newClassCode, setNewClassCode] = useState('');
   const [confirmConfig, setConfirmConfig] = useState(null);
 
-  const handleCreateSubmit = () => {
+  const handleCreateSubmit = async (formData) => {
+    const newClass = await createClass(formData);
     setIsCreateOpen(false);
-    // Auto-show the generated class code upon creation
+    setNewClassCode(newClass.class_code);
     setIsCodeOpen(true);
   };
 
@@ -59,14 +53,35 @@ const InstructorDashboard = () => {
 
   const closeConfirm = () => setConfirmConfig(null);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-8 h-8 border-4 border-[#bc1313] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-4">
+        <p className="text-red-600 font-medium">{error}</p>
+        <button onClick={refetch} className="px-4 py-2 bg-[#bc1313] text-white rounded-lg hover:bg-[#890E0E] transition-colors">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <>
-      <InstructorLayout activeView={activeView} setActiveView={setActiveView}>
-        {activeView === 'instructor-portal' && <DashboardView onCreateClass={() => setIsCreateOpen(true)} />}
+      <InstructorLayout activeView={activeView} setActiveView={setActiveView} classes={classes}>
+        {activeView === 'instructor-portal' && (
+          <DashboardView onCreateClass={() => setIsCreateOpen(true)} stats={stats} loading={loading} />
+        )}
 
         {activeView === 'my-classes' && (
           <MyClassesView
-            classes={mockClasses}
+            classes={classes}
             onSelectClass={setActiveView}
             onCreateClass={() => setIsCreateOpen(true)}
           />
@@ -74,26 +89,41 @@ const InstructorDashboard = () => {
 
         {activeView === 'archived' && (
           <ArchivedClassesView
-            classes={mockArchived}
-            onRestore={() => triggerConfirm('Restore Class', 'Are you sure you want to restore this class?', 'Restore', 'success', () => { })}
-            onDelete={() => triggerConfirm('Permanently Delete', 'This action cannot be undone. All student records will be destroyed.', 'Delete Forever', 'danger', () => { })}
+            classes={archivedClasses}
+            onRestore={() => {}}
+            onDelete={(id) => triggerConfirm('Permanently Delete', 'This action cannot be undone. All student records will be destroyed.', 'Delete Forever', 'danger', () => deleteClass(id))}
           />
         )}
 
-        {activeView.startsWith('class-') && (
-          <ClassDetailView
-            classId={activeView}
-            onBack={() => setActiveView('my-classes')}
-            onShowCode={() => setIsCodeOpen(true)}
-            onArchive={() => triggerConfirm('Archive Class', 'This class will be moved to archives and no longer active.', 'Archive', 'danger', () => { })}
-            onDelete={() => triggerConfirm('Delete Class', 'This will completely erase all grades and data associated.', 'Delete', 'danger', () => { })}
-          />
-        )}
+        {activeView.startsWith('class-') && (() => {
+          const classId = parseInt(activeView.replace('class-', ''));
+          const classObj = classes.find(c => c.id === classId);
+          return (
+            <ClassDetailView
+              classId={activeView}
+              classData={classObj}
+              onBack={() => setActiveView('my-classes')}
+              onShowCode={() => { setNewClassCode(classObj?.class_code || ''); setIsCodeOpen(true); }}
+              onArchive={() => {
+                triggerConfirm('Archive Class', 'This class will be moved to archives and no longer active.', 'Archive', 'danger', async () => {
+                  await archiveClass(classId);
+                  setActiveView('my-classes');
+                });
+              }}
+              onDelete={() => {
+                triggerConfirm('Delete Class', 'This will completely erase all grades and data associated.', 'Delete', 'danger', async () => {
+                  await deleteClass(classId);
+                  setActiveView('my-classes');
+                });
+              }}
+            />
+          );
+        })()}
       </InstructorLayout>
 
       {/* Global Modals */}
       <CreateClassModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onSubmit={handleCreateSubmit} />
-      <ClassCodeModal isOpen={isCodeOpen} onClose={() => setIsCodeOpen(false)} />
+      <ClassCodeModal isOpen={isCodeOpen} onClose={() => setIsCodeOpen(false)} classCode={newClassCode} />
       {confirmConfig && (
         <ConfirmationModal
           isOpen={confirmConfig.isOpen}

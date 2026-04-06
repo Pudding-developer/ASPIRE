@@ -65,7 +65,18 @@ uvicorn main:app --reload
 
 API runs at `http://localhost:8000`. Swagger docs at `http://localhost:8000/docs`.
 
-### 3. Frontend (React)
+### 3. Initial Admin Setup
+
+To log in as an administrator, you must first create an initial admin account:
+
+```bash
+# In the backend directory with venv activated
+python scripts/seed_admin.py
+```
+
+The terminal will prompt you for the admin email (must be within the allowed domain, e.g., `@g.batstate-u.edu.ph`) and full name. Once completed, you can use Google OAuth on the landing page to log in as the admin.
+
+### 4. Frontend (React)
 
 In a separate terminal:
 
@@ -81,8 +92,6 @@ Frontend runs at `http://localhost:5173`.
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/auth/register` | Register with email + password |
-| `POST` | `/auth/login` | Login with SR code + password |
 | `GET` | `/auth/login/google` | Initiate Google OAuth |
 | `GET` | `/auth/callback` | Google OAuth callback |
 

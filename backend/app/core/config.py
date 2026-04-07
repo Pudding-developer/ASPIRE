@@ -29,3 +29,6 @@ GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:8000/ap
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "ASPIRE <onboarding@resend.dev>")
 
+# Gemini AI (for CrewAI pipeline)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+

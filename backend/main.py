@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from app.api import student_routes, instructor_routes, auth_routes
 from app.api import instructor_auth_routes, admin_routes, github_routes
 from app.api import instructor_class_routes
+from app.routers.pipeline import router as pipeline_router
 from app.core.database import init_db
 import app.models  # noqa: F401 — ensures all models are registered with SQLModel metadata
 
@@ -49,6 +50,9 @@ app.include_router(github_routes.router, prefix="/api/github", tags=["GitHub"])
 
 # Instructor class management (routes have full paths baked in)
 app.include_router(instructor_class_routes.router, tags=["Instructor Classes"])
+
+# AI career-mapping pipeline
+app.include_router(pipeline_router)
 
 
 @app.exception_handler(HTTPException)

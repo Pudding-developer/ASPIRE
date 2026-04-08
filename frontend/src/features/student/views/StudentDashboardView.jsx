@@ -1,10 +1,15 @@
 import React from 'react';
 import {
   TrendingUp, Github, Bell, Filter, TrendingDown, Minus, ArrowUpRight,
-  ChevronRight, BookOpen, Star, Plus
+  ChevronRight, BookOpen, Star, Plus, AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import projectBg from '../../../assets/project_card_bg.png';
+
+// Hooks
+import useStudentData from '../hooks/useStudentData';
+import useGithubData from '../hooks/useGithubData';
+import usePipeline from '../hooks/usePipeline';
 
 /* ─── Stat Card ─── */
 export function StatCard({ label, value, sub, trend, badge }) {
@@ -34,12 +39,13 @@ export function StatCard({ label, value, sub, trend, badge }) {
 }
 
 /* ─── ILO Donut ─── */
-export function ILOCoverage() {
+export function ILOCoverage({ coverage }) {
   const segments = [
-    { label: 'Technical Depth',     pct: 45, color: '#bc1313' },
-    { label: 'Analytical Rigor',    pct: 33, color: '#e97b7b' },
-    { label: 'Professional Ethics', pct: 22, color: '#fcd5d5' },
+    { label: 'Technical Depth',     pct: coverage.techPct || 0, color: '#bc1313' },
+    { label: 'Analytical Rigor',    pct: coverage.analyticalPct || 0, color: '#e97b7b' },
+    { label: 'Professional Ethics', pct: coverage.ethicsPct || 0, color: '#fcd5d5' },
   ];
+  
   const size = 120, stroke = 16, r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   let offset = 0;
@@ -52,6 +58,7 @@ export function ILOCoverage() {
         <div className="relative flex-shrink-0">
           <svg width={size} height={size} className="-rotate-90">
             {segments.map((s, i) => {
+              if (!s.pct) return null;
               const dash = (s.pct / 100) * circ;
               const gap  = circ - dash;
               const el = (
@@ -71,7 +78,7 @@ export function ILOCoverage() {
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[18px] font-extrabold text-gray-900">78%</span>
+            <span className="text-[18px] font-extrabold text-gray-900">{coverage.totalMastery}%</span>
             <span className="text-[9px] text-gray-400 font-semibold">MASTERY</span>
           </div>
         </div>
@@ -94,26 +101,27 @@ export function ILOCoverage() {
 /* ─── Recent Activity ─── */
 export function RecentActivity() {
   const items = [
-    { icon: BookOpen, color: 'bg-emerald-100 text-emerald-600', title: 'Advanced Algorithms Grade Released', sub: 'A+ Achieved · 2 hours ago' },
-    { icon: Github,   color: 'bg-gray-100 text-gray-600',       title: 'GitHub Push: Scholastic UI Repository', sub: '12 Commits · Yesterday' },
-    { icon: Star,     color: 'bg-yellow-100 text-yellow-600',   title: 'Research Paper Feedback Provided', sub: 'Prof. Ana · 3 days ago' },
+    { icon: BookOpen, color: 'bg-emerald-100 text-emerald-600', title: 'Calculus 2 Grade Released', sub: 'A Achieved · 2 hours ago' },
+    { icon: Star,     color: 'bg-yellow-100 text-yellow-600',   title: 'Skill Milestone Reached', sub: 'Advanced in Python · Yesterday' },
   ];
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Recent Activity</p>
-      <h3 className="text-[16px] font-bold text-gray-900 mb-5">Real-time Feed</h3>
-      <div className="space-y-4">
-        {items.map((it, i) => (
-          <div key={i} className="flex items-start gap-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${it.color}`}>
-              <it.icon size={14} />
+    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+      <div>
+        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Recent Activity</p>
+        <h3 className="text-[16px] font-bold text-gray-900 mb-5">System Feed</h3>
+        <div className="space-y-4">
+          {items.map((it, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${it.color}`}>
+                <it.icon size={14} />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-gray-800 leading-snug">{it.title}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{it.sub}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[13px] font-semibold text-gray-800 leading-snug">{it.title}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">{it.sub}</p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       <button className="mt-5 w-full border border-gray-200 rounded-xl py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
         View all activities
@@ -123,91 +131,115 @@ export function RecentActivity() {
 }
 
 /* ─── Developing Skills ─── */
-export function DevelopingSkills() {
-  const skills = [
-    { name: 'Microprocessors',        current: 72, target: 90, status: 'EXCEEDING EXPECTATIONS', statusColor: 'text-emerald-500' },
-    { name: 'Embedded Systems',        current: 58, target: 80, status: 'ON TRACK',               statusColor: 'text-blue-500'    },
-    { name: 'Digital Signal Processing', current: 44, target: 90, status: 'NEEDS ATTENTION',      statusColor: 'text-red-500'     },
-  ];
+export function DevelopingSkills({ weakSkills, aggregatedSkills }) {
+  if (!weakSkills || !weakSkills.length) {
+    return (
+      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-[16px] font-bold text-gray-900 mb-1">Developing Skills</h3>
+        <p className="text-[12px] text-gray-400 mb-5">Not enough data to predict developing skills yet.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
       <h3 className="text-[16px] font-bold text-gray-900 mb-1">Developing Skills</h3>
-      <p className="text-[12px] text-gray-400 mb-5">Ongoing competencies and performance analysis</p>
+      <p className="text-[12px] text-gray-400 mb-5">Ongoing competencies requiring attention</p>
       <div className="space-y-5">
-        {skills.map((s) => (
-          <div key={s.name}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[13px] font-semibold text-gray-800">{s.name}</span>
-              <span className={`text-[10px] font-bold uppercase ${s.statusColor}`}>{s.status}</span>
+        {weakSkills.slice(0, 3).map((skillName) => {
+          const current = Math.round(aggregatedSkills[skillName] || 0);
+          const target = 80;
+          return (
+            <div key={skillName}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[13px] font-semibold text-gray-800">{skillName}</span>
+                <span className="text-[10px] font-bold uppercase text-red-500">NEEDS ATTENTION</span>
+              </div>
+              <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden mb-1">
+                <div
+                  className="absolute left-0 top-0 h-full rounded-full transition-all"
+                  style={{ width: `${current}%`, background: '#ef4444' }}
+                />
+                <div
+                  className="absolute top-0 h-full w-0.5 bg-gray-400/60"
+                  style={{ left: `${target}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] text-gray-400">
+                <span>Current Proficiency: {current}%</span>
+                <span>Target: {target}%</span>
+              </div>
             </div>
-            <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden mb-1">
-              <div
-                className="absolute left-0 top-0 h-full rounded-full transition-all"
-                style={{
-                  width: `${s.current}%`,
-                  background: s.statusColor.includes('emerald') ? '#10b981' : s.statusColor.includes('blue') ? '#3b82f6' : '#ef4444'
-                }}
-              />
-              <div
-                className="absolute top-0 h-full w-0.5 bg-gray-400/60"
-                style={{ left: `${s.target}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[11px] text-gray-400">
-              <span>Current Proficiency: {s.current}%</span>
-              <span>Target: {s.target}%</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-5 bg-gray-50 rounded-xl p-3 flex items-start gap-2">
-        <TrendingUp size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-        <p className="text-[12px] text-gray-500">Trajectory shows strong growth in Microprocessors. Suggested peer review for DSP to accelerate understanding.</p>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 /* ─── Excelled Skills ─── */
-export function ExcelledSkills() {
-  const skills = ['System Architecture', 'Cloud Infrastructure', 'UX Design Systems', 'Academic Writing', 'Python Expert'];
+export function ExcelledSkills({ topSkills }) {
+  if (!topSkills || !topSkills.length) {
+    return (
+      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-full flex flex-col">
+        <h3 className="text-[16px] font-bold text-gray-900 mb-5">Excelled Skills</h3>
+        <p className="text-[12px] text-gray-400 mb-5">Not enough data to predict excelled skills yet.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-full flex flex-col">
       <h3 className="text-[16px] font-bold text-gray-900 mb-5">Excelled Skills</h3>
       <div className="flex flex-wrap content-start items-start gap-2 mb-5 flex-1">
-        {skills.map((s) => (
+        {topSkills.map((s) => (
           <span key={s} className="px-3 py-1.5 bg-gray-900 text-white text-[12px] font-medium rounded-full">{s}</span>
         ))}
       </div>
-      <button className="w-full border border-gray-200 rounded-xl py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+      <button className="w-full border border-gray-200 rounded-xl py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors mt-auto">
         View all achieved skills
       </button>
     </div>
   );
 }
 
-/* ─── Top Projects ─── */
-export function TopProjects() {
-  const projects = [
-    { type: 'CAPSTONE · 2024', title: 'Neural-Net Security Protocol',     desc: 'Autonomous threat detection using recurrent neural networks for campus-wide networks.' },
-    { type: 'RESEARCH · 2023', title: 'Stochastic Modeling in Fintech',   desc: 'Developing predictive models for micro-lending risks in emerging academic markets.'      },
-    { type: 'AI/ML · 300+',   title: 'Semantic Curator Engine',           desc: 'An AI-driven bibliographic tool that cross-references interdisciplinary academic sources.' },
-  ];
+/* ─── Top Projects / GitHub Repos ─── */
+export function TopProjects({ repos }) {
+  if (!repos || !repos.length) {
+    return (
+      <div>
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Portfolio</p>
+        <h2 className="text-[22px] font-extrabold text-gray-900 mb-5">Top Academic Projects</h2>
+        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6 text-center text-gray-500 text-[13px]">
+          No projects available yet. Connect your GitHub or complete assignments.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Portfolio</p>
       <h2 className="text-[22px] font-extrabold text-gray-900 mb-5">Top Academic Projects</h2>
       <div className="grid md:grid-cols-3 gap-5">
-        {projects.map((p) => (
-          <div key={p.title} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
-            <div className="relative h-36 overflow-hidden">
-              <img src={projectBg} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        {repos.slice(0, 3).map((p) => (
+          <div key={p.name} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col">
+            <div className="relative h-32 overflow-hidden">
+              <img src={projectBg} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <span className="absolute bottom-2 left-3 text-[10px] font-bold text-white/80 uppercase tracking-widest">{p.type}</span>
+              <span className="absolute bottom-2 left-3 text-[10px] font-bold text-white/80 uppercase tracking-widest">
+                {p.primary_language || 'CODE'}
+              </span>
             </div>
-            <div className={`p-4`}>
-              <h4 className="text-[14px] font-bold text-gray-900 mb-1 leading-snug">{p.title}</h4>
-              <p className="text-[12px] text-gray-500 leading-relaxed">{p.desc}</p>
+            <div className="p-4 flex-1 flex flex-col justify-between">
+              <div>
+                <h4 className="text-[14px] font-bold text-gray-900 mb-1 leading-snug truncate">{p.name}</h4>
+                <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-2">{p.description || "No description provided."}</p>
+              </div>
+              <div className="mt-3 flex gap-4 text-[11px] text-gray-400 font-semibold">
+                <span>⭐ {p.stargazers_count}</span>
+                <span>📋 {p.forks_count} forks</span>
+              </div>
             </div>
           </div>
         ))}
@@ -217,7 +249,22 @@ export function TopProjects() {
 }
 
 /* ─── GitHub Card ─── */
-export function GitHubCard() {
+export function GitHubCard({ githubStatus, onConnect }) {
+  if (!githubStatus?.connected) {
+    return (
+      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-[16px] font-bold text-gray-900 mb-2">GitHub</h3>
+        <p className="text-[12px] text-gray-500 mb-4">Connect GitHub to track projects.</p>
+        <button 
+          onClick={onConnect}
+          className="w-full border border-gray-200 rounded-xl py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+        >
+           Connect <Github size={14} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
       <h3 className="text-[16px] font-bold text-gray-900 mb-5">GitHub</h3>
@@ -227,8 +274,8 @@ export function GitHubCard() {
             <Github size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-bold text-gray-900 leading-snug truncate">aldouz-perona</p>
-            <p className="text-[11px] text-gray-500 mt-0.5 truncate">12-day streak · TypeScript 42%</p>
+            <p className="text-[13px] font-bold text-gray-900 leading-snug truncate">{githubStatus.github_username}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5 truncate">Analysis {githubStatus.has_analysis ? 'Ready' : 'Pending'}</p>
           </div>
         </div>
         <span className="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2 py-1 rounded-md flex-shrink-0 ml-2">Connected</span>
@@ -261,8 +308,21 @@ export function JoinClassCard() {
 }
 
 /* ─── Career Choice Card ─── */
-export function CareerChoiceCard() {
-  const pct = 89;
+export function CareerChoiceCard({ report }) {
+  if (!report || !report.careerOptions || !report.careerOptions.length) {
+    return (
+      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col justify-center h-full">
+        <h3 className="text-[16px] font-bold text-gray-900 mb-2">Career Map</h3>
+        <p className="text-[12px] text-gray-500 mb-4">No AI career report generated yet. We analyze your performance to map out a career path.</p>
+        <button className="w-full border border-gray-200 rounded-xl py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors mt-auto">
+          Generate map
+        </button>
+      </div>
+    );
+  }
+
+  const topCareer = report.careerOptions[0];
+  const pct = Math.round((topCareer.matchScore || 0) * 100);
   const size = 64, stroke = 6, r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
@@ -270,7 +330,7 @@ export function CareerChoiceCard() {
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-      <h3 className="text-[16px] font-bold text-gray-900 mb-5">Career choice</h3>
+      <h3 className="text-[16px] font-bold text-gray-900 mb-5">Top Career Match</h3>
       
       <div className="flex items-center gap-4 mb-5">
         <div className="relative flex-shrink-0">
@@ -296,17 +356,13 @@ export function CareerChoiceCard() {
         </div>
         
         <div>
-          <h4 className="text-[14px] font-bold text-gray-900 leading-tight">Full-Stack Engineer</h4>
+          <h4 className="text-[14px] font-bold text-gray-900 leading-tight">{topCareer.title}</h4>
           <p className="text-[11px] text-gray-500 mt-1">High probability of success</p>
-          <div className="flex flex-wrap gap-2 mt-2">
-            <span className="px-2 py-1 bg-gray-50 border border-gray-100 text-gray-600 rounded-md text-[10px] font-semibold">TypeScript</span>
-            <span className="px-2 py-1 bg-gray-50 border border-gray-100 text-gray-600 rounded-md text-[10px] font-semibold">React Patterns</span>
-          </div>
         </div>
       </div>
       
       <button className="w-full border border-gray-200 rounded-xl py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-        Generate career roadmap
+        View detailed roadmap
       </button>
     </div>
   );
@@ -331,8 +387,20 @@ export function CTABanner() {
 
 /* ─── Dashboard Main View ─── */
 export default function StudentDashboardView({ user }) {
-  const fullName = user?.full_name || 'Don Maxwell F. Beltran';
+  const { predictions, iloCoverage, loading: studentLoading } = useStudentData();
+  const { status: githubStatus, repos, loading: githubLoading, connectGithub } = useGithubData();
+  const { report, loading: pipelineLoading } = usePipeline(user?.id);
+
+  if (studentLoading) {
+    return <div className="p-8 text-gray-500 font-semibold flex justify-center items-center h-full">Loading Student Dashboard...</div>;
+  }
+
+  const fullName = user?.full_name || 'Student';
   
+  // Aggregate stats from backend
+  const masteryScore = iloCoverage.totalMastery || 0;
+  const overallOutcome = predictions?.overall_outcome || 'N/A';
+
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
@@ -347,17 +415,16 @@ export default function StudentDashboardView({ user }) {
           </button>
           <button className="relative w-9 h-9 border border-gray-200 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-colors">
             <Bell size={16} className="text-gray-500" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#bc1313] rounded-full" />
           </button>
         </div>
       </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Overall Performance" value="89.6%"   trend="up"   />
-        <StatCard label="Skill Achievement"   value="89.6%"   sub="Accelerated in Data Structures" />
-        <StatCard label="Skill Growth"        value="91.3%"   trend="up"   />
-        <StatCard label="Career Target"       value="ON TRACK" badge="On Track" />
+        <StatCard label="Overall Mastery"     value={`${masteryScore}%`}    trend="up"   />
+        <StatCard label="Computed Outcome"    value={overallOutcome}        sub="Model Aggregate" />
+        <StatCard label="Top Skill"           value={predictions?.top_skills?.[0] || 'N/A'} sub="Strongest predicted skillset" />
+        <StatCard label="Career Target"       value="ON TRACK"              badge="On Track" />
       </div>
 
       {/* Body: Main Left Column & Sidebar Right Column */}
@@ -367,25 +434,25 @@ export default function StudentDashboardView({ user }) {
         <div className="lg:col-span-2 space-y-8">
           {/* ILO + Activity row */}
           <div className="grid md:grid-cols-2 gap-6">
-            <ILOCoverage />
+            <ILOCoverage coverage={iloCoverage} />
             <RecentActivity />
           </div>
 
           {/* Skills row */}
           <div className="grid md:grid-cols-2 gap-6">
-            <DevelopingSkills />
-            <ExcelledSkills />
+            <DevelopingSkills weakSkills={predictions?.weak_skills} aggregatedSkills={predictions?.aggregated_skills} />
+            <ExcelledSkills topSkills={predictions?.top_skills} />
           </div>
 
           {/* Projects */}
-          <TopProjects />
+          <TopProjects repos={repos} />
         </div>
 
         {/* Right Column (Sidebar) */}
         <div className="space-y-6">
-          <GitHubCard />
+          <GitHubCard githubStatus={githubStatus} onConnect={connectGithub} />
           <JoinClassCard />
-          <CareerChoiceCard />
+          <CareerChoiceCard report={report} />
         </div>
         
       </div>

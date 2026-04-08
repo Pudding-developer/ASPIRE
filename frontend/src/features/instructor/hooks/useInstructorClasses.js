@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { instructorApi } from '../services/instructorApi';
+import { instructorApi } from '../../../services/instructorApi';
 
 export function useInstructorClasses() {
   const [classes, setClasses]           = useState([]);

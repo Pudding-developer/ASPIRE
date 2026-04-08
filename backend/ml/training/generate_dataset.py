@@ -1,7 +1,9 @@
 """
 Run once to regenerate student_ilo_data.csv with realistic multi-course data.
 
-    python -m model.generate_dataset
+Usage:
+    cd backend/
+    python -m ml.training.generate_dataset
 """
 from __future__ import annotations
 
@@ -10,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .targets import COURSE_PROFILES, COURSE_SEMESTER
+from ml.config import COURSE_PROFILES, COURSE_SEMESTER
 
 # ── Config ────────────────────────────────────────────────────────────────────
 N_STUDENTS = 80
@@ -158,5 +160,5 @@ def generate(output_path: Path, seed: int = SEED) -> None:
 
 
 if __name__ == "__main__":
-    thesis_root = Path(__file__).resolve().parents[1]
-    generate(thesis_root / "student_ilo_data.csv")
+    ml_root = Path(__file__).resolve().parents[1]
+    generate(ml_root / "data" / "student_ilo_data.csv")

@@ -1,5 +1,5 @@
 """
-pipeline.py — Endpoints for the AI career-mapping pipeline.
+pipeline_routes.py — Endpoints for the AI career-mapping pipeline.
 """
 import asyncio
 import json

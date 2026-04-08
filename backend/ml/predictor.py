@@ -9,15 +9,12 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from .targets import (
-    SKILL_CATEGORIES,
-    compute_skill_scores,
+from .config import (
     ilo_weighted_avg,
     map_avg_to_outcome,
 )
 
-THESIS_ROOT = Path(__file__).resolve().parents[1]
-ARTIFACTS   = THESIS_ROOT / "model" / "artifacts"
+ARTIFACTS = Path(__file__).resolve().parent / "artifacts"
 
 
 @dataclass

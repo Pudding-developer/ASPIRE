@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, Wedge
 import numpy as np
 
-from .predictor import PredictionResult
-from .targets import COURSE_PROFILES, SKILL_CATEGORIES, get_course_code
+from ml.predictor import PredictionResult
+from ml.config import COURSE_PROFILES, SKILL_CATEGORIES, get_course_code
 
 # ── ASPIRE palette ────────────────────────────────────────────────────────────
 MAIN_BG  = "#F2F3F8"

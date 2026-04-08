@@ -30,15 +30,17 @@ _github_oauth_states: set[str] = set()
 # OAuth helpers
 # ---------------------------------------------------------------------------
 
+import urllib.parse
+
 def build_github_auth_url(user_id: int) -> str:
     state = f"{user_id}:{secrets.token_urlsafe(16)}"
     _github_oauth_states.add(state)
-    params = "&".join([
-        f"client_id={GITHUB_CLIENT_ID}",
-        f"redirect_uri={GITHUB_REDIRECT_URI}",
-        f"scope=read:user repo",
-        f"state={state}",
-    ])
+    params = urllib.parse.urlencode({
+        "client_id": GITHUB_CLIENT_ID,
+        "redirect_uri": GITHUB_REDIRECT_URI,
+        "scope": "read:user repo",
+        "state": state,
+    })
     return f"{GITHUB_AUTH_URL}?{params}"
 
 
@@ -91,8 +93,8 @@ async def fetch_github_user(token: str) -> dict:
 
 
 _STUDENT_GRAPHQL_QUERY = """
-query GetStudentData($login: String!) {
-  user(login: $login) {
+query GetStudentData {
+  viewer {
     name
     bio
     avatarUrl
@@ -101,7 +103,6 @@ query GetStudentData($login: String!) {
     repositories(
       first: 30
       orderBy: { field: UPDATED_AT, direction: DESC }
-      ownerAffiliations: OWNER
     ) {
       nodes {
         name
@@ -156,7 +157,7 @@ async def fetch_student_github_data(username: str, token: str) -> dict:
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             GITHUB_GRAPHQL_URL,
-            json={"query": _STUDENT_GRAPHQL_QUERY, "variables": {"login": username}},
+            json={"query": _STUDENT_GRAPHQL_QUERY},
             headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
         )
     if resp.status_code != 200:
@@ -181,6 +182,29 @@ async def fetch_file_contents(owner: str, repo: str, path: str, token: str) -> s
         return base64.b64decode(content).decode("utf-8", errors="replace")
     except Exception:
         return None
+
+
+async def fetch_github_events(username: str, token: str) -> list[dict]:
+    """Fetches the last ~90 events (3 pages) from the public events API."""
+    events = []
+    try:
+        async with httpx.AsyncClient() as client:
+            for page in range(1, 4):
+                resp = await client.get(
+                    f"{GITHUB_REST_URL}/users/{username}/events",
+                    params={"per_page": 30, "page": page},
+                    headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+                )
+                if resp.status_code != 200:
+                    break
+                
+                page_events = resp.json()
+                if not page_events:
+                    break
+                events.extend(page_events)
+    except Exception:
+        pass
+    return events
 
 
 async def fetch_dependencies(owner: str, repo: str, token: str) -> dict:
@@ -314,7 +338,7 @@ async def connect_github_account(db, user_id: int, gh_user: dict, access_token: 
 
     github_created_at = None
     if gh_user.get("created_at"):
-        github_created_at = datetime.fromisoformat(gh_user["created_at"].replace("Z", "+00:00"))
+        github_created_at = datetime.fromisoformat(gh_user["created_at"].replace("Z", "+00:00")).replace(tzinfo=None)
 
     if is_new:
         profile = await github_repository.create_profile(
@@ -440,12 +464,18 @@ async def get_contribution_data(db, user_id: int) -> tuple[dict, str]:
     except (json.JSONDecodeError, TypeError):
         calendar = []
 
+    try:
+        activities = json.loads(contrib.activities_json) if hasattr(contrib, "activities_json") else []
+    except (json.JSONDecodeError, TypeError):
+        activities = []
+
     data = {
         "total_contributions": contrib.total_contributions,
         "total_commits": contrib.total_commits,
         "current_streak": contrib.current_streak,
         "longest_streak": contrib.longest_streak,
         "calendar": calendar,
+        "activities": activities,
     }
     return data, contrib.cached_at.isoformat()
 
@@ -475,7 +505,7 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
             )
 
             gh_data = await fetch_student_github_data(username, token)
-            user_data = gh_data["user"]
+            user_data = gh_data["viewer"]
             repos = user_data["repositories"]["nodes"]
             pinned_names = {
                 n["nameWithOwner"]
@@ -486,7 +516,7 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
 
             github_created_at = None
             if user_data.get("createdAt"):
-                github_created_at = datetime.fromisoformat(user_data["createdAt"].replace("Z", "+00:00"))
+                github_created_at = datetime.fromisoformat(user_data["createdAt"].replace("Z", "+00:00")).replace(tzinfo=None)
 
             await github_repository.update_profile(
                 db, user_id,
@@ -530,8 +560,6 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
             now = datetime.now()
             repo_models = []
             for repo in repos:
-                if repo.get("isPrivate"):
-                    continue
                 full_name = repo["nameWithOwner"]
                 languages = {}
                 for edge in (repo.get("languages", {}).get("edges") or []):
@@ -549,7 +577,7 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
 
                 pushed_at = None
                 if repo.get("pushedAt"):
-                    pushed_at = datetime.fromisoformat(repo["pushedAt"].replace("Z", "+00:00"))
+                    pushed_at = datetime.fromisoformat(repo["pushedAt"].replace("Z", "+00:00")).replace(tzinfo=None)
 
                 repo_models.append(RepositoryCache(
                     user_id=user_id,
@@ -570,6 +598,36 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
 
             await github_repository.save_repos(db, repo_models)
 
+            # --- Timeline Events Fetch ---
+            events_data = await fetch_github_events(username, token)
+            
+            # Clean up and keep only supported events to save space
+            relevant_events = []
+            for ev in events_data:
+                etype = ev.get("type")
+                if etype in ["PushEvent", "CreateEvent", "PullRequestEvent", "IssuesEvent"]:
+                    # strip payload to minimal info
+                    simplified = {
+                        "id": ev.get("id"),
+                        "type": etype,
+                        "created_at": ev.get("created_at"),
+                        "repo": ev.get("repo", {}).get("name"),
+                        "payload": {}
+                    }
+                    if etype == "PushEvent":
+                        simplified["payload"]["size"] = ev.get("payload", {}).get("size", 0)
+                        simplified["payload"]["commits"] = [
+                            {"message": c.get("message", ""), "sha": c.get("sha")}
+                            for c in ev.get("payload", {}).get("commits", [])[:3]
+                        ]
+                    elif etype == "CreateEvent":
+                        simplified["payload"]["ref_type"] = ev.get("payload", {}).get("ref_type")
+                    elif etype == "PullRequestEvent":
+                        simplified["payload"]["action"] = ev.get("payload", {}).get("action")
+                        simplified["payload"]["title"] = ev.get("payload", {}).get("pull_request", {}).get("title")
+                    
+                    relevant_events.append(simplified)
+
             calendar = contributions_collection["contributionCalendar"]
             flat_days = []
             for week in calendar_weeks:
@@ -584,6 +642,7 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
                 current_streak=streaks["current_streak"],
                 longest_streak=streaks["longest_streak"],
                 calendar_json=json.dumps(flat_days),
+                activities_json=json.dumps(relevant_events),
                 cached_at=now,
             )
 
@@ -596,7 +655,7 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
             await github_repository.update_profile(db, user_id, last_analyzed=now)
 
             await github_repository.update_job(
-                db, job_id, status="complete", percentage=100,
+                db, job_id, status="completed", percentage=100,
                 completed_at=datetime.now(),
             )
 

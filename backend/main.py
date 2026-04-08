@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from app.api import student_routes, instructor_routes, auth_routes
 from app.api import instructor_auth_routes, admin_routes, github_routes
 from app.api import instructor_class_routes
-from app.routers.pipeline import router as pipeline_router
+from app.api.pipeline_routes import router as pipeline_router
 from app.core.database import init_db
 import app.models  # noqa: F401 — ensures all models are registered with SQLModel metadata
 

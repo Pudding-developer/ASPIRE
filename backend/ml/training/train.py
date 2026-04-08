@@ -2,7 +2,8 @@
 Train and save the skill-prediction model.
 
 Usage:
-    python -m model.train
+    cd backend/
+    python -m ml.training.train
 """
 from __future__ import annotations
 
@@ -21,17 +22,16 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-from .targets import (
+from ml.config import (
     COURSE_PROFILES,
     SKILL_CATEGORIES,
     compute_skill_scores,
     ilo_weighted_avg,
-    map_avg_to_outcome,
 )
 
-THESIS_ROOT = Path(__file__).resolve().parents[1]
-DATA_CSV    = THESIS_ROOT / "student_ilo_data.csv"
-ARTIFACTS   = THESIS_ROOT / "model" / "artifacts"
+ML_ROOT   = Path(__file__).resolve().parents[1]
+DATA_CSV  = ML_ROOT / "data" / "student_ilo_data.csv"
+ARTIFACTS = ML_ROOT / "artifacts"
 
 
 def _build_training_data(df: pd.DataFrame, rng: np.random.Generator) -> tuple[pd.DataFrame, pd.DataFrame]:

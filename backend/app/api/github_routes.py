@@ -35,17 +35,25 @@ async def github_connect(current_user: User = Depends(get_current_student)):
 
 
 @router.get("/callback")
-async def github_callback(code: str, state: str, response: Response, db: AsyncSession = Depends(get_session)):
-    user_id = validate_and_pop_state(state)
-    if user_id is None:
-        raise HTTPException(status_code=403, detail="Invalid or expired OAuth state.")
+async def github_callback(code: str, state: str, db: AsyncSession = Depends(get_session)):
+    from fastapi.responses import RedirectResponse
+    import urllib.parse
+    
+    FRONTEND_URL = "http://localhost:5173/student/github"
+    
+    try:
+        user_id = validate_and_pop_state(state)
+        if user_id is None:
+            return RedirectResponse(url=f"{FRONTEND_URL}?error=invalid_state")
 
-    access_token = await exchange_code_for_token(code)
-    gh_user = await fetch_github_user(access_token)
-    data, is_new = await connect_github_account(db, user_id, gh_user, access_token)
+        access_token = await exchange_code_for_token(code)
+        gh_user = await fetch_github_user(access_token)
+        data, is_new = await connect_github_account(db, user_id, gh_user, access_token)
 
-    response.status_code = 201 if is_new else 200
-    return {"data": data, "message": "GitHub account connected successfully."}
+        return RedirectResponse(url=f"{FRONTEND_URL}?connected=true")
+    except Exception as e:
+        error_msg = urllib.parse.quote(str(e))
+        return RedirectResponse(url=f"{FRONTEND_URL}?error={error_msg}")
 
 
 @router.get("/status")

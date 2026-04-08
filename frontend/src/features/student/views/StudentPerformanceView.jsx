@@ -4,6 +4,8 @@ import {
   ChevronRight, AlertCircle, CheckCircle2, ChevronDown, X, BookOpen
 } from 'lucide-react';
 
+import useStudentData from '../hooks/useStudentData';
+
 /* ─── Constants ─── */
 const SEMESTERS = ['All Semesters', '1st Semester 2024-2025', '2nd Semester 2024-2025', '1st Semester 2023-2024', '2nd Semester 2023-2024'];
 const CATEGORIES = ['All Subjects', 'Mathematics', 'Engineering Core', 'General Education', 'Computer Science', 'Technical Electives'];
@@ -71,14 +73,7 @@ function FilterDropdown({ open, onClose, semester, setSemester, category, setCat
   );
 }
 
-/* ─── Notification Bell ─── */
-const MOCK_NOTIFICATIONS = [
-  { id: 1, instructor: 'Prof. Reyes', subject: 'Data Structures', message: 'Posted Midterm Exam scores', time: '2 hours ago', unread: true },
-  { id: 2, instructor: 'Engr. Santos', subject: 'Circuit Analysis', message: 'Updated Quiz 3 ILO scores', time: '5 hours ago', unread: true },
-  { id: 3, instructor: 'Prof. Cruz', subject: 'Discrete Mathematics', message: 'Posted Final Exam scores', time: '1 day ago', unread: false },
-  { id: 4, instructor: 'Engr. Bautista', subject: 'Digital Logic Design', message: 'Posted Laboratory Exercise 5 scores', time: '2 days ago', unread: false },
-];
-
+/* ─── Notification Dropdown ─── */
 function NotificationDropdown({ open, onClose, notifications }) {
   const ref = useRef(null);
   const unreadCount = notifications.filter(n => n.unread).length;
@@ -103,26 +98,25 @@ function NotificationDropdown({ open, onClose, notifications }) {
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={14} /></button>
       </div>
       <div className="max-h-80 overflow-y-auto">
-        {notifications.map(n => (
-          <div key={n.id} className={`p-4 border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer ${n.unread ? 'bg-red-50/30' : ''}`}>
-            <div className="flex items-start gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.unread ? 'bg-[#bc1313]/10 text-[#bc1313]' : 'bg-gray-100 text-gray-400'}`}>
-                <BookOpen size={14} />
+        {notifications.length === 0 ? (
+          <div className="p-4 text-center text-gray-500 text-sm">No new notifications.</div>
+        ) : (
+          notifications.map(n => (
+            <div key={n.id} className={`p-4 border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer ${n.unread ? 'bg-red-50/30' : ''}`}>
+              <div className="flex items-start gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.unread ? 'bg-[#bc1313]/10 text-[#bc1313]' : 'bg-gray-100 text-gray-400'}`}>
+                  <BookOpen size={14} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-bold text-gray-900 leading-snug">{n.instructor}</p>
+                  <p className="text-[11px] text-gray-600 mt-0.5">{n.message}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">{n.subject} &middot; {n.time}</p>
+                </div>
+                {n.unread && <span className="w-2 h-2 bg-[#bc1313] rounded-full flex-shrink-0 mt-2" />}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-bold text-gray-900 leading-snug">{n.instructor}</p>
-                <p className="text-[11px] text-gray-600 mt-0.5">{n.message}</p>
-                <p className="text-[10px] text-gray-400 mt-1">{n.subject} &middot; {n.time}</p>
-              </div>
-              {n.unread && <span className="w-2 h-2 bg-[#bc1313] rounded-full flex-shrink-0 mt-2" />}
             </div>
-          </div>
-        ))}
-      </div>
-      <div className="p-3 border-t border-gray-100">
-        <button className="w-full text-center text-[11px] font-bold text-gray-500 uppercase tracking-widest py-1 hover:text-gray-700 transition-colors">
-          View All Notifications
-        </button>
+          ))
+        )}
       </div>
     </div>
   );
@@ -152,15 +146,29 @@ function StatCard({ label, main, sub, badge, progress }) {
 }
 
 /* ─── Radar Chart Component ─── */
-function CompetencyRadar() {
+function CompetencyRadar({ skills }) {
+  if (!skills || Object.keys(skills).length === 0) {
+    return (
+      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-full flex items-center justify-center">
+        <p className="text-gray-400 font-medium">Insufficient data for competency tracking</p>
+      </div>
+    );
+  }
+
+  // Pick top 6 skills
+  const sortedSkills = Object.entries(skills).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  // Pad if less than 3
+  while (sortedSkills.length < 3) sortedSkills.push(['Pending Data', 0]);
+
+  const labels = sortedSkills.map(s => s[0].toUpperCase().substring(0, 15));
+  // Normalize score up to max 100
+  const values = sortedSkills.map(s => Math.min(Math.max((s[1] || 0) / 100, 0), 1));
+
   const size = 500;
   const center = size / 2;
   const radius = size / 2 - 80;
 
-  const labels = ['PROBLEM SOLVING', 'ETHICS', 'COMMUNICATION', 'TEAMWORK', 'INQUIRY', 'DESIGN'];
-  const values = [0.92, 0.72, 0.88, 0.96, 0.68, 0.78];
-
-  const angles = labels.map((_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / 6);
+  const angles = labels.map((_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / labels.length);
 
   const getPoint = (val, angle) => ({
     x: center + radius * val * Math.cos(angle),
@@ -187,7 +195,6 @@ function CompetencyRadar() {
 
       <div className="flex justify-center items-center mt-2">
         <svg width={size} height={size} className="overflow-visible">
-          {/* Hexagonal web rings - salmon/pink */}
           {levels.map((level, i) => (
             <path
               key={`web-${i}`}
@@ -198,7 +205,6 @@ function CompetencyRadar() {
             />
           ))}
 
-          {/* Data polygon - light gray fill, thick dark-red border */}
           <path
             d={dataPolygon}
             fill="rgba(200,200,200,0.30)"
@@ -207,7 +213,6 @@ function CompetencyRadar() {
             strokeLinejoin="round"
           />
 
-          {/* Labels outside each vertex */}
           {angles.map((angle, i) => {
             const dist = radius * 1.3;
             const x = center + dist * Math.cos(angle);
@@ -236,7 +241,10 @@ function CompetencyRadar() {
 }
 
 /* ─── Insight Alert ─── */
-function SmartInsight() {
+function SmartInsight({ topSkills, weakSkills }) {
+  const top = topSkills?.[0] || 'Unknown Skill';
+  const weak = weakSkills?.[0] || 'Unknown Skill';
+
   return (
     <div className="bg-[#1a0505] rounded-2xl p-8 shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex flex-col justify-between h-full relative overflow-hidden group">
       <div className="absolute top-0 right-0 w-64 h-64 bg-[#bc1313] opacity-5 blur-[100px] rounded-full group-hover:opacity-10 transition-opacity duration-700" />
@@ -248,11 +256,11 @@ function SmartInsight() {
         </div>
 
         <p className="text-[20px] font-medium text-white leading-snug mb-3 pr-4">
-          "Surpassing target outcomes in <span className="font-bold underline decoration-[#bc1313] decoration-2 underline-offset-4">Quantitative Analysis</span>."
+          "Surpassing target outcomes in <span className="font-bold underline decoration-[#bc1313] decoration-2 underline-offset-4">{top}</span>."
         </p>
 
         <p className="text-[15px] text-gray-400 font-light leading-relaxed pr-8">
-          Recommended: Focus on <span className="text-gray-200">"Software Security"</span> to bridge the gap for Senior Architect role.
+          Recommended: Focus on <span className="text-gray-200">"{weak}"</span> to bridge the gap in your overall competency profile.
         </p>
       </div>
 
@@ -272,9 +280,9 @@ function GrowthColumn({ title, threshold, colorClass, borderClass, textClass, ba
         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${badgeClass}`}>{threshold}</span>
       </div>
       <div className="space-y-4">
-        {items.map((item, i) => (
+        {items.length === 0 ? <p className="text-xs text-gray-400 font-medium">None</p> : items.map((item, i) => (
           <div key={i} className="flex justify-between items-center">
-            <span className="text-[12px] font-medium text-gray-700">{item.name}</span>
+            <span className="text-[12px] font-medium text-gray-700 truncate mr-2" title={item.name}>{item.name}</span>
             <span className="text-[12px] font-bold text-gray-900">{item.val}</span>
           </div>
         ))}
@@ -289,10 +297,60 @@ export default function StudentPerformanceView() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [semester, setSemester] = useState('All Semesters');
   const [category, setCategory] = useState('All Subjects');
-  const [notifications] = useState(MOCK_NOTIFICATIONS);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const { scores, classes, predictions, iloCoverage, loading } = useStudentData();
+  const notifications = []; // Mock left empty as requested dynamically
+  const unreadCount = 0;
+
+  if (loading) {
+    return <div className="p-8 text-gray-500 font-semibold flex justify-center items-center h-full">Loading Analytics...</div>;
+  }
+
   const hasActiveFilters = semester !== 'All Semesters' || category !== 'All Subjects';
+
+  // Group classes to display in table
+  const courseMap = {};
+  classes.forEach(c => {
+    courseMap[c.id] = { ...c, totalScore: 0, count: 0, ilos: new Set() };
+  });
+
+  scores.forEach(s => {
+    if (courseMap[s.class_id]) {
+      courseMap[s.class_id].totalScore += s.percentage;
+      courseMap[s.class_id].count += 1;
+      courseMap[s.class_id].ilos.add(`ILO${s.ilo_number}`);
+    } else {
+       // Class not in classes array (edge case)
+       courseMap[s.class_id] = { 
+         subject_name: s.subject_name,
+         semester: 'Unknown',
+         totalScore: s.percentage,
+         count: 1, 
+         ilos: new Set([`ILO${s.ilo_number}`])
+       };
+    }
+  });
+
+  const tableData = Object.values(courseMap).filter(c => c.count > 0).map(c => {
+    const avg = c.count ? Math.round(c.totalScore / c.count) : 0;
+    return {
+      ...c,
+      avgScore: avg,
+      gradeLetter: avg >= 90 ? 'A' : avg >= 80 ? 'B' : avg >= 70 ? 'C' : avg >= 60 ? 'D' : 'F'
+    };
+  });
+
+  // Group generic skills for the growth columns
+  const aggSkills = predictions?.aggregated_skills || {};
+  const HighPerforming = [];
+  const Satisfactory = [];
+  const AtRisk = [];
+
+  Object.entries(aggSkills).forEach(([key, val]) => {
+     if (val >= 90) HighPerforming.push({ name: key, val: `${Math.round(val)}%` });
+     else if (val >= 70) Satisfactory.push({ name: key, val: `${Math.round(val)}%` });
+     else AtRisk.push({ name: key, val: `${Math.round(val)}%` });
+  });
 
   return (
     <div className="p-8 space-y-6">
@@ -356,11 +414,6 @@ export default function StudentPerformanceView() {
               className="relative w-9 h-9 border border-gray-200 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-colors"
             >
               <Bell size={16} className="text-gray-500" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#bc1313] rounded-full text-[8px] font-bold text-white flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
             </button>
             <NotificationDropdown
               open={notifOpen}
@@ -373,16 +426,16 @@ export default function StudentPerformanceView() {
 
       {/* 4 Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="GLOBAL RANK" main="Top 3%" sub="Institutional Percentile" />
-        <StatCard label="AVG. ILO MASTERY" main="88.5%" badge="+1.2%" sub="Growth this month" />
-        <StatCard label="SKILLS VELOCITY" main="1.4x" sub="High Momentum" />
-        <StatCard label="COMPLETION STATUS" main="94%" sub="" progress="94%" />
+        <StatCard label="GLOBAL RANK" main={predictions?.overall_outcome ? "Model Fit" : "N/A"} sub={predictions?.overall_outcome} />
+        <StatCard label="AVG. ILO MASTERY" main={`${iloCoverage.totalMastery || 0}%`} badge={null} sub="Current mastery" />
+        <StatCard label="SKILLS VELOCITY" main={HighPerforming.length} sub="High Momentum Skills" />
+        <StatCard label="COMPLETION STATUS" main="Enrolled" sub={`${classes.length} classes active`} progress="60%" />
       </div>
 
       {/* Row 2: Radar | Achieved Skills */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <CompetencyRadar />
+          <CompetencyRadar skills={predictions?.aggregated_skills} />
         </div>
 
         {/* Skills Lists Config */}
@@ -390,32 +443,27 @@ export default function StudentPerformanceView() {
           <div>
             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-5">ACHIEVED SKILLS</p>
             <div className="space-y-4 mb-8">
-              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                <span className="text-[13px] font-semibold text-gray-800">Data Structures</span>
-                <span className="text-[9px] font-extrabold bg-[#1a0505] text-white px-2 py-0.5 rounded-full tracking-wider">EXPERT</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                <span className="text-[13px] font-semibold text-gray-800">Logic Design</span>
-                <span className="text-[9px] font-extrabold bg-[#1a0505] text-white px-2 py-0.5 rounded-full tracking-wider">ADV.</span>
-              </div>
+              {HighPerforming.slice(0, 3).map(skill => (
+                <div key={skill.name} className="flex justify-between items-center border-b border-gray-100 pb-3">
+                  <span className="text-[13px] font-semibold text-gray-800 truncate mr-2">{skill.name}</span>
+                  <span className="text-[9px] font-extrabold bg-[#1a0505] text-white px-2 py-0.5 rounded-full tracking-wider">EXPERT</span>
+                </div>
+              ))}
+              {HighPerforming.length === 0 && <p className="text-xs text-gray-400">None achieved yet.</p>}
             </div>
 
             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-5">PREDICTED SKILLSETS</p>
             <div className="space-y-5">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[12px] font-semibold text-gray-800">Machine Learning</span>
-                  <span className="text-[10px] text-gray-500 font-medium">80% Confidence</span>
+              {Satisfactory.slice(0, 3).map(skill => (
+                <div key={skill.name}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[12px] font-semibold text-gray-800 truncate mr-2">{skill.name}</span>
+                    <span className="text-[10px] text-gray-500 font-medium">{skill.val} Confidence</span>
+                  </div>
+                  <div className="w-full h-1 bg-gray-100 rounded-full"><div className="h-full bg-[#bc1313] rounded-full" style={{ width: skill.val }} /></div>
                 </div>
-                <div className="w-full h-1 bg-gray-100 rounded-full"><div className="h-full bg-[#bc1313] rounded-full" style={{ width: '80%' }} /></div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[12px] font-semibold text-gray-800">Cloud Architecture</span>
-                  <span className="text-[10px] text-gray-500 font-medium">65% Confidence</span>
-                </div>
-                <div className="w-full h-1 bg-gray-100 rounded-full"><div className="h-full bg-[#bc1313] rounded-full opacity-70" style={{ width: '65%' }} /></div>
-              </div>
+              ))}
+              {Satisfactory.length === 0 && <p className="text-xs text-gray-400">Not enough data.</p>}
             </div>
           </div>
         </div>
@@ -423,7 +471,8 @@ export default function StudentPerformanceView() {
 
       {/* Row 3: Insight | Priority Recommendations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SmartInsight />
+        <SmartInsight topSkills={predictions?.top_skills} weakSkills={predictions?.weak_skills} />
+        
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col justify-center">
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-6">PRIORITY RECOMMENDATIONS</p>
           <div className="space-y-4">
@@ -432,8 +481,8 @@ export default function StudentPerformanceView() {
                 <GraduationCap size={18} />
               </div>
               <div className="flex-1">
-                <h4 className="text-[13px] font-bold text-gray-900 leading-snug">Enroll in Advanced Distributed Systems</h4>
-                <p className="text-[11px] text-gray-500 mt-0.5">Core requirement for Software Engineering Track</p>
+                <h4 className="text-[13px] font-bold text-gray-900 leading-snug">Focus on missing assignments</h4>
+                <p className="text-[11px] text-gray-500 mt-0.5">Improve grade consistency.</p>
               </div>
               <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-600 transition-colors" />
             </div>
@@ -443,8 +492,8 @@ export default function StudentPerformanceView() {
                 <Microscope size={18} />
               </div>
               <div className="flex-1">
-                <h4 className="text-[13px] font-bold text-gray-900 leading-snug">Complete Lab Hours for CS-402</h4>
-                <p className="text-[11px] text-gray-500 mt-0.5">Required for Practical Certification</p>
+                <h4 className="text-[13px] font-bold text-gray-900 leading-snug">Practice weak skills</h4>
+                <p className="text-[11px] text-gray-500 mt-0.5">Review the concepts you missed in midterms.</p>
               </div>
               <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-600 transition-colors" />
             </div>
@@ -459,17 +508,17 @@ export default function StudentPerformanceView() {
           <GrowthColumn
             title="HIGH PERFORMING" threshold="90%+"
             borderClass="border-t-4 border-t-green-500 border-x-gray-100 border-b-gray-100" textClass="text-green-700" badgeClass="bg-green-50 text-green-700"
-            items={[{ name: 'Artificial Intelligence', val: '98%' }, { name: 'Database Systems', val: '92%' }, { name: 'Academic Writing', val: '90%' }]}
+            items={HighPerforming}
           />
           <GrowthColumn
             title="SATISFACTORY" threshold="70-89%"
             borderClass="border-t-4 border-t-blue-500 border-x-gray-100 border-b-gray-100" textClass="text-blue-700" badgeClass="bg-blue-50 text-blue-700"
-            items={[{ name: 'Operating Systems', val: '84%' }, { name: 'Software Engineering', val: '79%' }, { name: 'User Experience', val: '87%' }]}
+            items={Satisfactory}
           />
           <GrowthColumn
             title="AT RISK" threshold="Below 70%"
             borderClass="border-t-4 border-t-red-500 border-x-gray-100 border-b-gray-100" textClass="text-red-700" badgeClass="bg-red-50 text-red-600"
-            items={[{ name: 'Discrete Math', val: '68%' }, { name: 'Network Security', val: '72%' }]}
+            items={AtRisk}
           />
         </div>
       </div>
@@ -478,12 +527,6 @@ export default function StudentPerformanceView() {
       <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-x-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-[16px] font-bold text-gray-900">Detailed Course Mastery</h3>
-          <button
-            onClick={() => { setFilterOpen(true); setNotifOpen(false); }}
-            className="text-[10px] font-bold uppercase tracking-widest text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-          >
-            <Filter size={12} /> {hasActiveFilters ? `${semester !== 'All Semesters' ? semester : ''} ${category !== 'All Subjects' ? category : ''}`.trim() : 'Filter Semester'}
-          </button>
         </div>
 
         <table className="w-full text-left border-collapse min-w-[700px]">
@@ -497,63 +540,30 @@ export default function StudentPerformanceView() {
             </tr>
           </thead>
           <tbody className="text-[13px] font-medium text-gray-800">
-            <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-              <td className="py-4 font-bold text-gray-900">Computer Science 101</td>
-              <td className="py-4 text-gray-500">Spring 2024</td>
-              <td className="py-4 font-extrabold">A+</td>
-              <td className="py-4 pr-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-full h-1.5 bg-gray-100 rounded-full flex-1">
-                    <div className="h-full bg-[#1a0505] rounded-full" style={{ width: '98%' }} />
+            {tableData.length === 0 ? (
+               <tr><td colSpan="5" className="py-4 text-center text-gray-500">No grades recorded yet.</td></tr>
+            ) : tableData.map(c => (
+              <tr key={c.id || c.subject_name} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                <td className="py-4 font-bold text-gray-900">{c.subject_name}</td>
+                <td className="py-4 text-gray-500">{c.semester || 'N/A'}</td>
+                <td className="py-4 font-extrabold">{c.gradeLetter}</td>
+                <td className="py-4 pr-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-full h-1.5 bg-gray-100 rounded-full flex-1">
+                      <div className="h-full bg-[#1a0505] rounded-full" style={{ width: `${Math.min(c.avgScore, 100)}%` }} />
+                    </div>
+                    <span className="text-[10px] font-bold w-4 text-right">{c.avgScore}</span>
                   </div>
-                  <span className="text-[10px] font-bold w-4 text-right">98</span>
-                </div>
-              </td>
-              <td className="py-4">
-                <div className="flex gap-1.5">
-                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold rounded">ALGORITHM</span>
-                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold rounded">LOGIC</span>
-                </div>
-              </td>
-            </tr>
-            <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-              <td className="py-4 font-bold text-gray-900">Distributed Computing</td>
-              <td className="py-4 text-gray-500">Spring 2024</td>
-              <td className="py-4 font-extrabold">A</td>
-              <td className="py-4 pr-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-full h-1.5 bg-gray-100 rounded-full flex-1">
-                    <div className="h-full bg-[#1a0505] rounded-full" style={{ width: '85%' }} />
+                </td>
+                <td className="py-4">
+                  <div className="flex gap-1.5 flex-wrap">
+                    {Array.from(c.ilos).map(ilo => (
+                      <span key={ilo} className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold rounded">{ilo}</span>
+                    ))}
                   </div>
-                  <span className="text-[10px] font-bold w-4 text-right">85</span>
-                </div>
-              </td>
-              <td className="py-4">
-                <div className="flex gap-1.5">
-                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold rounded">SYSTEMS</span>
-                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold rounded">SCALE</span>
-                </div>
-              </td>
-            </tr>
-            <tr className="hover:bg-gray-50/50 transition-colors">
-              <td className="py-4 font-bold text-gray-900">Ethical Engineering</td>
-              <td className="py-4 text-gray-500">Autumn 2023</td>
-              <td className="py-4 font-extrabold">B+</td>
-              <td className="py-4 pr-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-full h-1.5 bg-gray-100 rounded-full flex-1">
-                    <div className="h-full bg-gray-500 rounded-full" style={{ width: '75%' }} />
-                  </div>
-                  <span className="text-[10px] font-bold w-4 text-right">75</span>
-                </div>
-              </td>
-              <td className="py-4">
-                <div className="flex gap-1.5">
-                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold rounded">ETHICS</span>
-                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold rounded">LAW</span>
-                </div>
-              </td>
-            </tr>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

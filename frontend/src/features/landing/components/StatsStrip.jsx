@@ -1,93 +1,84 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'motion/react'; // eslint-disable-line no-unused-vars
+import { useRef } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
 
-function AnimatedCounter({ target, suffix = '', duration = 2000 }) {
-  const [count, setCount] = useState(0);
-  const [hasStarted, setHasStarted] = useState(false);
+gsap.registerPlugin(ScrollTrigger);
+
+function AnimatedCounter({ target, suffix = '', duration = 2 }) {
   const ref = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasStarted) {
-          setHasStarted(true);
-        }
+  
+  useGSAP(() => {
+    const el = ref.current;
+    const obj = { val: 0 };
+    
+    gsap.to(obj, {
+      val: target,
+      duration: duration,
+      ease: "power2.out",
+      scrollTrigger: {
+        trigger: el,
+        start: "top 80%",
+        once: true
       },
-      { threshold: 0.5 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [hasStarted]);
-
-  useEffect(() => {
-    if (!hasStarted) return;
-    let startTime = null;
-    const step = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      setCount(Math.floor(progress * target));
-      if (progress < 1) {
-        requestAnimationFrame(step);
+      onUpdate: () => {
+        if(el) {
+          el.innerHTML = Math.floor(obj.val) + suffix;
+        }
       }
-    };
-    requestAnimationFrame(step);
-  }, [hasStarted, target, duration]);
+    });
+  }, { scope: ref });
 
-  return (
-    <span ref={ref}>
-      {count}{suffix}
-    </span>
-  );
+  return <span ref={ref}>0{suffix}</span>;
 }
 
 export default function StatsStrip() {
+  const containerRef = useRef(null);
+
+  useGSAP(() => {
+    gsap.fromTo('.stat-item', 
+      { opacity: 0, y: 20 },
+      { 
+        opacity: 1, 
+        y: 0, 
+        duration: 0.6, 
+        stagger: 0.1,
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top 80%",
+          once: true
+        }
+      }
+    );
+  }, { scope: containerRef });
+
   return (
-    <section className="py-20 border-y border-white/5 bg-[#0a0101]">
+    <section ref={containerRef} className="py-20 border-y border-white/5 bg-[#0a0101]">
       <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
+        <div className="stat-item opacity-0">
           <div className="text-4xl md:text-5xl font-light text-[#bc1313] mb-3">
             <AnimatedCounter target={680} suffix="+" />
           </div>
           <div className="text-sm text-gray-400">Students</div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          viewport={{ once: true }}
-        >
+        </div>
+        <div className="stat-item opacity-0">
           <div className="text-4xl md:text-5xl font-light text-[#bc1313] mb-3">
             <AnimatedCounter target={64} />
           </div>
           <div className="text-sm text-gray-400">Courses</div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          viewport={{ once: true }}
-        >
+        </div>
+        <div className="stat-item opacity-0">
           <div className="text-4xl md:text-5xl font-light text-[#bc1313] mb-3">
             <AnimatedCounter target={12} />
           </div>
           <div className="text-sm text-gray-400">Student Outcomes</div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          viewport={{ once: true }}
-        >
+        </div>
+        <div className="stat-item opacity-0">
           <div className="text-4xl md:text-5xl font-light text-[#bc1313] mb-3">
             <AnimatedCounter target={95} suffix="%" />
           </div>
           <div className="text-sm text-gray-400">Accuracy</div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  LayoutDashboard, TrendingUp, Github, Bot, LogOut, HelpCircle
+  LayoutDashboard, TrendingUp, Github, Bot, LogOut, HelpCircle, BookOpen
 } from 'lucide-react';
 import aspireLogo from '../../../assets/aspire-logo.png';
 
@@ -11,6 +11,7 @@ export default function StudentSidebar({ activeView, setActiveView, onLogout, us
 
   const nav = [
     { id: 'dashboard',        icon: LayoutDashboard, label: 'Dashboard'       },
+    { id: 'enrolled-classes', icon: BookOpen,        label: 'Enrolled Classes'},
     { id: 'my-performance',   icon: TrendingUp,      label: 'My Performance'  },
     { id: 'github-analytics', icon: Github,          label: 'GitHub Analytics'},
     { id: 'career-coach',     icon: Bot,             label: 'Career Coach'    },

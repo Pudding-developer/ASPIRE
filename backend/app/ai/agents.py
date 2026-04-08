@@ -4,7 +4,7 @@ agents.py — CrewAI agent definitions for the ASPIRE skill-mapping pipeline.
 from crewai import Agent, LLM
 
 from app.ai.tools.student_data_tool import StudentDataTool
-from app.ai.tools.career_taxonomy_tool import CareerTaxonomyTool
+from app.ai.tools.rag_career_tool import RAGCareerTool
 from app.core.config import GEMINI_API_KEY
 
 
@@ -36,22 +36,23 @@ def create_skill_analyst(student_data_tool: StudentDataTool) -> Agent:
     )
 
 
-def create_career_advisor(career_taxonomy_tool: CareerTaxonomyTool) -> Agent:
+def create_career_advisor(rag_tool: RAGCareerTool) -> Agent:
     return Agent(
         role="Career Readiness Advisor",
         goal=(
             "Map a student's identified skills to relevant Computer Engineering "
-            "career paths, calculate match scores, identify skill gaps, and "
-            "provide actionable career preparation recommendations."
+            "career paths by querying the ASPIRE knowledge base, calculate match scores, "
+            "identify skill gaps, and provide actionable career preparation recommendations."
         ),
         backstory=(
             "You are a career counselor who specializes in Computer Engineering "
-            "career pathways in the Philippines and globally. You understand "
-            "industry hiring requirements and can match student skill profiles "
-            "to the most promising career opportunities. You provide practical, "
-            "specific advice rather than generic platitudes."
+            "career pathways in the Philippines and globally. You use the RAG knowledge "
+            "base to find evidence-based career matches rather than relying on general "
+            "knowledge. You understand industry hiring requirements and can match student "
+            "skill profiles to the most promising career opportunities. You provide "
+            "practical, specific advice rather than generic platitudes."
         ),
         llm=_get_llm(),
-        tools=[career_taxonomy_tool],
+        tools=[rag_tool],
         verbose=False,
     )

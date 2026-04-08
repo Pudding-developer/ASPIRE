@@ -8,11 +8,11 @@ export default function DashboardView({ onCreateClass, stats, loading }) {
 
   return (
     <div className="p-8">
-      {/* Header Row */}
+      {/* Header Section */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Instructor Portal</h1>
-          <p className="text-gray-600 mt-1">Welcome back, {user?.full_name?.split(' ')[0] || 'Professor'}</p>
+          <p className="text-gray-600 mt-1">Welcome back, {user?.full_name || 'Professor'}</p>
         </div>
         <Button 
           onClick={onCreateClass}

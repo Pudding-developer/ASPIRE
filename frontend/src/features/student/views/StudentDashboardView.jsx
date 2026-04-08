@@ -1,8 +1,9 @@
 import React from 'react';
 import {
   TrendingUp, Github, Bell, Filter, TrendingDown, Minus, ArrowUpRight,
-  ChevronRight, BookOpen, Star,
+  ChevronRight, BookOpen, Star, Plus
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import projectBg from '../../../assets/project_card_bg.png';
 
 /* ─── Stat Card ─── */
@@ -48,7 +49,6 @@ export function ILOCoverage() {
       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Integrated ILO Coverage</p>
       <h3 className="text-[16px] font-bold text-gray-900 mb-5">Learning Outcome Status</h3>
       <div className="flex items-center gap-8">
-        {/* Donut */}
         <div className="relative flex-shrink-0">
           <svg width={size} height={size} className="-rotate-90">
             {segments.map((s, i) => {
@@ -75,7 +75,6 @@ export function ILOCoverage() {
             <span className="text-[9px] text-gray-400 font-semibold">MASTERY</span>
           </div>
         </div>
-        {/* Legend */}
         <div className="space-y-3 flex-1">
           {segments.map((s) => (
             <div key={s.label} className="flex items-center justify-between">
@@ -173,9 +172,9 @@ export function DevelopingSkills() {
 export function ExcelledSkills() {
   const skills = ['System Architecture', 'Cloud Infrastructure', 'UX Design Systems', 'Academic Writing', 'Python Expert'];
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-full flex flex-col">
       <h3 className="text-[16px] font-bold text-gray-900 mb-5">Excelled Skills</h3>
-      <div className="flex flex-wrap gap-2 mb-5">
+      <div className="flex flex-wrap content-start items-start gap-2 mb-5 flex-1">
         {skills.map((s) => (
           <span key={s} className="px-3 py-1.5 bg-gray-900 text-white text-[12px] font-medium rounded-full">{s}</span>
         ))}
@@ -187,7 +186,7 @@ export function ExcelledSkills() {
   );
 }
 
-/* ─── Projects ─── */
+/* ─── Top Projects ─── */
 export function TopProjects() {
   const projects = [
     { type: 'CAPSTONE · 2024', title: 'Neural-Net Security Protocol',     desc: 'Autonomous threat detection using recurrent neural networks for campus-wide networks.' },
@@ -206,13 +205,109 @@ export function TopProjects() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <span className="absolute bottom-2 left-3 text-[10px] font-bold text-white/80 uppercase tracking-widest">{p.type}</span>
             </div>
-            <div className="p-4">
+            <div className={`p-4`}>
               <h4 className="text-[14px] font-bold text-gray-900 mb-1 leading-snug">{p.title}</h4>
               <p className="text-[12px] text-gray-500 leading-relaxed">{p.desc}</p>
             </div>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ─── GitHub Card ─── */
+export function GitHubCard() {
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+      <h3 className="text-[16px] font-bold text-gray-900 mb-5">GitHub</h3>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white flex-shrink-0">
+            <Github size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-bold text-gray-900 leading-snug truncate">aldouz-perona</p>
+            <p className="text-[11px] text-gray-500 mt-0.5 truncate">12-day streak · TypeScript 42%</p>
+          </div>
+        </div>
+        <span className="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2 py-1 rounded-md flex-shrink-0 ml-2">Connected</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Join Class Card ─── */
+export function JoinClassCard() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center text-center">
+      <div className="w-12 h-12 bg-[#bc1313]/10 text-[#bc1313] rounded-full flex items-center justify-center mb-3">
+        <Plus size={24} />
+      </div>
+      <h3 className="text-[16px] font-bold text-gray-900 mb-2">Join a new Class</h3>
+      <p className="text-[12px] text-gray-500 mb-5 leading-relaxed">
+        Enter a class code provided by your instructor to join their roster and access your materials.
+      </p>
+      <button 
+        onClick={() => navigate('/student/join')}
+        className="w-full bg-[#bc1313] hover:bg-[#890E0E] text-white py-2.5 rounded-xl text-[13px] font-bold transition-colors"
+      >
+        Join Class
+      </button>
+    </div>
+  );
+}
+
+/* ─── Career Choice Card ─── */
+export function CareerChoiceCard() {
+  const pct = 89;
+  const size = 64, stroke = 6, r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  const gap = circ - dash;
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+      <h3 className="text-[16px] font-bold text-gray-900 mb-5">Career choice</h3>
+      
+      <div className="flex items-center gap-4 mb-5">
+        <div className="relative flex-shrink-0">
+          <svg width={size} height={size} className="-rotate-90">
+            <circle
+              cx={size / 2} cy={size / 2} r={r}
+              fill="none"
+              stroke="#fcd5d5"
+              strokeWidth={stroke}
+            />
+            <circle
+              cx={size / 2} cy={size / 2} r={r}
+              fill="none"
+              stroke="#bc1313"
+              strokeWidth={stroke}
+              strokeDasharray={`${dash} ${gap}`}
+              strokeLinecap="round"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[14px] font-extrabold text-gray-900">{pct}%</span>
+          </div>
+        </div>
+        
+        <div>
+          <h4 className="text-[14px] font-bold text-gray-900 leading-tight">Full-Stack Engineer</h4>
+          <p className="text-[11px] text-gray-500 mt-1">High probability of success</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <span className="px-2 py-1 bg-gray-50 border border-gray-100 text-gray-600 rounded-md text-[10px] font-semibold">TypeScript</span>
+            <span className="px-2 py-1 bg-gray-50 border border-gray-100 text-gray-600 rounded-md text-[10px] font-semibold">React Patterns</span>
+          </div>
+        </div>
+      </div>
+      
+      <button className="w-full border border-gray-200 rounded-xl py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+        Generate career roadmap
+      </button>
     </div>
   );
 }
@@ -229,9 +324,6 @@ export function CTABanner() {
         <button className="px-5 py-2.5 bg-[#bc1313] hover:bg-[#890E0E] text-white text-[13px] font-bold rounded-xl transition-colors flex items-center gap-2">
           VIEW ROADMAP <ChevronRight size={14} />
         </button>
-        <button className="px-5 py-2.5 border border-white/20 text-white text-[13px] font-bold rounded-xl hover:bg-white/5 transition-colors flex items-center gap-2">
-          <Github size={14} /> CONNECT GITHUB
-        </button>
       </div>
     </div>
   );
@@ -239,14 +331,15 @@ export function CTABanner() {
 
 /* ─── Dashboard Main View ─── */
 export default function StudentDashboardView({ user }) {
-  const firstName = user?.full_name?.split(' ')[0] || 'Student';
+  const fullName = user?.full_name || 'Don Maxwell F. Beltran';
+  
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Student Overview</p>
-          <h1 className="text-[2.2rem] font-extrabold text-gray-900 leading-tight">Welcome back, {firstName}.</h1>
+          <h1 className="text-[2.2rem] font-extrabold text-gray-900 leading-tight">Welcome back, {fullName}.</h1>
         </div>
         <div className="flex items-center gap-3 mt-2">
           <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
@@ -267,23 +360,39 @@ export default function StudentDashboardView({ user }) {
         <StatCard label="Career Target"       value="ON TRACK" badge="On Track" />
       </div>
 
-      {/* ILO + Activity row */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <ILOCoverage />
-        <RecentActivity />
+      {/* Body: Main Left Column & Sidebar Right Column */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left Column (Main Content) */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* ILO + Activity row */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <ILOCoverage />
+            <RecentActivity />
+          </div>
+
+          {/* Skills row */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <DevelopingSkills />
+            <ExcelledSkills />
+          </div>
+
+          {/* Projects */}
+          <TopProjects />
+        </div>
+
+        {/* Right Column (Sidebar) */}
+        <div className="space-y-6">
+          <GitHubCard />
+          <JoinClassCard />
+          <CareerChoiceCard />
+        </div>
+        
       </div>
 
-      {/* Skills row */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <DevelopingSkills />
-        <ExcelledSkills />
-      </div>
-
-      {/* Projects */}
-      <TopProjects />
-
-      {/* CTA */}
+      {/* Full-width CTA */}
       <CTABanner />
+
     </div>
   );
 }

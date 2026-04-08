@@ -7,7 +7,7 @@ from crewai import Crew, Process, Task
 
 from app.ai.agents import create_skill_analyst, create_career_advisor
 from app.ai.tools.student_data_tool import StudentDataTool
-from app.ai.tools.career_taxonomy_tool import CareerTaxonomyTool
+from app.ai.tools.rag_career_tool import RAGCareerTool
 
 
 def run_pipeline(student_data: dict) -> dict:
@@ -18,11 +18,11 @@ def run_pipeline(student_data: dict) -> dict:
     # Prepare tools
     student_data_tool = StudentDataTool()
     student_data_tool.set_data(student_data)
-    career_taxonomy_tool = CareerTaxonomyTool()
+    rag_career_tool = RAGCareerTool()
 
     # Create agents
     skill_analyst = create_skill_analyst(student_data_tool)
-    career_advisor = create_career_advisor(career_taxonomy_tool)
+    career_advisor = create_career_advisor(rag_career_tool)
 
     # Define tasks
     analyze_task = Task(
@@ -52,16 +52,19 @@ def run_pipeline(student_data: dict) -> dict:
 
     career_task = Task(
         description=(
-            "Using the skill profile from the previous analysis and the "
-            "career_taxonomy tool, map this student's competencies to Computer "
-            "Engineering career paths.\n\n"
-            "Call the career_taxonomy tool with query='all' to get every career path.\n\n"
-            "For each relevant career:\n"
+            "Using the skill profile from the previous analysis, query the RAG knowledge "
+            "base to find the most relevant career paths for this student's skills.\n\n"
+            "Make MULTIPLE specific queries to the rag_career_knowledge tool:\n"
+            "1. Query with the student's top programming languages and frameworks\n"
+            "2. Query with their strongest domain areas (e.g., 'embedded systems firmware developer')\n"
+            "3. Query for gap areas (e.g., 'career paths requiring machine learning skills')\n\n"
+            "For each retrieved career path:\n"
             "1. Calculate a match_score (0-100) based on how many core skills "
             "the student already has vs. what the career requires.\n"
             "2. List matched_skills the student already possesses.\n"
             "3. List gap_skills the student needs to develop.\n"
-            "4. Provide brief reasoning for the score.\n\n"
+            "4. Provide brief reasoning for the score, citing specific evidence from both "
+            "the student data and the retrieved knowledge documents.\n\n"
             "Then provide:\n"
             "- 3-5 specific, actionable recommendations for career preparation "
             "(courses to take, projects to build, certifications to pursue).\n"

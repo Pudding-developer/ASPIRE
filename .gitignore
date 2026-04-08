@@ -32,3 +32,6 @@ coverage.xml
 
 # Render / Vercel Specific #
 .vercel/
+
+# Thesis data files #
+BSCpE_ILO_Skillset_Alignment.xlsx

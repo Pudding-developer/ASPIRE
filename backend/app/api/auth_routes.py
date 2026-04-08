@@ -7,6 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.core.database import get_session
 from app.api.deps import security_scheme
@@ -108,4 +111,5 @@ async def google_callback(
         error_param = error_code if error_code else str(e.detail).replace(" ", "_")
         return RedirectResponse(url=f"{FRONTEND_CALLBACK_URL}?error={error_param}")
     except Exception:
+        logger.exception("[OAuth Callback] Unhandled exception during Google login")
         return RedirectResponse(url=f"{FRONTEND_CALLBACK_URL}?error=server_error")

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import useAuth from '../../features/auth/hooks/useAuth';
 import StudentSidebar from '../../features/student/components/StudentSidebar';
 import StudentDashboardView from '../../features/student/views/StudentDashboardView';
+import StudentPerformanceView from '../../features/student/views/StudentPerformanceView';
+import StudentGitHubView from '../../features/student/views/StudentGitHubView';
 
 /* ─── Placeholder views ─── */
 function PlaceholderView({ title }) {
@@ -29,8 +31,8 @@ export default function StudentDashboardPage() {
       <StudentSidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} user={user} />
       <main className="flex-1 overflow-y-auto bg-[#f8f9fb] h-full">
         {activeView === 'dashboard'        && <StudentDashboardView user={user} />}
-        {activeView === 'my-performance'   && <PlaceholderView title="My Performance" />}
-        {activeView === 'github-analytics' && <PlaceholderView title="GitHub Analytics" />}
+        {activeView === 'my-performance'   && <StudentPerformanceView user={user} />}
+        {activeView === 'github-analytics' && <StudentGitHubView user={user} />}
         {activeView === 'career-coach'     && <PlaceholderView title="Career Coach" />}
       </main>
     </div>

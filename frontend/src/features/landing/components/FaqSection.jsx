@@ -1,3 +1,7 @@
+import { useRef } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
 import {
   Accordion,
   AccordionContent,
@@ -5,20 +9,59 @@ import {
   AccordionTrigger,
 } from '../../../components/ui/accordion';
 
+gsap.registerPlugin(ScrollTrigger);
+
 export default function FaqSection() {
+  const containerRef = useRef(null);
+
+  useGSAP(() => {
+    // Header animation
+    gsap.fromTo('.faq-header',
+      { opacity: 0, y: 30 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top 80%",
+          once: true
+        }
+      }
+    );
+
+    // Staggered accordion items
+    gsap.fromTo('.faq-item',
+      { opacity: 0, x: -20 },
+      {
+        opacity: 1,
+        x: 0,
+        duration: 0.5,
+        stagger: 0.15,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: '.faq-accordion',
+          start: "top 85%",
+          once: true
+        }
+      }
+    );
+  }, { scope: containerRef });
+
   return (
-    <section id="faq" className="py-24 px-6 bg-[#0a0101]">
+    <section id="faq" ref={containerRef} className="py-24 px-6 bg-[#0a0101]">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="faq-header text-center mb-16 opacity-0">
           <p className="text-[#bc1313] mb-2 font-bold tracking-widest text-xs uppercase">• FAQS</p>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
             Frequently asked <span className="text-[#bc1313] italic">questions</span>
           </h2>
         </div>
 
-        <Accordion type="single" collapsible className="space-y-4 shadow-black/50 shadow-2xl">
+        <Accordion type="single" collapsible className="faq-accordion space-y-4 shadow-black/50 shadow-2xl">
           {/* FAQ 1 */}
-          <AccordionItem value="item-1" className="bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
+          <AccordionItem value="item-1" className="faq-item opacity-0 bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
             <AccordionTrigger className="hover:text-[#bc1313] text-gray-300 py-6 text-left text-base font-medium transition-colors">
               What is ASPIRE and how does it work?
             </AccordionTrigger>
@@ -28,7 +71,7 @@ export default function FaqSection() {
           </AccordionItem>
 
           {/* FAQ 2 */}
-          <AccordionItem value="item-2" className="bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
+          <AccordionItem value="item-2" className="faq-item opacity-0 bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
             <AccordionTrigger className="hover:text-[#bc1313] text-gray-300 py-6 text-left text-base font-medium transition-colors">
               How accurate are the enrollment predictions?
             </AccordionTrigger>
@@ -38,7 +81,7 @@ export default function FaqSection() {
           </AccordionItem>
 
           {/* FAQ 3 */}
-          <AccordionItem value="item-3" className="bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
+          <AccordionItem value="item-3" className="faq-item opacity-0 bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
             <AccordionTrigger className="hover:text-[#bc1313] text-gray-300 py-6 text-left text-base font-medium transition-colors">
               Can I track individual student performance?
             </AccordionTrigger>
@@ -48,7 +91,7 @@ export default function FaqSection() {
           </AccordionItem>
 
           {/* FAQ 4 */}
-          <AccordionItem value="item-4" className="bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
+          <AccordionItem value="item-4" className="faq-item opacity-0 bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
             <AccordionTrigger className="hover:text-[#bc1313] text-gray-300 py-6 text-left text-base font-medium transition-colors">
               What are Intended Learning Outcomes (ILOs)?
             </AccordionTrigger>
@@ -58,7 +101,7 @@ export default function FaqSection() {
           </AccordionItem>
 
           {/* FAQ 5 */}
-          <AccordionItem value="item-5" className="bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
+          <AccordionItem value="item-5" className="faq-item opacity-0 bg-transparent border border-white/5 rounded-2xl px-6 transition-all hover:border-[#bc1313]/30">
             <AccordionTrigger className="hover:text-[#bc1313] text-gray-300 py-6 text-left text-base font-medium transition-colors">
               Is my student data secure and private?
             </AccordionTrigger>

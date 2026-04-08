@@ -1,21 +1,32 @@
-import { motion } from 'motion/react'; // eslint-disable-line no-unused-vars
+import { useRef } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
 import { Activity, Users, Target, Zap } from 'lucide-react';
 
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.15,
-    },
-  },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-};
+gsap.registerPlugin(ScrollTrigger);
 
 export default function FeaturesSection() {
+  const containerRef = useRef(null);
+
+  useGSAP(() => {
+    gsap.fromTo('.feature-card',
+      { opacity: 0, y: 30 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        stagger: 0.15,
+        ease: "easeOut",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top 75%",
+          once: true
+        }
+      }
+    );
+  }, { scope: containerRef });
+
   const features = [
     {
       icon: <Activity className="w-5 h-5 text-[#bc1313]" />,
@@ -40,7 +51,7 @@ export default function FeaturesSection() {
   ];
 
   return (
-    <section id="features" className="py-24 px-6 bg-[#0a0101]">
+    <section id="features" ref={containerRef} className="py-24 px-6 bg-[#0a0101]">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <p className="text-[#bc1313] mb-3 font-bold tracking-widest text-xs uppercase">• FEATURES</p>
@@ -49,18 +60,11 @@ export default function FeaturesSection() {
           </h2>
         </div>
 
-        <motion.div
-          className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-        >
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, i) => (
-            <motion.div
+            <div
               key={i}
-              variants={cardVariants}
-              className="bg-[#110202] border border-[#300505] rounded-2xl p-8 hover:border-[#bc1313] transition-colors shadow-2xl"
+              className="feature-card opacity-0 bg-[#110202] border border-[#300505] rounded-2xl p-8 hover:border-[#bc1313] transition-colors shadow-2xl"
             >
               <div className="bg-[#bc1313]/10 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
                 {feature.icon}
@@ -69,9 +73,9 @@ export default function FeaturesSection() {
               <p className="text-sm text-gray-400 leading-relaxed">
                 {feature.description}
               </p>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

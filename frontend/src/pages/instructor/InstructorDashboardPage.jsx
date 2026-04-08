@@ -7,7 +7,7 @@ import MyClassesView from '../../features/instructor/views/MyClassesView';
 import ArchivedClassesView from '../../features/instructor/views/ArchivedClassesView';
 import ClassDetailView from '../../features/instructor/views/ClassDetailView';
 import { CreateClassModal, ClassCodeModal, ConfirmationModal } from '../../features/instructor/components/InstructorModals';
-import { useInstructorClasses } from '../../hooks/useInstructorClasses';
+import { useInstructorClasses } from '../../features/instructor/hooks/useInstructorClasses';
 
 const InstructorDashboard = () => {
   const { token, logout } = useAuth();

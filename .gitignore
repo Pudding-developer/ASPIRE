@@ -33,5 +33,8 @@ coverage.xml
 # Render / Vercel Specific #
 .vercel/
 
-# Thesis data files #
+# ML generated outputs #
+backend/ml/artifacts/png/
+backend/ml/artifacts/dataframes/
 BSCpE_ILO_Skillset_Alignment.xlsx
+*.db

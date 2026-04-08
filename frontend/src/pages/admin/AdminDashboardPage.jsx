@@ -89,10 +89,10 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a0a00] flex text-white">
+    <div className="h-screen w-full bg-[#1a0a00] flex flex-row overflow-hidden text-white">
       <AdminSidebar tab={tab} setTab={setTab} />
 
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-8 overflow-y-auto">
         {tab === 'dashboard' && <DashboardTab stats={stats} />}
         {tab === 'instructors' && <InstructorsTab instructors={instructors} toggleInstructor={toggleInstructor} removeInstructor={removeInstructor} />}
         {tab === 'tokens' && <TokensTab tokens={tokens} setShowGenerateModal={setShowGenerateModal} deleteToken={deleteToken} />}

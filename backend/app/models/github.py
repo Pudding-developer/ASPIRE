@@ -43,6 +43,7 @@ class ContributionCache(SQLModel, table=True):
     current_streak: int = Field(default=0)
     longest_streak: int = Field(default=0)
     calendar_json: str = Field(default="[]")
+    activities_json: str = Field(default="[]")
     cached_at: datetime = Field(default_factory=datetime.now)
 
 

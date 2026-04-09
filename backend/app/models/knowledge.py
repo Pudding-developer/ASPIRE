@@ -6,7 +6,7 @@ from sqlmodel import SQLModel, Field
 from sqlalchemy import Column, Text
 from pgvector.sqlalchemy import Vector
 
-EMBEDDING_DIM = 768  # Gemini text-embedding-004 output dimension
+EMBEDDING_DIM = 768  # gemini-embedding-001 output dimension (reduced)
 
 
 class KnowledgeChunk(SQLModel, table=True):
@@ -23,7 +23,7 @@ class KnowledgeChunk(SQLModel, table=True):
     # Full text content of the chunk
     content: str = Field(sa_column=Column(Text, nullable=False))
 
-    # The vector embedding (768-dim for Gemini text-embedding-004)
+    # The vector embedding (768-dim from gemini-embedding-001)
     embedding: list = Field(
         default=None,
         sa_column=Column(Vector(EMBEDDING_DIM), nullable=True)

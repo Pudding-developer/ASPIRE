@@ -5,13 +5,21 @@ Run from the backend directory:
     python scripts/seed_knowledge.py
 
 This populates the knowledge_chunks table with:
-  - 10 CPE career path documents
-  - 6 ABET ILO competency descriptions
-  - 8 BatStateU CPE core curriculum subjects
+  - 10 CPE career path documents (hardcoded)
+  - N Skillset Definitions parsed from 'Skillset Explanations' xlsx tab
+  - 60 BSCpE course documents parsed from the main ILO-Skillset Alignment xlsx tab,
+    with ABET SO codes expanded inline to their full definitions from the 'SO Legend' tab.
+
+NOTE: CURRICULUM_DOCUMENTS and ILO_DOCUMENTS are intentionally removed.
+  The Excel spreadsheet already contains this data at a higher fidelity.
+  GitHub activity and side projects are the primary career-matching signal.
 """
 import sys
 import os
 import time
+from pathlib import Path
+
+import pandas as pd
 
 # Add backend root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -131,153 +139,146 @@ CAREER_PATHS = [
     },
 ]
 
-ILO_DOCUMENTS = [
-    {
-        "title": "ILO: Problem Solving & Engineering Design",
-        "content": (
-            "ABET/CHED ILO: Problem Solving and Engineering Design\n"
-            "Students demonstrate ability to identify, formulate, and solve complex engineering "
-            "problems by applying principles of engineering, science, and mathematics. "
-            "Assessed through: design projects, laboratory exercises, case studies, "
-            "and capstone research. Key competencies: analytical thinking, algorithm design, "
-            "debugging, optimization, and creative solution development."
-        ),
-    },
-    {
-        "title": "ILO: Communication Skills",
-        "content": (
-            "ABET/CHED ILO: Communication Skills\n"
-            "Students communicate effectively with a range of audiences through written reports, "
-            "technical documentation, oral presentations, and team collaboration. "
-            "Assessed through: lab reports, research papers, project presentations, "
-            "and peer review exercises."
-        ),
-    },
-    {
-        "title": "ILO: Professional & Ethical Responsibility",
-        "content": (
-            "ABET/CHED ILO: Professional and Ethical Responsibility\n"
-            "Students recognize ethical and professional responsibilities in engineering "
-            "situations and make informed judgments considering the impact of engineering "
-            "solutions in global and societal contexts. "
-            "Assessed through: ethics case studies, written reflections, and professional conduct practicum."
-        ),
-    },
-    {
-        "title": "ILO: Teamwork & Project Management",
-        "content": (
-            "ABET/CHED ILO: Teamwork and Project Management\n"
-            "Students function effectively as members and leaders of diverse engineering teams. "
-            "Competencies include: agile methodologies, project planning, task delegation, "
-            "conflict resolution, and progress monitoring. "
-            "Assessed through: group projects, capstone team deliverables, and peer evaluation."
-        ),
-    },
-    {
-        "title": "ILO: Lifelong Learning & Inquiry",
-        "content": (
-            "ABET/CHED ILO: Lifelong Learning and Self-Directed Inquiry\n"
-            "Students show ability to acquire and apply new knowledge as needed using "
-            "appropriate learning strategies. Competencies include: independent research, "
-            "self-paced online learning, reading technical literature, and skills adaptation. "
-            "Assessed through: research proposals, literature reviews, and skill self-assessments."
-        ),
-    },
-    {
-        "title": "ILO: Technical Design & Systems Thinking",
-        "content": (
-            "ABET/CHED ILO: Technical Design and Systems Thinking\n"
-            "Students design systems, components, or processes to meet desired specifications "
-            "within realistic constraints such as economic, environmental, social, or safety factors. "
-            "Competencies: circuit design, software architecture, systems integration, "
-            "and prototype development. Assessed through: design labs and capstone engineering projects."
-        ),
-    },
-]
+# ─── BSCpE ILO–Skillset Alignment (parsed from xlsx) ─────────────────────────
 
-CURRICULUM_DOCUMENTS = [
-    {
-        "title": "CPE Curriculum: Data Structures and Algorithms",
-        "content": (
-            "Course: Data Structures and Algorithms | BatStateU CPE Core\n"
-            "Topics: Arrays, Linked Lists, Stacks, Queues, Trees, Graphs, Sorting, "
-            "Searching, Dynamic Programming, Algorithm Complexity (Big-O).\n"
-            "Skills developed: Problem decomposition, algorithmic thinking, code optimization.\n"
-            "Mapped ILOs: Problem Solving, Engineering Design."
-        ),
-    },
-    {
-        "title": "CPE Curriculum: Digital Logic Design",
-        "content": (
-            "Course: Digital Logic Design | BatStateU CPE Core\n"
-            "Topics: Boolean Algebra, Logic Gates, Combinational Circuits, Sequential Circuits, "
-            "Flip-Flops, Counters, Registers, Hardware Description Languages (Verilog/VHDL).\n"
-            "Skills developed: Hardware reasoning, circuit simulation, HDL programming.\n"
-            "Mapped ILOs: Technical Design, Systems Thinking."
-        ),
-    },
-    {
-        "title": "CPE Curriculum: Microprocessors and Microcontrollers",
-        "content": (
-            "Course: Microprocessors and Microcontrollers | BatStateU CPE Core\n"
-            "Topics: CPU Architecture, Assembly Language, Memory Systems, I/O Interfaces, "
-            "Interrupts, DMA, ARM Cortex-M programming, Arduino, STM32.\n"
-            "Skills developed: Low-level programming, hardware-software co-design, embedded C.\n"
-            "Mapped ILOs: Technical Design, Problem Solving."
-        ),
-    },
-    {
-        "title": "CPE Curriculum: Operating Systems",
-        "content": (
-            "Course: Operating Systems | BatStateU CPE Core\n"
-            "Topics: Process Management, Scheduling, Memory Management, Virtual Memory, "
-            "File Systems, Synchronization, Deadlocks, Linux internals.\n"
-            "Skills developed: Systems programming, bash scripting, OS-level debugging.\n"
-            "Mapped ILOs: Problem Solving, Systems Thinking."
-        ),
-    },
-    {
-        "title": "CPE Curriculum: Computer Networks",
-        "content": (
-            "Course: Computer Networks | BatStateU CPE Core\n"
-            "Topics: OSI Model, TCP/IP, Routing Protocols, Subnetting, DNS, HTTP, "
-            "Network Security basics, Socket Programming, Wireless Protocols.\n"
-            "Skills developed: Network configuration, protocol analysis, socket programming.\n"
-            "Mapped ILOs: Technical Design, Communication Skills."
-        ),
-    },
-    {
-        "title": "CPE Curriculum: Software Engineering",
-        "content": (
-            "Course: Software Engineering | BatStateU CPE Core\n"
-            "Topics: SDLC, Agile/Scrum, Requirements Analysis, UML Diagrams, "
-            "Design Patterns, Testing Strategies, DevOps basics, Version Control (Git).\n"
-            "Skills developed: Project management, team collaboration, documentation.\n"
-            "Mapped ILOs: Teamwork, Professional Responsibility."
-        ),
-    },
-    {
-        "title": "CPE Curriculum: Signal Processing",
-        "content": (
-            "Course: Signals and Systems / Digital Signal Processing | BatStateU CPE\n"
-            "Topics: Fourier Transform, Laplace Transform, Z-Transform, FIR/IIR Filters, "
-            "Sampling Theorem, FFT, MATLAB/Python signal analysis.\n"
-            "Skills developed: Mathematical modeling, frequency analysis, filter design.\n"
-            "Mapped ILOs: Technical Design, Problem Solving."
-        ),
-    },
-    {
-        "title": "CPE Curriculum: Capstone Engineering Design",
-        "content": (
-            "Course: Capstone Engineering Design Project | BatStateU CPE\n"
-            "Students design, implement, and defend a complete engineering system that meets "
-            "real-world requirements. Topics: Project planning, prototyping, testing, "
-            "technical writing, oral defense, user evaluation.\n"
-            "Skills developed: Full-cycle engineering, research, teamwork, communication.\n"
-            "Mapped ILOs: All ABET ILOs - Problem Solving, Communication, Ethics, Teamwork, Inquiry, Design."
-        ),
-    },
-]
+XLSX_PATH = Path(__file__).resolve().parent.parent / "Documents" / "BSCpE_ILO_Skillset_Alignment.xlsx"
+
+
+def _load_so_lookup() -> dict:
+    """
+    Internal helper — loads the 'SO Legend' tab and returns a dict:
+        { "SO3": ("Design/Dev. of Solutions", "Design solutions/systems/..."), ... }
+
+    Used by _parse_ilo_alignment_xlsx to expand bare SO codes inline so the AI
+    sees human-readable definitions rather than opaque 'SO3 (I)' labels.
+    """
+    df = pd.read_excel(XLSX_PATH, sheet_name='SO Legend', skiprows=1)
+    lookup = {}
+    for _, row in df.dropna(how='all').iterrows():
+        code = str(row.iloc[0]).strip()
+        name = str(row.iloc[1]).strip()
+        desc = str(row.iloc[2]).strip()
+        if code and code != 'nan':
+            lookup[code] = (name, desc)
+    return lookup
+
+def _parse_skillsets() -> list[dict]:
+    """Parse the 'Skillset Reference' sheet for specific technical/professional skills."""
+    df = pd.read_excel(XLSX_PATH, sheet_name='Skillset Reference', skiprows=1)
+    docs = []
+    for _, row in df.dropna(how='all').iterrows():
+        domain = str(row.iloc[0]).strip()
+        skill = str(row.iloc[1]).strip()
+        sos = str(row.iloc[2]).strip()
+        desc = str(row.iloc[3]).strip()
+        if skill and skill != 'nan' and domain not in ('Category', 'nan'):
+            docs.append({
+                "title": f"Skillset Definition: {skill} ({domain})",
+                "content": (
+                    f"Skill Domain: {domain}\nSkillset Name: {skill}\n"
+                    f"Mapped ABET SOs: {sos}\nDescription & Keywords: {desc}\n"
+                    f"This defines specific abilities evaluated in technical engineering courses."
+                )
+            })
+    return docs
+
+
+def _parse_ilo_alignment_xlsx() -> list[dict]:
+    """
+    Parse the ILO-Skillset Alignment xlsx into one document per subject.
+
+    SO codes in column E (e.g. 'SO3 (I)  SO5 (R)') are expanded inline
+    using the SO Legend tab so the AI sees full English definitions, not
+    opaque codes.
+
+    The xlsx layout repeats this block per subject:
+      - Row A (col0): "  CODE  ·  Subject Name"
+      - Row B (col0): SO summary line
+      - Rows C+ (col2-6): ILO number, statement, mapped SOs, tech skills, prof skills
+      - Blank row separator
+    """
+    df = pd.read_excel(XLSX_PATH, header=None)
+    so_lookup = _load_so_lookup()  # { "SO3": ("Design/Dev. of Solutions", "..."), ... }
+
+    import re
+
+    def _expand_sos(raw: str) -> str:
+        """Replace 'SO3 (I)' with 'SO3-Design/Dev. of Solutions [Introduced] — <definition>'"""
+        level_map = {"I": "Introduced", "R": "Reinforced", "D": "Demonstrated", "I/R": "Introduced/Reinforced"}
+        parts = []
+        for token in re.findall(r'SO\d+\s*\([^)]+\)', raw):
+            m = re.match(r'(SO\d+)\s*\(([^)]+)\)', token)
+            if m:
+                code, level = m.group(1), m.group(2).strip()
+                level_label = level_map.get(level, level)
+                if code in so_lookup:
+                    name, desc = so_lookup[code]
+                    parts.append(f"{code} [{level_label}]: {name} — {desc}")
+                else:
+                    parts.append(f"{code} [{level_label}]")
+        return "\n    ".join(parts) if parts else raw
+
+    subjects: list[dict] = []
+    current_subject = None
+
+    for i in range(df.shape[0]):
+        col0 = df.iloc[i, 0]
+
+        # Detect subject header: "  CODE  ·  Subject Name"
+        if pd.notna(col0) and "·" in str(col0):
+            if current_subject and current_subject["ilos"]:
+                subjects.append(current_subject)
+            parts = str(col0).strip().split("·", 1)
+            current_subject = {
+                "code": parts[0].strip(),
+                "name": parts[1].strip() if len(parts) > 1 else parts[0].strip(),
+                "ilos": [],
+            }
+            continue
+
+        # Detect ILO data row: col2 has "ILO N"
+        col2 = df.iloc[i, 2]
+        if current_subject and pd.notna(col2) and str(col2).strip().startswith("ILO"):
+            ilo_num = str(col2).strip()
+            statement = str(df.iloc[i, 3]).strip() if pd.notna(df.iloc[i, 3]) else ""
+            mapped_sos = str(df.iloc[i, 4]).strip() if pd.notna(df.iloc[i, 4]) else ""
+            tech_skills = str(df.iloc[i, 5]).strip() if pd.notna(df.iloc[i, 5]) else ""
+            prof_skills = str(df.iloc[i, 6]).strip() if pd.notna(df.iloc[i, 6]) else ""
+            current_subject["ilos"].append({
+                "num": ilo_num,
+                "statement": statement,
+                "mapped_sos": _expand_sos(mapped_sos),
+                "tech_skills": tech_skills,
+                "prof_skills": prof_skills,
+            })
+
+    # Don't forget the last subject
+    if current_subject and current_subject["ilos"]:
+        subjects.append(current_subject)
+
+    # Build one document per subject
+    docs: list[dict] = []
+    for subj in subjects:
+        title = f"BSCpE Curriculum: {subj['code']} — {subj['name']}"
+        lines = [
+            f"Course: {subj['name']} | Code: {subj['code']} | BatStateU BSCpE",
+            "",
+        ]
+        for ilo in subj["ilos"]:
+            lines.append(f"{ilo['num']}: {ilo['statement']}")
+            lines.append(f"  Mapped Student Outcomes:\n    {ilo['mapped_sos']}")
+            if ilo["tech_skills"] and ilo["tech_skills"] != "—":
+                skills = ilo["tech_skills"].replace("✓ ", "").replace("* ", "").replace("\n", ", ")
+                lines.append(f"  Technical Skills: {skills}")
+            if ilo["prof_skills"] and ilo["prof_skills"] != "—":
+                skills = ilo["prof_skills"].replace("✓ ", "").replace("* ", "").replace("\n", ", ")
+                lines.append(f"  Professional Skills: {skills}")
+            lines.append("")
+
+        docs.append({"title": title, "content": "\n".join(lines).strip()})
+
+    return docs
+
 
 # ─── Seeder Logic ─────────────────────────────────────────────────────────────
 
@@ -340,8 +341,16 @@ def main():
             conn.execute(text("TRUNCATE knowledge_chunks RESTART IDENTITY"))
 
         seed_category(conn, "career_path", CAREER_PATHS)
-        seed_category(conn, "ilo", ILO_DOCUMENTS)
-        seed_category(conn, "curriculum", CURRICULUM_DOCUMENTS)
+
+        # Skillset definitions from 'Skillset Explanations' tab
+        skill_docs = _parse_skillsets()
+        print(f"\n📄 Parsed {len(skill_docs)} Skillset Definitions from {XLSX_PATH.name}")
+        seed_category(conn, "skillset", skill_docs)
+
+        # 60 BSCpE course documents — SO codes expanded inline from 'SO Legend' tab
+        bsu_docs = _parse_ilo_alignment_xlsx()
+        print(f"\n📄 Parsed {len(bsu_docs)} subjects from {XLSX_PATH.name}")
+        seed_category(conn, "bsu_curriculum", bsu_docs)
 
         total = conn.execute(text("SELECT COUNT(*) FROM knowledge_chunks")).scalar()
 

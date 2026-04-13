@@ -46,6 +46,7 @@ export default function usePipeline(studentId) {
     if (!studentId) return;
     try {
       setPipelineStatus({ status: 'starting', percentage: 0, current_step: 'Starting pipeline...' });
+      setError(null);
       const res = await pipelineApi.run(studentId);
       const newJobId = res.data.job_id;
       setJobId(newJobId);
@@ -59,16 +60,22 @@ export default function usePipeline(studentId) {
           if (job.status === 'completed' || job.status === 'failed') {
             clearInterval(pollRef.current);
             pollRef.current = null;
+            if (job.status === 'failed') {
+               setError(job.error || 'The AI pipeline encountered an error. Please try again.');
+            }
             setJobId(null);
             if (job.status === 'completed') fetchReports();
           }
         } catch {
           clearInterval(pollRef.current);
           pollRef.current = null;
+          setError('Lost connection to the analysis server. Please check your network.');
+          setJobId(null);
         }
       }, 3000);
     } catch (e) {
       setPipelineStatus({ status: 'failed', error: e.message });
+      setError(`Failed to start AI Pipeline: ${e.message}`);
     }
   }, [studentId, fetchReports]);
 

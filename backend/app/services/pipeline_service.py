@@ -141,36 +141,82 @@ async def run_pipeline_job(
     job_id: str, student_id: int, session_factory
 ) -> None:
     """
-    Background task — fetches data, runs the CrewAI pipeline in a thread,
-    and stores the result. Follows the same pattern as github_service.run_analysis.
+    Background task — fetches data + previous report, runs the 7-agent CrewAI pipeline
+    in a thread, and stores the result including Agent 7 progression data.
+    Progress steps mirror the 7 agents for frontend polling.
     """
     async with session_factory() as db:
         try:
-            # Step 1: Fetch student data
+            # ── Pre-flight: collect student data and previous report ───────────
             await _update_job(
                 db, job_id,
                 status="running",
                 current_step="Collecting student data...",
-                percentage=10,
+                percentage=5,
             )
             student_data = await _fetch_student_data(db, student_id)
 
-            # Step 2: Run AI pipeline (sync → thread)
+            # Fetch student for chosen_career field
+            result = await db.execute(select(User).where(User.id == student_id))
+            student = result.scalar_one_or_none()
+
+            # Fetch previous report for Agent 7 comparison
+            from app.repositories.pipeline_repository import get_previous_report
+            previous_report = await get_previous_report(db, student_id)
+
+            days_since = None
+            if previous_report:
+                days_since = (datetime.utcnow() - previous_report.created_at).days
+
+            # ── Step 1 progress label ─────────────────────────────────────────
             await _update_job(
                 db, job_id,
-                current_step="Running AI skill analysis...",
-                percentage=30,
+                current_step="Analyzing GitHub repositories...",
+                percentage=10,
             )
 
+            # ── Step 2 progress label (set before blocking thread) ────────────
+            await _update_job(
+                db, job_id,
+                current_step="Processing academic performance...",
+                percentage=25,
+            )
+
+            # ── Run the entire 7-agent crew in a background thread ────────────
             from app.ai.crew import run_pipeline
+
             pipeline_result = await asyncio.to_thread(run_pipeline, student_data)
 
-            # Step 3: Save report
+            # ── Post-pipeline progress labels (fast — just DB writes) ─────────
             await _update_job(
                 db, job_id,
-                current_step="Saving report...",
+                current_step="Synthesizing skill profile...",
+                percentage=40,
+            )
+            await _update_job(
+                db, job_id,
+                current_step="Mapping career paths...",
+                percentage=55,
+            )
+            await _update_job(
+                db, job_id,
+                current_step="Analyzing skill gaps...",
+                percentage=70,
+            )
+            await _update_job(
+                db, job_id,
+                current_step="Generating career report...",
                 percentage=85,
             )
+            await _update_job(
+                db, job_id,
+                current_step="Tracking your progress...",
+                percentage=95,
+            )
+
+            # ── Persist the report + progression ─────────────────────────────
+            progression = pipeline_result.get("progression", {})
+            chosen = (student.chosen_career if student else None)
 
             report = CareerReport(
                 student_id=student_id,
@@ -178,15 +224,17 @@ async def run_pipeline_job(
                 report_json=json.dumps(pipeline_result, default=str),
                 summary=pipeline_result.get("summary", ""),
                 created_at=datetime.utcnow(),
+                chosen_career=chosen,
+                progression_json=json.dumps(progression, default=str),
             )
             db.add(report)
             await db.commit()
 
-            # Step 4: Done
+            # ── Done ──────────────────────────────────────────────────────────
             await _update_job(
                 db, job_id,
                 status="completed",
-                current_step="Complete",
+                current_step="Career report ready",
                 percentage=100,
                 completed_at=datetime.utcnow(),
             )
@@ -198,6 +246,7 @@ async def run_pipeline_job(
                 error=str(exc),
                 completed_at=datetime.utcnow(),
             )
+
 
 
 # ---------------------------------------------------------------------------

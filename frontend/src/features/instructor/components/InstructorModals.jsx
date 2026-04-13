@@ -3,33 +3,55 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Copy, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 
+import curriculumData from '../../../data/curriculum.json';
+
 export function CreateClassModal({ isOpen, onClose, onSubmit }) {
-  const [subjectName, setSubjectName] = useState('');
-  const [courseCode, setCourseCode] = useState('');
   const [year, setYear] = useState('1');
   const [semester, setSemester] = useState('1');
+  const [selectedCourseCode, setSelectedCourseCode] = useState('');
   const [section, setSection] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
+  // Filter curriculum data based on selected year and semester
+  const availableSubjects = curriculumData.filter(
+    (s) => s.year === year && s.semester === semester
+  );
+
   useEffect(() => {
     if (!isOpen) return;
-    setSubjectName(''); setCourseCode(''); setYear('1'); setSemester('1'); setSection(''); setFormError('');
+    setYear('1'); setSemester('1'); setSelectedCourseCode(''); setSection(''); setFormError('');
     const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
+  // Reset selected course when filters change
+  useEffect(() => {
+    if (availableSubjects.length > 0) {
+      setSelectedCourseCode(availableSubjects[0].code);
+    } else {
+      setSelectedCourseCode('');
+    }
+  }, [year, semester]); // We intentionally do not include availableSubjects as a dependency
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!selectedCourseCode) {
+      setFormError('Please select a subject from the curriculum.');
+      return;
+    }
     setFormError('');
     setSubmitting(true);
+    
+    const subject = availableSubjects.find(s => s.code === selectedCourseCode);
+    
     try {
       await onSubmit({
-        subject_name: subjectName,
-        course_code: courseCode,
+        subject_name: subject.title,
+        course_code: subject.code,
         year_level: parseInt(year),
         semester: parseInt(semester),
         section,
@@ -57,21 +79,13 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
         </div>
 
         <form className="p-6 space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Subject Name</label>
-            <input required type="text" placeholder="e.g. Data Structures & Algorithms" value={subjectName} onChange={(e) => setSubjectName(e.target.value)} className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313] focus:ring-1 focus:ring-[#bc1313]" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Course Code</label>
-            <input required type="text" placeholder="e.g. CS 201" value={courseCode} onChange={(e) => setCourseCode(e.target.value)} className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313]" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Year Level</label>
+              <label className="text-sm font-medium text-gray-700">Filter Year Level</label>
               <select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313]"
+                className="w-full bg-white text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313]"
               >
                 <option value="1">1st Year</option>
                 <option value="2">2nd Year</option>
@@ -80,19 +94,39 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Semester</label>
+              <label className="text-sm font-medium text-gray-700">Filter Semester</label>
               <select
                 value={semester}
                 onChange={(e) => setSemester(e.target.value)}
-                className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313]"
+                className="w-full bg-white text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313]"
               >
                 <option value="1">1st Sem</option>
                 <option value="2">2nd Sem</option>
+                <option value="3">Midyear</option>
               </select>
             </div>
           </div>
+          
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Section</label>
+            <label className="text-sm font-medium text-gray-700">Select Curriculum Subject</label>
+            <select 
+              value={selectedCourseCode} 
+              onChange={(e) => setSelectedCourseCode(e.target.value)} 
+              className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313] focus:ring-1 focus:ring-[#bc1313]"
+            >
+              {availableSubjects.length === 0 && (
+                <option value="" disabled>No subjects found for this term</option>
+              )}
+              {availableSubjects.map((subject) => (
+                <option key={subject.code} value={subject.code}>
+                  {subject.code} — {subject.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Class Section</label>
             <input
               required
               type="text"
@@ -105,7 +139,7 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
           {formError && <p className="text-red-600 text-sm">{formError}</p>}
           <div className="pt-4 flex justify-end gap-3">
             <Button type="button" onClick={onClose} variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">Cancel</Button>
-            <Button type="submit" disabled={submitting} className="bg-[#bc1313] hover:bg-[#890E0E] text-white">
+            <Button type="submit" disabled={submitting || availableSubjects.length === 0} className="bg-[#bc1313] hover:bg-[#890E0E] text-white">
               {submitting ? 'Creating...' : 'Create Class'}
             </Button>
           </div>

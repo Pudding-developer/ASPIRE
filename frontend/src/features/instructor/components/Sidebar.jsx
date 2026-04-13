@@ -22,7 +22,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`${isMinimized ? 'w-[88px]' : 'w-[280px]'} min-h-screen bg-[#0d0101] border-r border-[#261010] flex flex-col flex-shrink-0 transition-all duration-300 relative z-20`}
+      className={`${isMinimized ? 'w-[88px]' : 'w-[280px]'} h-screen bg-[#0d0101] border-r border-[#261010] flex flex-col flex-shrink-0 transition-all duration-300 relative z-20`}
     >
       {/* Top section: Logo & Toggle */}
       <div className={`px-4 pt-4 pb-1 flex ${isMinimized ? 'justify-center' : 'items-center justify-between'} overflow-visible min-h-[104px]`}>
@@ -67,7 +67,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
       )}
 
       {/* Middle section: Navigation */}
-      <div className="px-3 space-y-1.5 flex-1 overflow-x-hidden">
+      <div className="px-3 space-y-1.5 flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#2a1212] [&::-webkit-scrollbar-track]:bg-transparent">
         {/* Instructor Portal */}
         <button
           onClick={() => setActiveView('instructor-portal')}
@@ -113,7 +113,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
           </button>
 
           {/* Sub-items block (collapsible class list) */}
-          <div className={`overflow-hidden transition-all duration-300 ${classesOpen && !isMinimized ? 'max-h-40 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+          <div className={`overflow-y-auto overflow-x-hidden transition-all duration-300 ${classesOpen && !isMinimized ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
             <div className="relative py-1">
               <div className="absolute left-[16px] top-0 bottom-3 w-px bg-[#261010]" />
 

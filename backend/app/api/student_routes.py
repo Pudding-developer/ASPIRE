@@ -1,11 +1,14 @@
 """
 student_routes.py — Student-facing API endpoints.
 
-Provides profile data, academic scores, enrolled classes, and ML skill predictions.
+Provides profile data, academic scores, enrolled classes, ML skill predictions,
+and career goal selection (PATCH/GET /career).
 """
 import asyncio
+from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -18,6 +21,38 @@ from app.models.class_model import (
 
 router = APIRouter()
 
+
+# ── Career constants ──────────────────────────────────────────────────────────
+
+VALID_CAREERS = [
+    "Full Stack Developer",
+    "Backend Developer",
+    "Frontend Developer",
+    "DevOps Engineer",
+    "Data Scientist",
+    "AI Engineer",
+    "Android Developer",
+    "iOS Developer",
+    "Cybersecurity",
+    "Machine Learning",
+    "Software Architect",
+    "QA Engineer",
+]
+
+ROADMAP_LINKS = {
+    "Full Stack Developer": "https://roadmap.sh/full-stack",
+    "Backend Developer":    "https://roadmap.sh/backend",
+    "Frontend Developer":   "https://roadmap.sh/frontend",
+    "DevOps Engineer":      "https://roadmap.sh/devops",
+    "Data Scientist":       "https://roadmap.sh/data-scientist",
+    "AI Engineer":          "https://roadmap.sh/ai-engineer",
+    "Android Developer":    "https://roadmap.sh/android",
+    "iOS Developer":        "https://roadmap.sh/ios",
+    "Cybersecurity":        "https://roadmap.sh/cyber-security",
+    "Machine Learning":     "https://roadmap.sh/machine-learning",
+    "Software Architect":   "https://roadmap.sh/software-architect",
+    "QA Engineer":          "https://roadmap.sh/qa",
+}
 
 # ── Profile ──────────────────────────────────────────────────────────────────
 
@@ -43,17 +78,33 @@ async def get_enrolled_classes(
     current_user: User = Depends(get_current_student),
     db: AsyncSession = Depends(get_session),
 ):
-    """Return all classes the student is enrolled in."""
+    """Return all classes the student is enrolled in, with instructor and classmates."""
+    from app.models.instructor import Instructor
+    
     result = await db.execute(
-        select(Class, ClassEnrollment)
+        select(Class, ClassEnrollment, Instructor)
         .join(ClassEnrollment, Class.id == ClassEnrollment.class_id)
+        .join(Instructor, Class.instructor_id == Instructor.id)
         .where(ClassEnrollment.student_id == current_user.id)
         .where(Class.is_archived == False)
     )
     rows = result.all()
 
-    return {"data": [
-        {
+    data = []
+    for cls, enrollment, instructor in rows:
+        from sqlalchemy.orm import aliased
+        EnrollmentAlias = aliased(ClassEnrollment)
+        classmates_result = await db.execute(
+            select(User.full_name, User.avatar_url)
+            .join(EnrollmentAlias, User.id == EnrollmentAlias.student_id)
+            .where(EnrollmentAlias.class_id == cls.id)
+        )
+        classmates = [
+            {"name": row.full_name, "avatar": row.avatar_url}
+            for row in classmates_result.all()
+        ]
+
+        data.append({
             "id": cls.id,
             "subject_name": cls.subject_name,
             "course_code": cls.course_code,
@@ -62,9 +113,55 @@ async def get_enrolled_classes(
             "section": cls.section,
             "class_code": cls.class_code,
             "enrolled_at": enrollment.enrolled_at.isoformat(),
-        }
-        for cls, enrollment in rows
-    ]}
+            "instructor_name": instructor.full_name,
+            "instructor_avatar": instructor.avatar_url,
+            "classmates": classmates
+        })
+
+    return {"data": data}
+
+
+# ── Join Class ───────────────────────────────────────────────────────────────
+
+class JoinClassBody(BaseModel):
+    class_code: str
+
+@router.post("/join")
+async def join_class(
+    body: JoinClassBody,
+    current_user: User = Depends(get_current_student),
+    db: AsyncSession = Depends(get_session),
+):
+    """Enroll the student in a class using its class code."""
+    result = await db.execute(
+        select(Class).where(Class.class_code == body.class_code, Class.is_archived == False)
+    )
+    cls = result.scalar_one_or_none()
+    if not cls:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid class code. Please check with your instructor.")
+
+    existing = await db.execute(
+        select(ClassEnrollment).where(
+            ClassEnrollment.class_id == cls.id,
+            ClassEnrollment.student_id == current_user.id,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="You are already enrolled in this class.")
+
+    enrollment = ClassEnrollment(class_id=cls.id, student_id=current_user.id)
+    db.add(enrollment)
+    await db.commit()
+    await db.refresh(enrollment)
+
+    return {"data": {
+        "id": cls.id,
+        "subject_name": cls.subject_name,
+        "course_code": cls.course_code,
+        "section": cls.section,
+        "class_code": cls.class_code,
+        "enrolled_at": enrollment.enrolled_at.isoformat(),
+    }}
 
 
 # ── Academic Scores ──────────────────────────────────────────────────────────
@@ -150,3 +247,65 @@ async def get_skill_predictions(
     predictions = await asyncio.to_thread(predict_student_aggregate, scores_by_course)
 
     return {"data": predictions}
+
+
+# ── Career goal selection ─────────────────────────────────────────────────────
+
+class CareerChoicePayload(BaseModel):
+    career: str
+
+
+@router.patch("/career")
+async def set_chosen_career(
+    payload: CareerChoicePayload,
+    current_user: User = Depends(get_current_student),
+    db: AsyncSession = Depends(get_session),
+):
+    """
+    Set or update the student's chosen career goal.
+    Validates against VALID_CAREERS — returns 400 if unknown.
+    """
+    if payload.career not in VALID_CAREERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid career. Must be one of: {', '.join(VALID_CAREERS)}",
+        )
+
+    result = await db.execute(select(User).where(User.id == current_user.id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Student not found.")
+
+    user.chosen_career = payload.career
+    user.career_chosen_at = datetime.utcnow()
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    return {
+        "chosen_career": user.chosen_career,
+        "career_chosen_at": user.career_chosen_at.isoformat() if user.career_chosen_at else None,
+        "roadmap_url": ROADMAP_LINKS.get(user.chosen_career),
+    }
+
+
+@router.get("/career")
+async def get_chosen_career(
+    current_user: User = Depends(get_current_student),
+    db: AsyncSession = Depends(get_session),
+):
+    """
+    Return the student's currently chosen career goal.
+    Returns null values if no career has been chosen yet.
+    """
+    result = await db.execute(select(User).where(User.id == current_user.id))
+    user = result.scalar_one_or_none()
+
+    return {
+        "chosen_career": user.chosen_career if user else None,
+        "career_chosen_at": (
+            user.career_chosen_at.isoformat()
+            if user and user.career_chosen_at else None
+        ),
+        "roadmap_url": ROADMAP_LINKS.get(user.chosen_career) if user and user.chosen_career else None,
+    }

@@ -285,8 +285,7 @@ export function GitHubCard({ githubStatus, onConnect }) {
 }
 
 /* ─── Join Class Card ─── */
-export function JoinClassCard() {
-  const navigate = useNavigate();
+export function JoinClassCard({ onNavigate }) {
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center text-center">
@@ -298,7 +297,7 @@ export function JoinClassCard() {
         Enter a class code provided by your instructor to join their roster and access your materials.
       </p>
       <button 
-        onClick={() => navigate('/student/join')}
+        onClick={() => onNavigate('enrolled-classes')}
         className="w-full bg-[#bc1313] hover:bg-[#890E0E] text-white py-2.5 rounded-xl text-[13px] font-bold transition-colors"
       >
         Join Class
@@ -386,7 +385,7 @@ export function CTABanner() {
 }
 
 /* ─── Dashboard Main View ─── */
-export default function StudentDashboardView({ user }) {
+export default function StudentDashboardView({ user, onNavigate }) {
   const { predictions, iloCoverage, loading: studentLoading } = useStudentData();
   const { status: githubStatus, repos, loading: githubLoading, connectGithub } = useGithubData();
   const { report, loading: pipelineLoading } = usePipeline(user?.id);
@@ -451,7 +450,7 @@ export default function StudentDashboardView({ user }) {
         {/* Right Column (Sidebar) */}
         <div className="space-y-6">
           <GitHubCard githubStatus={githubStatus} onConnect={connectGithub} />
-          <JoinClassCard />
+          <JoinClassCard onNavigate={onNavigate} />
           <CareerChoiceCard report={report} />
         </div>
         

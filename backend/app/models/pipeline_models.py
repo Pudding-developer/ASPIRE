@@ -30,3 +30,9 @@ class CareerReport(SQLModel, table=True):
     report_json: str = Field(default="{}")  # Full pipeline result as JSON
     summary: str = Field(default="")
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Career chosen by student at report time (mirrored from User.chosen_career)
+    chosen_career: Optional[str] = Field(default=None)
+
+    # Agent 7 progression output stored as JSON
+    progression_json: Optional[str] = Field(default=None)

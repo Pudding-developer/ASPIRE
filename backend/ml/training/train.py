@@ -1,6 +1,9 @@
 """
 Train and save the skill-prediction model.
 
+Reads real ILO data from the PostgreSQL database (instructor-entered scores)
+instead of a static CSV file.
+
 Usage:
     cd backend/
     python -m ml.training.train
@@ -8,18 +11,18 @@ Usage:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
-from typing import List
-
 import joblib
 import numpy as np
 import pandas as pd
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import KFold, cross_val_score
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from ml.config import (
@@ -30,8 +33,65 @@ from ml.config import (
 )
 
 ML_ROOT   = Path(__file__).resolve().parents[1]
-DATA_CSV  = ML_ROOT / "data" / "student_ilo_data.csv"
 ARTIFACTS = ML_ROOT / "artifacts"
+
+# SQL to compute ILO percentages per student per course.
+# Aggregates across all assessments: AVG(score / max_score * 100) grouped by ILO number,
+# then pivots ILO numbers 1-4 into columns.
+_ILO_QUERY = text("""
+    SELECT
+        ss.student_id,
+        c.subject_name  AS "Course",
+        c.semester       AS "Semester",
+        ROUND(AVG(CASE WHEN ai.ilo_number = 1 THEN ss.score / ai.max_score * 100 END)::numeric, 1) AS "ILO1",
+        ROUND(AVG(CASE WHEN ai.ilo_number = 2 THEN ss.score / ai.max_score * 100 END)::numeric, 1) AS "ILO2",
+        ROUND(AVG(CASE WHEN ai.ilo_number = 3 THEN ss.score / ai.max_score * 100 END)::numeric, 1) AS "ILO3",
+        ROUND(AVG(CASE WHEN ai.ilo_number = 4 THEN ss.score / ai.max_score * 100 END)::numeric, 1) AS "ILO4"
+    FROM student_scores ss
+    JOIN assessment_ilos ai ON ss.ilo_id = ai.id
+    JOIN assessments a      ON ss.assessment_id = a.id
+    JOIN classes c           ON a.class_id = c.id
+    WHERE ai.max_score > 0
+    GROUP BY ss.student_id, c.id, c.subject_name, c.semester
+    HAVING
+        COUNT(CASE WHEN ai.ilo_number = 1 THEN 1 END) > 0 AND
+        COUNT(CASE WHEN ai.ilo_number = 2 THEN 1 END) > 0 AND
+        COUNT(CASE WHEN ai.ilo_number = 3 THEN 1 END) > 0 AND
+        COUNT(CASE WHEN ai.ilo_number = 4 THEN 1 END) > 0
+""")
+
+
+def _get_sync_url() -> str:
+    """Convert the async DATABASE_URL to a sync psycopg2 URL."""
+    load_dotenv()
+    url = os.getenv("DATABASE_URL", "")
+    if not url:
+        raise RuntimeError("DATABASE_URL is not set in .env")
+    return url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+
+
+def _load_ilo_data() -> pd.DataFrame:
+    """Fetch ILO data from the database and return a DataFrame."""
+    engine = create_engine(_get_sync_url(), echo=False)
+    df = pd.read_sql(_ILO_QUERY, engine)
+    engine.dispose()
+
+    if df.empty:
+        raise ValueError(
+            "No ILO data found in the database. "
+            "Instructors must enter assessment scores before the model can be trained."
+        )
+
+    # Drop the student_id column (not needed for training features)
+    df = df.drop(columns=["student_id"])
+
+    required = {"Course", "Semester", "ILO1", "ILO2", "ILO3", "ILO4"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Query result is missing columns: {sorted(missing)}")
+
+    print(f"Loaded {len(df)} student-course records from database")
+    return df
 
 
 def _build_training_data(df: pd.DataFrame, rng: np.random.Generator) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -78,9 +138,6 @@ def _build_training_data(df: pd.DataFrame, rng: np.random.Generator) -> tuple[pd
 
 
 def _build_pipeline() -> Pipeline:
-    # Encode course as integer, then scale everything uniformly
-    # (GBR is tree-based so scaling doesn't matter, but LabelEncoder is needed
-    #  to convert course strings to numeric)
     from sklearn.preprocessing import OrdinalEncoder
 
     preprocessor = ColumnTransformer(
@@ -90,8 +147,6 @@ def _build_pipeline() -> Pipeline:
         remainder="passthrough",
     )
 
-    # GradientBoosting: shallow trees + learning rate regularisation
-    # max_depth=3 and min_samples_leaf=15 prevent overfitting on 1840 rows
     base_gbr = GradientBoostingRegressor(
         n_estimators=150,
         max_depth=3,
@@ -112,12 +167,8 @@ def train_and_save() -> None:
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(42)
 
-    # ── Load data ─────────────────────────────────────────────────────────
-    df = pd.read_csv(DATA_CSV)
-    required = {"Course", "Semester", "ILO1", "ILO2", "ILO3", "ILO4"}
-    missing  = required - set(df.columns)
-    if missing:
-        raise ValueError(f"student_ilo_data.csv is missing columns: {sorted(missing)}")
+    # ── Load data from database ───────────────────────────────────────────
+    df = _load_ilo_data()
 
     X, Y = _build_training_data(df, rng)
     y_arr = Y.to_numpy(dtype=float)
@@ -138,7 +189,7 @@ def train_and_save() -> None:
     per_skill_metrics: list[dict] = []
     for fold, (train_idx, test_idx) in enumerate(kf.split(X)):
         if fold > 0:
-            break  # single fold is sufficient for per-skill breakdown
+            break
         X_tr, X_te = X.iloc[train_idx], X.iloc[test_idx]
         y_tr, y_te = y_arr[train_idx], y_arr[test_idx]
         pipeline.fit(X_tr, y_tr)

@@ -189,7 +189,7 @@ async def fetch_github_events(username: str, token: str) -> list[dict]:
     events = []
     try:
         async with httpx.AsyncClient() as client:
-            for page in range(1, 4):
+            for page in range(1, 11):
                 resp = await client.get(
                     f"{GITHUB_REST_URL}/users/{username}/events",
                     params={"per_page": 30, "page": page},
@@ -625,6 +625,11 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
                     elif etype == "PullRequestEvent":
                         simplified["payload"]["action"] = ev.get("payload", {}).get("action")
                         simplified["payload"]["title"] = ev.get("payload", {}).get("pull_request", {}).get("title")
+                        simplified["payload"]["number"] = ev.get("payload", {}).get("number")
+                        try:
+                            simplified["payload"]["head_ref"] = ev.get("payload", {}).get("pull_request", {}).get("head", {}).get("ref")
+                        except Exception:
+                            pass
                     
                     relevant_events.append(simplified)
 

@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import useGithubData from '../hooks/useGithubData';
 import ContributionActivity from '../components/ContributionActivity';
 import ActivityHistoryModal from '../components/ActivityHistoryModal';
+import RelatedRepositories from '../components/RelatedRepositories';
 
 /* ─── Language color map ─── */
 const LANG_COLORS = {
@@ -375,6 +376,9 @@ export default function StudentGitHubView({ user }) {
               </div>
             )}
           </div>
+          
+          {/* Related Repositories */}
+          <RelatedRepositories userRepos={repos} />
         </div>
 
         {/* Right sidebar */}
@@ -394,6 +398,7 @@ export default function StudentGitHubView({ user }) {
 
           <ContributionActivity 
             activities={contributions?.activities || []} 
+            repos={repos || []}
             onClickShowMore={() => setShowActivityModal(true)} 
           />
 
@@ -416,6 +421,7 @@ export default function StudentGitHubView({ user }) {
         isOpen={showActivityModal} 
         onClose={() => setShowActivityModal(false)} 
         activities={contributions?.activities || []} 
+        repos={repos || []}
       />
     </div>
   );

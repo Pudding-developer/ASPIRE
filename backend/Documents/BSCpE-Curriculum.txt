@@ -1,0 +1,1069 @@
+Republic of the Philippines
+
+BATANGAS STATE UNIVERSITY
+Pablo Borbon Main II,Alangilan, Batangas City
+
+COLLEGE OF ENGINEERING, ARCHITECTURE & FINE ARTS
+www.batstate-u.edu.ph Tel. No. (043) 425-0139 loc 118
+
+CURRICULUM
+Bachelor of Science in Computer Engineering (BSCpE)
+Academic Year 2018-2019
+Reference CMOs: CMO No. 87 s. 2017, CMO No. 4 s. 2018 and CMO No. 20, s. 2013
+
+Curriculum Description
+The Bachelor of Science in Computer Engineering (BSCpE) is a program that embodies
+the Science and technology of design, development, implementation, maintenance and
+integration of software and hardware components in modern computing systems and computercontrolled equipment.
+
+Program Educational Objectives of Computer Engineering
+The computer engineering alumni three to five years after graduation shall:
+1. Help create innovations to ensure the competitive edge of the Philippine computing
+industry
+2. Adhere to ethical standards in the practice of the computer engineering profession
+
+Student Outcomes
+The following skills, knowledge, and behaviors are expected to be attained by students as they
+progress through the program:
+a. Ability to apply knowledge of mathematics and science to solve engineering problems.
+b. Ability to design and conduct experiments, as well as to analyze and interpret data.
+c. Ability to design a system, component, or process to meet desired needs within realistic
+constraints such as economic, environmental, social, political, ethical, health and safety,
+manufacturability, and sustainability, in accordance with standards.
+d. Ability to function on multidisciplinary teams.
+e. Ability to identify, formulate, and solve engineering problems.
+f. Understanding of professional and ethical responsibility.
+g. Ability to communicate effectively.
+h. Broad education necessary to understand the impact of engineering solutions in a global,
+economic, environmental, and societal context.
+i. Recognition of the need for, and an ability to engage in life-long learning.
+j. Knowledge of contemporary issues.
+k. Ability to use techniques, skills, and modern engineering tools necessary for engineering
+practice.
+l. Knowledge and understanding of engineering and management principles as a member
+and leader in a team, to manage projects and in multidisciplinary environments.
+
+Page 1 of 5
+
+CURRICULUM COMPONENTS
+Minimum No. of Hours/Week
+Lec
+Lab
+
+Classification/ Field / Course
+I. TECHNICAL COURSES
+A. Mathematics
+Differential Calculus
+Integral Calculus
+Engineering Data Analysis
+Differential Equations
+
+Credit Units
+
+Sub-Total
+
+3
+3
+3
+3
+12
+
+0
+0
+0
+0
+0
+
+3
+3
+3
+3
+12
+
+Sub-Total
+
+3
+3
+2
+8
+
+3
+3
+3
+9
+
+4
+4
+3
+11
+
+Sub-Total
+
+0
+3
+3
+0
+0
+0
+3
+9
+
+3
+0
+0
+3
+3
+3
+0
+12
+
+1
+3
+3
+1
+1
+1
+3
+13
+
+3
+3
+6
+
+3
+3
+6
+
+4
+4
+8
+
+1
+0
+3
+0
+2
+3
+0
+3
+
+0
+6
+0
+6
+0
+0
+6
+3
+
+1
+2
+3
+2
+2
+3
+2
+4
+
+2
+3
+3
+0
+3
+3
+3
+3
+0
+3
+3
+0
+3
+3
+0
+0
+3
+3
+3
+
+3
+0
+0
+3
+3
+3
+3
+0
+3
+0
+3
+3
+3
+3
+6
+6
+0
+0
+0
+
+3
+3
+3
+1
+4
+4
+4
+3
+1
+3
+4
+1
+4
+4
+2
+2
+3
+3
+3
+4
+1
+1
+80
+
+B. Natural and Physical Sciences
+General Chemistry
+Physics 1
+Modern Biology
+C. Basic Engineering Sciences
+Computer-Aided Design
+Engineering Economics
+Technopreneurship
+Introduction to Engineering
+Engineering Drawing
+Computer Programming 1
+Manufacturing and Quality Control
+D. Allied Courses
+Fundamentals of Electrical Engineering
+Electronic Circuits: Devices and Analysis
+Sub-total
+E. Professional Courses
+Computer Engineering as a Discipline
+Programming Logic and Design
+Discrete Mathematics
+Object Oriented Programming
+CpE Laws and Professional Practice
+Advanced Engineering Mathematics for CpE
+Data Structures and Algorithms
+Logic Circuits and Design
+Introduction to Networks, Data and Digital Communications
+(CISCO 1)
+Fundamentals of Mixed Signals and Sensors
+Feedback and Control Systems
+Introduction to HDL
+Software Design
+Microprocessors
+Digital Signal Processing
+Emerging Technologies in CpE
+CpE Practice and Design 1
+Operating Systems
+Computer Architecture and Organization
+Computer Engineering Drafting and Design
+Connecting Networks and Security (CISCO 4)
+Embedded Systems
+Seminars and Fieldtrips
+CpE Practice and Design 2
+Numerical Methods
+Research Methods
+Basic Occupational Health and Safety
+On-the-Job Training
+Routing and Switching (CISCO 2)
+Scaling Networks (CISCO 3)
+Sub-Total
+
+320 hrs
+0
+0
+53
+
+3
+3
+69
+
+Page 2 of 5
+
+F. Cognates/Electives
+Cognate/Track Course 1
+Cognate/Track Course 2
+Cognate/Track Course 3
+Sub-Total
+Total Technical Courses
+
+2
+2
+2
+6
+94
+
+3
+3
+3
+9
+105
+
+3
+3
+3
+9
+133
+
+Sub-total
+
+3
+3
+3
+3
+3
+3
+3
+3
+24
+
+0
+0
+0
+0
+0
+0
+0
+0
+0
+
+3
+3
+3
+3
+3
+3
+3
+3
+24
+
+Sub-total
+
+3
+3
+3
+3
+12
+
+0
+0
+0
+0
+0
+
+3
+3
+3
+3
+12
+
+Sub-total
+
+2
+2
+2
+2
+8
+
+0
+0
+0
+0
+0
+
+2
+2
+2
+2
+8
+
+Sub-total
+
+3
+3
+6
+
+0
+0
+0
+
+3
+3
+6
+
+50
+144
+
+0
+105
+
+50
+183
+
+II. Non-technical Courses
+A. General Education Courses
+Mathematics in the Modern World
+Readings in Philippine History
+Understanding the Self
+Contemporary World
+Science, Technology and Society
+Purposive Communication
+Art Appreciation
+Ethics
+B. Filipino/Literature/Rizal
+Kontekstwalisadong Komunikasyon sa Filipino
+Filipino sa Iba't Ibang Disiplina
+ASEAN Literature
+Life and Works of Rizal
+C. Physical Education
+PE 101
+PE 102
+PE 103
+PE 104
+D. NSTP
+NSTP 111
+NSTP 121
+
+Total Non-Technical Courses
+GRAND TOTAL
+SUMMARY
+Courses
+
+Number of Units
+
+I. Technical Courses
+A. Mathematics
+B. Natural/Physical Sciences
+C. Basic Engineering Sciences
+D. Allied Courses
+E. Professional Courses
+F. Cognate/Electives
+II. Non-Technical Courses
+A. General Education Courses
+B. Filipino/Literature/Mandated Courses
+C. Physical Education
+D. NSTP
+
+12
+11
+13
+8
+80
+9
+
+GRAND TOTAL
+
+24
+12
+8
+6
+183
+
+Page 3 of 5
+
+PROGRAM OF STUDY
+
+Course Code
+ENGG 401
+GEd 101
+GEd 102
+GEd 105
+GEd 106
+MATH 401
+SCI 401
+PE 101
+NSTP 111
+
+Course Code
+CpE 401
+ENGG 402
+GEd 104
+GEd 108
+GEd 109
+MATH 402
+SCI 403
+PE 102
+NSTP 121
+
+Course Code
+GEd 103
+GEd 107
+SCI 402
+
+Course Code
+CpE 403
+CpE 404
+CpE 405
+EE 423
+ENGG 403
+ENGG 404
+MATH 403
+MATH 404
+PE 103
+
+Course Code
+CpE 406
+CpE 407
+CpE 408
+CpEE 401
+ECE 421
+ENGG 411
+ENGG 414
+Fili 101
+PE 104
+
+FIRST YEAR
+First Semester
+No. of Hour/s
+Course Title
+Lec
+Lab
+Introduction to Engineering
+0
+3
+Understanding the Self
+3
+0
+Mathematics in the Modern World
+3
+0
+Readings in Philippine History
+3
+0
+Purposive Communication
+3
+0
+Differential Calculus
+3
+0
+General Chemistry
+3
+3
+Physical Fitness, Gymnastics and Aerobics
+2
+0
+National Service Training Program 1
+3
+0
+Total 23
+6
+FIRST YEAR
+Second Semester
+No. of Hour/s
+Course Title
+Lec
+Lab
+Computer Programming 1
+0
+3
+Engineering Drawing
+0
+3
+Contemporary World
+3
+0
+Art Appreciation
+3
+0
+Science, Technology and Society
+3
+0
+Integral Calculus
+3
+0
+Physics 1
+3
+3
+Rhythmic Activities
+2
+0
+National Service Training Program 2
+3
+0
+Total 20
+9
+FIRST YEAR
+Midterm
+No. of Hour/s
+Course Title
+Lec
+Lab
+Life and Works of Rizal
+3
+0
+Ethics
+3
+0
+Modern Biology
+2
+3
+Total
+8
+3
+SECOND YEAR
+First Semester
+No. of Hour/s
+Course Title
+Lec
+Lab
+Computer Engineering as a Discipline
+1
+0
+Programming Logic and Design
+0
+6
+Discrete Mathematics
+3
+0
+Fundamentals of Electrical Engineering
+3
+3
+Computer-Aided Design
+0
+3
+Engineering Economics
+3
+0
+Engineering Data Analysis
+3
+0
+Differential Equations
+3
+0
+Individual and Dual Sports
+2
+0
+Total 18
+12
+SECOND YEAR
+Second Semester
+No. of Hour/s
+Course Title
+Lec
+Lab
+Object Oriented Programming
+0
+6
+CpE Laws and Professional Practice
+2
+0
+Advanced Engineering Mathematics for CpE
+3
+0
+Cognate/Elective Course 1
+2
+3
+Electronic Circuits: Devices and Analysis
+3
+3
+Basic Occupational Health and Safety
+3
+0
+Numerical Methods
+3
+0
+3
+0
+Kontekstwalisadong Komunikasyon sa Filipino
+Team Sports
+2
+0
+Total 21
+12
+
+Unit/s
+
+Pre-requisite/s
+
+Co-requisite/s
+
+Pre-requisite/s
+
+Co-requisite/s
+
+1
+3
+3
+3
+3
+3
+4
+2
+3
+25
+
+Unit/s
+1
+1
+3
+3
+3
+3
+4
+2
+3
+23
+
+Unit/s
+
+MATH 401
+MATH 401
+PE 101
+NSTP 111
+
+MATH 402
+
+Pre-requisite/s
+
+Co-requisite/s
+
+Pre-requisite/s
+
+Co-requisite/s
+
+3
+3
+3
+9
+
+Unit/s
+1
+2
+3
+4
+1
+3
+3
+3
+2
+22
+
+MATH 401
+SCI 403
+ENGG 402
+MATH 402
+MATH 401
+MATH 402
+PE 101
+
+Unit/s
+
+Pre-requisite/s
+
+2
+2
+3
+3
+4
+3
+3
+3
+2
+25
+
+CpE 404
+2rd Year Standing
+
+Co-requisite/s
+
+2nd Year Standing
+EE 423
+MATH 404
+PE 101
+
+Page 4 of 5
+
+Course Code
+CpE 410
+CpE 411
+CpE 412
+CpE 413
+CpE 414
+CpE 415
+ENGG 416
+Fili 102
+
+Course Code
+CpE 417
+CpE 418
+CpE 419
+CpE 420
+CpE 421
+CpE 422
+CpEE 402
+
+Course Code
+CpE 423
+CpE 424
+CpE 425
+
+Course Code
+CpE 426
+CpE 427
+CpE 428
+CpE 429
+IE 425
+CpEE 403
+Litr 102
+
+Course Code
+ENGG 405
+ENGG 417
+CpE 430
+
+THIRD YEAR
+First Semester
+No. of Hour/s
+Lec
+Lab
+3
+3
+0
+6
+
+Unit/s
+
+Pre-requisite/s
+
+4
+2
+
+ECE 421
+CpE 406
+
+2
+
+3
+
+3
+
+ECE 421
+
+3
+0
+3
+0
+0
+3
+3
+0
+3
+0
+Total 17
+15
+THIRD YEAR
+Second Semester
+No. of Hour/s
+Course Title
+Lec
+Lab
+Microprocessors
+3
+3
+Software Design
+3
+3
+Routing and Switching (CISCO 2)
+0
+3
+Digital Signal Processing
+3
+3
+Emerging Technologies in CpE
+3
+0
+0
+3
+CpE Practice and Design 1
+Cognate/Elective Course 2
+2
+3
+Total 14
+18
+THIRD YEAR
+Midterm
+No. of Hour/s
+Course Title
+Lec
+Lab
+0
+3
+Scaling Networks (CISCO 3)
+Operating Systems
+3
+0
+Computer Architecture and Organization
+3
+3
+Total
+6
+6
+FOURTH YEAR
+First Semester
+No. of Hour/s
+Course Title
+Lec
+Lab
+Computer Engineering Drafting and Design
+0
+3
+3
+3
+Connecting Networks and Security (CISCO 4)
+Embedded Systems
+3
+3
+Seminars and Fieldtrips
+0
+6
+Manufacturing and Quality Control
+3
+0
+Cognate/Elective Course 3
+2
+3
+ASEAN Literature
+3
+0
+Total 14
+18
+FOURTH YEAR
+Second Semester
+No. of Hour/s
+Course Title
+Lec
+Lab
+Technopreneurship
+3
+0
+320
+On-the-Job Training
+CpE Practice and Design 2
+0
+6
+Total
+3
+6
+GRAND TOTAL UNITS
+144
+105
+
+3
+3
+1
+3
+3
+22
+
+ECE 421
+ENGG 414; EE 423
+CpE 404; ECE 421
+MATH 403
+
+Unit/s
+
+Pre-requisite/s
+
+4
+4
+1
+4
+3
+1
+3
+20
+
+CpE 410
+CpE 411
+CpE 412
+CpE 414
+3rd Year Standing
+ENGG 416
+CpEE 401
+
+Unit/s
+
+Pre-requisite/s
+
+1
+3
+4
+8
+
+CpE 419
+CpE 411
+CpE 417
+
+Unit/s
+
+Pre-requisite/s
+
+1
+4
+4
+2
+3
+3
+3
+20
+
+ECE 421
+CpE 423
+CpE 417
+4th Year Standing
+MATH 403
+CpEE 402
+
+Unit/s
+
+Pre-requisite/s
+
+3
+4
+2
+9
+183
+
+4th Year Standing
+4th Year Standing
+CpE 422
+
+Course Title
+
+Logic Circuits and Design
+Data Structures and Algorithms
+Introduction to Networks, Data and Digital
+Communications (CISCO 1)
+Fundamentals of Mixed Signals and Sensors
+Feedback and Control Systems
+Introduction to HDL
+Research Methods
+Filipino sa Iba't Ibang Disiplina
+
+Co-requisite/s
+
+CpE 410
+
+Co-requisite/s
+
+CpE 417
+
+Co-requisite/s
+
+Co-requisite/s
+
+Co-requisite/s
+
+Page 5 of 5
+
+

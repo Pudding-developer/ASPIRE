@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import ContributionActivity from './ContributionActivity';
 
-export default function ActivityHistoryModal({ isOpen, onClose, activities }) {
+export default function ActivityHistoryModal({ isOpen, onClose, activities, repos }) {
   const modalRef = useRef();
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function ActivityHistoryModal({ isOpen, onClose, activities }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-sm">
       <div 
         ref={modalRef} 
-        className="bg-[#0d1117] border border-[#30363d] w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-full"
+        className="bg-[#0d1117] border border-[#30363d] w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-full"
       >
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#30363d]">
           <h2 className="text-[18px] font-semibold text-[#c9d1d9]">Activity History</h2>
@@ -43,7 +43,7 @@ export default function ActivityHistoryModal({ isOpen, onClose, activities }) {
         
         <div className="p-6 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
           {activities && activities.length > 0 ? (
-            <ContributionActivity activities={activities} showAll={true} />
+            <ContributionActivity activities={activities} showAll={true} repos={repos} />
           ) : (
             <p className="text-center text-[#8b949e] py-10">No recent activity found.</p>
           )}

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func
 
 from app.models.class_model import Class, ClassEnrollment, Assessment, AssessmentILO, StudentScore
+from app.models.user import User
 from app.schemas.class_schema import ClassCreate
 
 
@@ -82,6 +83,29 @@ async def get_student_count(session: AsyncSession, class_id: int) -> int:
     return result.scalar()
 
 
+async def get_students_by_class(session: AsyncSession, class_id: int) -> list[dict[str, object | None]]:
+    result = await session.execute(
+        select(User, ClassEnrollment)
+        .join(ClassEnrollment, User.id == ClassEnrollment.student_id)
+        .where(ClassEnrollment.class_id == class_id)
+        .where(User.role == "student")
+        .order_by(User.full_name.asc())
+    )
+
+    students = []
+    for user, enrollment in result.all():
+        students.append({
+            "id": user.id,
+            "sr_code": user.sr_code,
+            "full_name": user.full_name,
+            "email": user.email,
+            "avatar_url": user.avatar_url,
+            "enrolled_at": enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None,
+        })
+
+    return students
+
+
 async def get_dashboard_stats(session: AsyncSession, instructor_id: int) -> dict:
     # Active classes for this instructor
     active_classes = await get_classes_by_instructor(session, instructor_id)
@@ -123,3 +147,56 @@ async def get_dashboard_stats(session: AsyncSession, instructor_id: int) -> dict
         "active_courses": active_count,
         "avg_performance": avg_performance,
     }
+
+
+async def get_assessments_by_class(session: AsyncSession, class_id: int) -> list[Assessment]:
+    result = await session.execute(
+        select(Assessment)
+        .where(Assessment.class_id == class_id)
+        .order_by(Assessment.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def get_assessment_by_id(session: AsyncSession, assessment_id: int) -> Assessment | None:
+    result = await session.execute(
+        select(Assessment).where(Assessment.id == assessment_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_assessment_ilos(session: AsyncSession, assessment_id: int) -> list[AssessmentILO]:
+    result = await session.execute(
+        select(AssessmentILO).where(AssessmentILO.assessment_id == assessment_id)
+    )
+    return list(result.scalars().all())
+
+
+async def get_student_scores(session: AsyncSession, assessment_id: int) -> list[StudentScore]:
+    result = await session.execute(
+        select(StudentScore).where(StudentScore.assessment_id == assessment_id)
+    )
+    return list(result.scalars().all())
+
+
+async def delete_assessment(session: AsyncSession, assessment_id: int) -> None:
+    from sqlalchemy import delete
+    await session.execute(delete(StudentScore).where(StudentScore.assessment_id == assessment_id))
+    await session.execute(delete(AssessmentILO).where(AssessmentILO.assessment_id == assessment_id))
+    await session.execute(delete(Assessment).where(Assessment.id == assessment_id))
+    await session.commit()
+
+
+async def get_enrolled_subjects(
+    db: AsyncSession,
+    student_id: int
+) -> list[str]:
+    """Returns list of subject_name strings for all classes
+    the student is enrolled in."""
+    result = await db.execute(
+        select(Class.subject_name)
+        .join(ClassEnrollment, ClassEnrollment.class_id == Class.id)
+        .where(ClassEnrollment.student_id == student_id)
+    )
+    return list(result.scalars().all())
+

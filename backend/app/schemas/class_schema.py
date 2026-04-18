@@ -40,3 +40,21 @@ class AssessmentCreate(BaseModel):
 class ScoreSubmit(BaseModel):
     assessment_id: int
     scores: list[dict]  # [{"student_id": 1, "ilo_id": 1, "score": 18.0}, ...]
+
+
+class AssessmentBatchSubmit(BaseModel):
+    name: str # e.g. "Midterm Exam"
+    type: str # e.g. "Summative"
+    ilos: dict[int, float] # { 1: 50.0, 2: 50.0, ... } mapping ILO number to max score
+    scores: dict[int, dict[int, float]] # { 1: { 1: 45.0, 2: 40.0 }, ... } mapping student ID to ILO scores
+
+class AssessmentSummary(BaseModel):
+    id: int
+    name: str
+    type: str
+    created_at: datetime
+
+
+class AssessmentBatchDetail(AssessmentBatchSubmit):
+    id: int
+    created_at: datetime

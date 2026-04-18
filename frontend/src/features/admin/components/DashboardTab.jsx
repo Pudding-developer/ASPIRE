@@ -1,11 +1,29 @@
 import StatCard from './StatCard';
 
 export default function DashboardTab({ stats }) {
+  const totalTokens = stats
+    ? (stats.total_tokens_generated ?? 0)
+    : 0;
+  const usedRate = totalTokens > 0
+    ? Math.round(((stats.total_tokens_used ?? 0) / totalTokens) * 100)
+    : 0;
+
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">Overview</h1>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-white">Overview</h1>
+          <p className="mt-1 text-sm text-gray-400">Monitor platform activity, instructor access, and invite token health.</p>
+        </div>
+        {stats && (
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur-sm">
+            <span className="text-[11px] uppercase tracking-wide text-gray-500">Token usage</span>
+            <span className="text-sm font-semibold text-white">{usedRate}%</span>
+          </div>
+        )}
+      </div>
       {stats ? (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <StatCard label="Total Students" value={stats.total_students} />
           <StatCard label="Total Instructors" value={stats.total_instructors} color="#f59e0b" />
           <StatCard label="Tokens Generated" value={stats.total_tokens_generated} color="#8b5cf6" />
@@ -14,7 +32,11 @@ export default function DashboardTab({ stats }) {
           <StatCard label="Tokens Expired" value={stats.total_tokens_expired} color="#6b7280" />
         </div>
       ) : (
-        <div className="text-gray-500 animate-pulse">Loading stats...</div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="h-28 animate-pulse rounded-2xl border border-white/10 bg-black/20" />
+          ))}
+        </div>
       )}
     </div>
   );

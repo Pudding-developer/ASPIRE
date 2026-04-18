@@ -57,7 +57,7 @@
     "year": "1",
     "semester": "2",
     "code": "CpE 401",
-    "title": "Computer Programming"
+    "title": "Computer Programming 1"
   },
   {
     "year": "1",
@@ -93,7 +93,7 @@
     "year": "1",
     "semester": "2",
     "code": "SCI 403",
-    "title": "Physics"
+    "title": "Physics 1"
   },
   {
     "year": "1",
@@ -201,7 +201,7 @@
     "year": "2",
     "semester": "2",
     "code": "CpEE 401",
-    "title": "Cognate/Elective Course"
+    "title": "Cognate/Elective Course 1"
   },
   {
     "year": "2",
@@ -309,13 +309,13 @@
     "year": "3",
     "semester": "2",
     "code": "CpE 422",
-    "title": "CpE Practice and Design"
+    "title": "CpE Practice and Design 1"
   },
   {
     "year": "3",
     "semester": "2",
     "code": "CpEE 402",
-    "title": "Cognate/Elective Course"
+    "title": "Cognate/Elective Course 2"
   },
   {
     "year": "3",
@@ -362,14 +362,14 @@
   {
     "year": "4",
     "semester": "1",
-    "code": "IE 425",
+    "code": "IE 424",
     "title": "Manufacturing and Quality Control"
   },
   {
     "year": "4",
     "semester": "1",
     "code": "CpEE 403",
-    "title": "Cognate/Elective Course"
+    "title": "Cognate/Elective Course 3 (Data Mining / AI Track)"
   },
   {
     "year": "4",
@@ -393,6 +393,6 @@
     "year": "4",
     "semester": "2",
     "code": "CpE 430",
-    "title": "CpE Practice and Design"
+    "title": "CpE Practice and Design 2"
   }
 ]

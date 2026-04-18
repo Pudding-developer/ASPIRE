@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import PageLoadingSkeleton from './components/ui/PageLoadingSkeleton';
+import RouteTransitionLoader from './components/ui/RouteTransitionLoader';
 import './App.css';
 
 // Lazy load page components to enable code splitting and Suspense loading states
@@ -15,6 +16,7 @@ function App() {
   return (
     <Router>
       <div style={{ backgroundColor: '#0a0101', minHeight: '100vh' }}>
+        <RouteTransitionLoader />
         <Suspense fallback={<PageLoadingSkeleton />}>
           <Routes>
             {/* Landing page */}

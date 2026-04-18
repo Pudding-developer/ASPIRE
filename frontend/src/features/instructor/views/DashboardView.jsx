@@ -1,10 +1,51 @@
+import { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { Plus } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import useAuth from '../../auth/hooks/useAuth';
 
-export default function DashboardView({ onCreateClass, stats, loading }) {
+function yearLabel(value) {
+  if (value === 'all') return 'All Class Years';
+  return `${value}${value === 1 ? 'st' : value === 2 ? 'nd' : value === 3 ? 'rd' : 'th'} Year`;
+}
+
+function semesterLabel(value) {
+  if (value === 'all') return 'All Semesters';
+  return value === 1 ? 'First Semester' : 'Second Semester';
+}
+
+export default function DashboardView({ onCreateClass, stats, loading, classes = [] }) {
   const { user } = useAuth();
+  const [selectedYear, setSelectedYear] = useState('all');
+  const [selectedSemester, setSelectedSemester] = useState('all');
+
+  const availableYears = useMemo(() => {
+    const years = Array.from(new Set(classes.map(c => c.year_level).filter(Boolean)));
+    return years.sort((a, b) => a - b);
+  }, [classes]);
+
+  const availableSemesters = useMemo(() => {
+    const semesters = Array.from(new Set(classes.map(c => c.semester).filter(Boolean)));
+    return semesters.sort((a, b) => a - b);
+  }, [classes]);
+
+  const filteredClasses = useMemo(() => {
+    return classes.filter((cls) => {
+      const yearOk = selectedYear === 'all' || cls.year_level === Number(selectedYear);
+      const semOk = selectedSemester === 'all' || cls.semester === Number(selectedSemester);
+      return yearOk && semOk;
+    });
+  }, [classes, selectedYear, selectedSemester]);
+
+  const filteredStats = useMemo(() => {
+    const totalStudents = filteredClasses.reduce((sum, cls) => sum + (cls.student_count || 0), 0);
+    return {
+      total_students: totalStudents,
+      active_courses: filteredClasses.length,
+      school_year: stats?.school_year ?? '—',
+      avg_performance: stats?.avg_performance ?? null,
+    };
+  }, [filteredClasses, stats]);
 
   return (
     <div className="p-8">
@@ -25,28 +66,36 @@ export default function DashboardView({ onCreateClass, stats, loading }) {
 
       {/* Filters Row */}
       <div className="grid md:grid-cols-2 gap-4 mb-8">
-        <select className="bg-white border border-gray-300 text-gray-900 rounded-lg p-3 outline-none focus:border-[#bc1313] focus:ring-1 focus:ring-[#bc1313]">
-          <option>All Class Years</option>
-          <option>1st Year</option>
-          <option>2nd Year</option>
-          <option>3rd Year</option>
-          <option>4th Year</option>
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+          className="bg-white border border-gray-300 text-gray-900 rounded-lg p-3 outline-none focus:border-[#bc1313] focus:ring-1 focus:ring-[#bc1313]"
+        >
+          <option value="all">All Class Years</option>
+          {availableYears.map((year) => (
+            <option key={year} value={year}>{yearLabel(year)}</option>
+          ))}
         </select>
-        <select className="bg-white border border-gray-300 text-gray-900 rounded-lg p-3 outline-none focus:border-[#bc1313] focus:ring-1 focus:ring-[#bc1313]">
-          <option>All Semesters</option>
-          <option>First Semester</option>
-          <option>Second Semester</option>
-          <option>Midterm</option>
+
+        <select
+          value={selectedSemester}
+          onChange={(e) => setSelectedSemester(e.target.value)}
+          className="bg-white border border-gray-300 text-gray-900 rounded-lg p-3 outline-none focus:border-[#bc1313] focus:ring-1 focus:ring-[#bc1313]"
+        >
+          <option value="all">All Semesters</option>
+          {availableSemesters.map((semester) => (
+            <option key={semester} value={semester}>{semesterLabel(semester)}</option>
+          ))}
         </select>
       </div>
 
       {/* Stats Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { label: 'Total Students', value: loading ? '—' : stats?.total_students ?? '0' },
-          { label: 'Active Courses', value: loading ? '—' : stats?.active_courses ?? '0' },
-          { label: 'School Year', value: loading ? '—' : stats?.school_year ?? '—' },
-          { label: 'Avg Performance', value: loading ? '—' : stats?.avg_performance ? `${stats.avg_performance.toFixed(1)}%` : 'N/A' },
+          { label: 'Total Students', value: loading ? '—' : filteredStats.total_students ?? '0' },
+          { label: 'Active Courses', value: loading ? '—' : filteredStats.active_courses ?? '0' },
+          { label: 'School Year', value: loading ? '—' : filteredStats.school_year ?? '—' },
+          { label: 'Avg Performance', value: loading ? '—' : filteredStats.avg_performance ? `${filteredStats.avg_performance.toFixed(1)}%` : 'N/A' },
         ].map((stat, idx) => (
           <motion.div 
             key={idx}

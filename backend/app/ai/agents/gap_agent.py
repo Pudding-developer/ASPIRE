@@ -7,14 +7,15 @@ and finds concrete GitHub learning resources for each gap.
 from crewai import Agent, LLM
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY
+from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
+from app.ai.tools.github_search_tool import GitHubSearchTool
 
 
 def _get_llm() -> LLM:
     return LLM(
-        model="gemini/gemini-2.5-flash",
+        model=GEMINI_MODEL,
         api_key=GEMINI_API_KEY,
-        max_retries=3,
+        max_retries=5,
         timeout=120
     )
 
@@ -48,7 +49,7 @@ def create_gap_analysis_task(agent: Agent, career_task) -> Task:
             "For each gap skill in gap_skills of the recommended career:\n"
             "1. Use rag_career_knowledge with query='[skill] learning resources curriculum' "
             "   to find any relevant knowledge base content\n"
-            "2. Use github_search with skill_query='[skill] beginner tutorial' "
+            "2. Use github_search with skill_name='[skill]' "
             "   to find the top 2 most-starred learning repositories\n"
             "3. Assign a priority: 'high' if the skill appears in > 50% of job postings "
             "   for that career, 'medium' otherwise — use your domain knowledge\n"
@@ -61,7 +62,7 @@ def create_gap_analysis_task(agent: Agent, career_task) -> Task:
             '      "skill": "Docker",\n'
             '      "priority": "high",\n'
             '      "reason": "Required for 90% of backend developer job postings",\n'
-            '      "learning_resources": [\n'
+            '      "resources": [\n'
             "        {\n"
             '          "type": "github_repo",\n'
             '          "title": "docker/getting-started",\n'
@@ -79,8 +80,9 @@ def create_gap_analysis_task(agent: Agent, career_task) -> Task:
         ),
         expected_output=(
             "A JSON object with keys: gap_analysis (list), total_gaps (int), "
-            "estimated_total_weeks (int). Each gap item must include learning_resources "
-            "with at least one github_repo entry. Return ONLY the JSON."
+            "estimated_total_weeks (int). Each gap item must include a 'resources' "
+            "list with at least one real GitHub repository URL found via GitHubSearchTool. "
+            "Return ONLY the JSON."
         ),
         agent=agent,
         context=[career_task],

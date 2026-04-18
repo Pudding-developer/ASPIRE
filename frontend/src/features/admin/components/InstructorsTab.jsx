@@ -5,8 +5,8 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
   const [confirm, setConfirm] = useState(null); // { id, full_name }
   const [toast, setToast]     = useState(null); // { message, type: 'success' | 'error' }
 
-  const thClass = 'text-left text-xs text-gray-500 font-medium uppercase tracking-wider py-3 px-4';
-  const tdClass = 'py-3 px-4 text-sm text-gray-300';
+  const thClass = 'text-left text-[11px] text-gray-500 font-medium uppercase tracking-wider py-3 px-4';
+  const tdClass = 'py-3.5 px-4 text-sm text-gray-300';
 
   // Auto-dismiss toast after 3.5 s
   useEffect(() => {
@@ -31,10 +31,14 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold mb-6">Instructors</h1>
-        <div className="bg-[#2a1a0e] border border-white/10 rounded-xl overflow-hidden">
-          <table className="w-full">
-            <thead className="border-b border-white/10">
+        <div className="mb-6">
+          <h1 className="text-3xl font-semibold tracking-tight text-white">Instructors</h1>
+          <p className="mt-1 text-sm text-gray-400">Manage activation, deactivation, and access role assignments.</p>
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0.2)_100%)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02),0_10px_32px_rgba(0,0,0,0.25)] backdrop-blur-sm">
+          <div className="max-h-[70vh] overflow-auto">
+            <table className="w-full min-w-230">
+              <thead className="sticky top-0 z-10 border-b border-white/10 bg-[#1b0a06]/95 backdrop-blur-md">
               <tr>
                 <th className={thClass}>Instructor</th>
                 <th className={thClass}>Email</th>
@@ -42,10 +46,10 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
                 <th className={thClass}>Registered</th>
                 <th className={thClass}>Actions</th>
               </tr>
-            </thead>
-            <tbody>
+              </thead>
+              <tbody>
               {instructors.map(i => (
-                <tr key={i.id} className="border-b border-white/5 hover:bg-white/3">
+                <tr key={i.id} className="border-b border-white/5 hover:bg-black/20 transition-colors">
                   <td className={tdClass}>
                     <div className="flex items-center gap-2.5">
                       {i.avatar_url
@@ -64,7 +68,7 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
                       {!i.is_active && (
                         <button
                           onClick={() => toggleInstructor(i.id, true)}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-colors"
+                          className="text-xs px-3 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
                         >
                           Activate
                         </button>
@@ -73,7 +77,7 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
                       {i.is_active && (
                         <button
                           onClick={() => toggleInstructor(i.id, false)}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors"
+                          className="text-xs px-3 py-1.5 rounded-lg border border-amber-500/30 text-amber-300 bg-amber-500/5 hover:bg-amber-500/10 transition-colors"
                         >
                           Deactivate
                         </button>
@@ -81,7 +85,7 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
                       {/* Remove Role — always visible */}
                       <button
                         onClick={() => setConfirm({ id: i.id, full_name: i.full_name })}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-lg border border-red-500/30 text-red-300 bg-red-500/5 hover:bg-red-500/10 transition-colors"
                       >
                         Remove Role
                       </button>
@@ -92,15 +96,16 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
               {instructors.length === 0 && (
                 <tr><td colSpan={5} className="py-8 text-center text-gray-600 text-sm">No instructors yet.</td></tr>
               )}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       {/* ── Confirmation modal ── */}
       {confirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#1a0a00] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+          <div className="bg-[linear-gradient(180deg,#1a0a00_0%,#120600_100%)] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <h2 className="text-lg font-semibold text-white mb-2">Remove Instructor Role</h2>
             <p className="text-gray-400 text-sm mb-6">
               Are you sure you want to remove instructor access for{' '}
@@ -127,7 +132,7 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
 
       {/* ── Toast notification ── */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-xl text-sm font-medium shadow-xl border backdrop-blur-sm ${
+        <div className={`fixed bottom-6 right-6 z-100 px-4 py-3 rounded-xl text-sm font-medium shadow-xl border backdrop-blur-sm ${
           toast.type === 'error'
             ? 'bg-red-950/90 border-red-500/30 text-red-300'
             : 'bg-green-950/90 border-green-500/30 text-green-300'

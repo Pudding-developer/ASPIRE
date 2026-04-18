@@ -25,31 +25,27 @@ from app.ai.agents.skill_agent import create_skill_synthesizer, create_skill_syn
 from app.ai.agents.career_agent import create_career_mapper, create_career_mapping_task
 from app.ai.agents.gap_agent import create_gap_analyst, create_gap_analysis_task
 from app.ai.agents.report_agent import create_report_generator, create_report_generation_task
-from app.ai.agents.progress_agent import create_progress_tracker, create_progress_tracking_task
+from app.ai.agents.progress_tracker_agent import create_progress_tracker, create_progress_tracking_task
 
 
 def _run_with_retry(crew: Crew, inputs: dict):
-    """Executes crew kickoff with exponential backoff for Google API rate limits."""
-    @retry(
-        retry=retry_if_exception_type((
-            genai_errors.ClientError,  # catches 429 rate limit
-            Exception                   # fallback
-        )),
-        wait=wait_exponential(multiplier=2, min=10, max=60),
-        stop=stop_after_attempt(5),
-        reraise=True
-    )
-    def _execute():
-        return crew.kickoff(inputs=inputs)
-
-    return _execute()
+    """
+    Executes crew kickoff.
+    Note: Rate limit retries are handled natively by liteLLM (max_retries=5) per individual API call.
+    Restarting the entire CrewAI pipeline on a rate limit exception exhausts quota faster.
+    """
+    return crew.kickoff(inputs=inputs)
 
 
-def run_pipeline(student_data: dict) -> dict:
+def build_and_run_crew(
+    student_data: dict, 
+    previous_report: str = None,
+    subject_skill_context: str = "No subjects enrolled yet."
+) -> dict:
     """
     Synchronous entry point — called via asyncio.to_thread() from pipeline_service.
 
-    Builds the 6-agent crew, runs it sequentially, and returns the parsed
+    Builds the 7-agent crew, runs it sequentially, and returns the parsed
     CareerReport dict that matches the schema expected by the frontend.
     """
     # ── Instantiate shared tools ──────────────────────────────────────────────
@@ -84,6 +80,12 @@ def run_pipeline(student_data: dict) -> dict:
     )
     progress_task = create_progress_tracking_task(progress_tracker, report_task)
 
+    # ── Inject deterministic subject mappings into Agent 2 ───────────────
+    academic_task.description = academic_task.description.replace(
+        "{subject_skill_context}",
+        subject_skill_context
+    )
+
     # ── Assemble crew ─────────────────────────────────────────────────────────
     crew = Crew(
         agents=[
@@ -106,53 +108,74 @@ def run_pipeline(student_data: dict) -> dict:
         ],
         process=Process.sequential,
         verbose=True,
-        max_rpm=4,
+        max_rpm=3,
     )
 
-    result = _run_with_retry(crew, inputs={
-        "student_name": student_data.get("full_name", "Unknown"),
-        "sr_code":      student_data.get("sr_code", "N/A"),
-    })
+    try:
+        result = _run_with_retry(crew, inputs={
+            "student_name": student_data.get("full_name", "Unknown"),
+            "sr_code":      student_data.get("sr_code", "N/A"),
+            "previous_report_json": previous_report or "null",
+            "subject_skill_context": subject_skill_context,
+        })
+    except Exception as e:
+        import traceback
+        print(f"\n{'='*60}")
+        print(f"CREW PIPELINE FAILED: {e}")
+        traceback.print_exc()
+        print(f"{'='*60}\n")
+        # If crew fails produce minimal fallback report
+        fallback = _parse_combined_output("{}", "{}")
+        fallback["error"] = str(e)
+        fallback["note"] = "Pipeline partially completed. Some data may be missing."
+        return fallback
 
-    raw_output = result.raw if hasattr(result, "raw") else str(result)
-    return _parse_crew_output(raw_output)
+    # Extract raw outputs from the result object
+    # result.tasks_output is a list of TaskOutput objects
+    # Index 5 = report_task, Index 6 = progress_task
+    report_raw = ""
+    progress_raw = ""
+    
+    if hasattr(result, 'tasks_output') and len(result.tasks_output) >= 7:
+        report_raw = result.tasks_output[5].raw
+        progress_raw = result.tasks_output[6].raw
+    else:
+        # Fallback if task structure changed
+        progress_raw = result.raw if hasattr(result, "raw") else str(result)
+
+    return _parse_combined_output(report_raw, progress_raw)
 
 
-def _parse_crew_output(raw: str) -> dict:
+def _parse_combined_output(report_raw: str, progress_raw: str) -> dict:
     """
-    Best-effort parse of the crew's final raw output into the CareerReport dict.
-
-    The LLM may wrap JSON in markdown code fences — strip them before parsing.
-    Falls back to returning the raw string as the summary so the pipeline never
-    raises an exception and always writes something to CareerReport.
+    Parses and merges outputs from the Report Generator and Progress Tracker.
     """
+    report_dict = _parse_json_snippet(report_raw)
+    progress_dict = _parse_json_snippet(progress_raw)
+
+    return {
+        "career_matches":  report_dict.get("career_matches", []),
+        "recommendations": report_dict.get("recommendations", []),
+        "summary":         report_dict.get("summary", ""),
+        "skill_profile":   report_dict.get("skill_profile", {}),
+        "gap_analysis":    report_dict.get("gap_analysis", []),
+        "market_data":     report_dict.get("market_data", {}),
+        "progress":        progress_dict if progress_dict else _default_progression(),
+    }
+
+
+def _parse_json_snippet(raw: str) -> dict:
+    """Helper to extract JSON from markdown fences."""
     cleaned = raw.strip()
     if "```json" in cleaned:
         cleaned = cleaned.split("```json", 1)[1].split("```", 1)[0]
     elif "```" in cleaned:
         cleaned = cleaned.split("```", 1)[1].split("```", 1)[0]
-
+    
     try:
-        parsed = json.loads(cleaned.strip())
-        return {
-            "career_matches": parsed.get("career_matches", []),
-            "recommendations": parsed.get("recommendations", []),
-            "summary":         parsed.get("summary", ""),
-            "skill_profile":   parsed.get("skill_profile", {}),
-            "gap_analysis":    parsed.get("gap_analysis", []),
-            "market_data":     parsed.get("market_data", {}),
-            "progression":     parsed.get("progression", _default_progression()),
-        }
-    except (json.JSONDecodeError, AttributeError):
-        return {
-            "career_matches": [],
-            "recommendations": [],
-            "summary":         raw,
-            "skill_profile":   {},
-            "gap_analysis":    [],
-            "market_data":     {},
-            "progression":     _default_progression(),
-        }
+        return json.loads(cleaned.strip())
+    except Exception:
+        return {}
 
 
 def _default_progression() -> dict:

@@ -47,3 +47,22 @@ async def get_latest_completed_report(
         .limit(1)
     )
     return result.scalar_one_or_none()
+
+
+async def get_latest_report(
+    db: AsyncSession,
+    student_id: int,
+) -> CareerReport | None:
+    """
+    Return the most recent completed CareerReport for a student.
+    Used by roadmap_service to overlay skill data onto career nodes.
+    Alias of get_latest_completed_report, kept under this name per the spec.
+    """
+    result = await db.execute(
+        select(CareerReport)
+        .where(CareerReport.student_id == student_id)
+        .where(CareerReport.report_json != "{}")
+        .order_by(CareerReport.created_at.desc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()

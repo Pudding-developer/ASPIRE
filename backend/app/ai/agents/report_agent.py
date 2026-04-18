@@ -7,14 +7,14 @@ that matches the schema the frontend already expects.
 from crewai import Agent, LLM
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY
+from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
 
 
 def _get_llm() -> LLM:
     return LLM(
-        model="gemini/gemini-2.5-flash",
+        model=GEMINI_MODEL,
         api_key=GEMINI_API_KEY,
-        max_retries=3,
+        max_retries=5,
         timeout=120
     )
 

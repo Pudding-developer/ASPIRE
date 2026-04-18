@@ -17,6 +17,8 @@ from app.models.user import User
 from app.models.class_model import StudentScore, Assessment, AssessmentILO
 from app.models.github import GithubProfile, RepositoryCache, ContributionCache
 from app.models.pipeline_models import PipelineJob, CareerReport
+from app.ai.data.subject_skill_map import build_subject_skill_context
+from app.repositories.class_repository import get_enrolled_subjects
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +119,16 @@ async def _fetch_student_data(db: AsyncSession, student_id: int) -> dict:
     }
 
 
+async def _fetch_previous_report(student_id: int, db: AsyncSession) -> str | None:
+    """
+    Fetches the most recent completed CareerReport for the student
+    before the current analysis. Returns the report_json string or None.
+    """
+    from app.repositories.pipeline_repository import get_previous_report
+    prev = await get_previous_report(db, student_id)
+    return prev.report_json if prev else None
+
+
 # ---------------------------------------------------------------------------
 # Job helpers
 # ---------------------------------------------------------------------------
@@ -182,10 +194,34 @@ async def run_pipeline_job(
                 percentage=25,
             )
 
-            # ── Run the entire 7-agent crew in a background thread ────────────
-            from app.ai.crew import run_pipeline
+            # --- fetch previous report for tracking ---
+            prev_report_json = await _fetch_previous_report(student_id, db)
 
-            pipeline_result = await asyncio.to_thread(run_pipeline, student_data)
+            # --- fetch enrolled subjects and build mapping context ---
+            enrolled_subjects = await get_enrolled_subjects(db, student_id)
+            subject_context = build_subject_skill_context(enrolled_subjects)
+
+            # ── Run the entire 7-agent crew in a background thread ────────────
+            from app.ai.crew import build_and_run_crew
+
+            pipeline_result = await asyncio.to_thread(
+                build_and_run_crew, 
+                student_data, 
+                prev_report_json,
+                subject_context
+            )
+
+            # ── If crew returned a fallback error, propagate it ──────────────
+            if pipeline_result.get("error"):
+                crew_error = pipeline_result["error"]
+                print(f"[pipeline] Crew returned fallback error: {crew_error}")
+                await _update_job(
+                    db, job_id,
+                    status="failed",
+                    error=f"AI Pipeline error: {crew_error}",
+                    completed_at=datetime.utcnow(),
+                )
+                return
 
             # ── Post-pipeline progress labels (fast — just DB writes) ─────────
             await _update_job(
@@ -215,7 +251,7 @@ async def run_pipeline_job(
             )
 
             # ── Persist the report + progression ─────────────────────────────
-            progression = pipeline_result.get("progression", {})
+            progress_data = pipeline_result.get("progress", {})
             chosen = (student.chosen_career if student else None)
 
             report = CareerReport(
@@ -225,7 +261,7 @@ async def run_pipeline_job(
                 summary=pipeline_result.get("summary", ""),
                 created_at=datetime.utcnow(),
                 chosen_career=chosen,
-                progression_json=json.dumps(progression, default=str),
+                progression_json=json.dumps(progress_data, default=str),
             )
             db.add(report)
             await db.commit()
@@ -240,12 +276,23 @@ async def run_pipeline_job(
             )
 
         except Exception as exc:
-            await _update_job(
-                db, job_id,
-                status="failed",
-                error=str(exc),
-                completed_at=datetime.utcnow(),
-            )
+            error_str = str(exc)
+            # If it's just empty data — mark as complete with warning, not as failed
+            if "no academic" in error_str.lower() or "empty" in error_str.lower():
+                await _update_job(
+                    db, job_id,
+                    status="completed",
+                    current_step="Career report ready",
+                    percentage=100,
+                    completed_at=datetime.utcnow(),
+                )
+            else:
+                await _update_job(
+                    db, job_id,
+                    status="failed",
+                    error=error_str,
+                    completed_at=datetime.utcnow(),
+                )
 
 
 

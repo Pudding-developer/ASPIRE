@@ -291,6 +291,20 @@ def ilo_weighted_avg(ilo1: float, ilo2: float, ilo3: float, ilo4: float) -> floa
     return float(ILO_WEIGHTS @ np.array([ilo1, ilo2, ilo3, ilo4], dtype=float))
 
 
+def ilo_weighted_avg_for_course(
+    course: str, ilo1: float, ilo2: float, ilo3: float, ilo4: float
+) -> float:
+    """
+    Weighted ILO average using only the ILOs the course actually has.
+    Weights are renormalized so a full-mastery 3-ILO course returns 100, not 80.
+    """
+    n = get_course_ilo_count(course)
+    weights = ILO_WEIGHTS[:n]
+    weights = weights / weights.sum()
+    values  = np.array([ilo1, ilo2, ilo3, ilo4], dtype=float)[:n]
+    return float(weights @ values)
+
+
 # ── Course code lookup ────────────────────────────────────────────────────────
 COURSE_CODE: Dict[str, str] = {
     "Introduction to Engineering":              "ENGG 401",
@@ -358,6 +372,86 @@ COURSE_CODE: Dict[str, str] = {
 
 def get_course_code(course: str) -> str:
     return COURSE_CODE.get(course, "")
+
+
+# ── ILO count per course (from courses_note.md) ───────────────────────────────
+# Most courses have 3 ILOs; some STEM/technical ones have 4; Contemporary World has 2.
+COURSE_ILO_COUNT: Dict[str, int] = {
+    # Year 1, Sem 1
+    "Differential Calculus": 4,
+    "General Chemistry": 4,
+    "Introduction to Engineering": 3,
+    "Mathematics in the Modern World": 3,
+    "Purposive Communication": 3,
+    "Readings in Philippine History": 3,
+    "Understanding the Self": 3,
+    # Year 1, Sem 2
+    "Art Appreciation": 3,
+    "Computer Programming 1": 4,
+    "Contemporary World": 2,
+    "Engineering Drawing": 3,
+    "Integral Calculus": 3,
+    "Physics 1": 3,
+    "Science, Technology and Society": 3,
+    # Year 1, Sem 3
+    "Ethics": 3,
+    "Life and Works of Rizal": 3,
+    "Modern Biology": 3,
+    # Year 2, Sem 1
+    "Computer Engineering as a Discipline": 3,
+    "Computer-Aided Design": 3,
+    "Differential Equations": 3,
+    "Discrete Mathematics": 4,
+    "Engineering Data Analysis": 3,
+    "Engineering Economics": 4,
+    "Fundamentals of Electrical Engineering": 3,
+    "Programming Logic and Design": 4,
+    # Year 2, Sem 2
+    "Advanced Engineering Mathematics for CpE": 4,
+    "Basic Occupational Health and Safety": 4,
+    "Cognate/Elective Course 1": 4,
+    "Electronic Circuits: Devices and Analysis": 3,
+    "Kontekstwalisadong Komunikasyon sa Filipino": 3,
+    "Numerical Methods": 4,
+    "Object Oriented Programming": 4,
+    # Year 3, Sem 1
+    "Data Structures and Algorithms": 3,
+    "Introduction to Networks, Data and Digital Communications (CISCO 1)": 3,
+    "Feedback and Control Systems": 3,
+    "Filipino sa Iba't Ibang Disiplina": 3,
+    "Fundamentals of Mixed Signals and Sensors": 3,
+    "Introduction to HDL": 3,
+    "Logic Circuits and Design": 3,
+    "Research Methods": 3,
+    # Year 3, Sem 2
+    "Cognate/Elective Course 2": 4,
+    "CpE Practice and Design 1": 4,
+    "Digital Signal Processing": 4,
+    "Emerging Technologies in CpE": 4,
+    "Microprocessors": 4,
+    "Routing and Switching (CISCO 2)": 4,
+    "Software Design": 4,
+    # Year 3, Sem 3
+    "Computer Architecture and Organization": 3,
+    "Operating Systems": 3,
+    "Scaling Networks (CISCO 3)": 3,
+    # Year 4, Sem 1
+    "ASEAN Literature": 3,
+    "Cognate/Elective Course 3 (Data Mining / AI Track)": 3,
+    "Computer Engineering Drafting and Design": 3,
+    "Connecting Networks and Security (CISCO 4)": 4,
+    "Embedded Systems": 3,
+    "Manufacturing and Quality Control": 3,
+    "Seminars and Fieldtrips": 3,
+    # Year 4, Sem 2
+    "CpE Practice and Design 2": 4,
+    "On-the-Job Training": 3,
+    "Technopreneurship": 3,
+}
+
+
+def get_course_ilo_count(course: str) -> int:
+    return COURSE_ILO_COUNT.get(course, 4)
 
 
 def map_avg_to_outcome(avg: float) -> str:

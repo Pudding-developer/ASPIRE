@@ -11,6 +11,7 @@ import pandas as pd
 
 from .config import (
     ilo_weighted_avg,
+    ilo_weighted_avg_for_course,
     map_avg_to_outcome,
 )
 
@@ -62,7 +63,9 @@ class SkillsPredictor:
                 ilo3: float, ilo4: float, semester: int = 4) -> PredictionResult:
 
         skills = self._predict_skills(course, ilo1, ilo2, ilo3, ilo4, semester)
-        avg    = ilo_weighted_avg(ilo1, ilo2, ilo3, ilo4)
+        # User-facing average: renormalized to the course's actual ILO count
+        # (a 3-ILO course at full mastery should be 100, not 80).
+        avg    = ilo_weighted_avg_for_course(course, ilo1, ilo2, ilo3, ilo4)
 
         # Trend scenarios: keep proportional structure, shift ILO level
         def _scale(target_avg: float) -> Dict[str, float]:

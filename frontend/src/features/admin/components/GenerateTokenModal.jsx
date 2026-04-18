@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { KeyRound, Mail, Clock3, Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { API_BASE, authHeaders } from '../utils';
 
 export default function GenerateTokenModal({ token: jwt, onClose, onGenerated }) {
@@ -46,8 +47,16 @@ export default function GenerateTokenModal({ token: jwt, onClose, onGenerated })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-[#1a0a00] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <h2 className="text-lg font-semibold text-white mb-4">Generate Invite Token</h2>
+      <div className="bg-[linear-gradient(180deg,#1a0a00_0%,#120600_100%)] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#bc1313]/35 bg-[#bc1313]/15 text-[#ffb2b2]">
+            <KeyRound size={18} />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-white">Generate Invite Token</h2>
+            <p className="text-xs text-gray-400">Create secure onboarding links for instructors</p>
+          </div>
+        </div>
 
         {errorMsg && (
           <div className="mb-4 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
@@ -58,18 +67,22 @@ export default function GenerateTokenModal({ token: jwt, onClose, onGenerated })
         {!result ? (
           <>
             <div className="mb-4">
-              <label className="text-sm text-gray-400 mb-1.5 block">Assigned Email (optional)</label>
+              <label className="text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <Mail size={14} /> Assigned Email (optional)
+              </label>
               <input
-                className="w-full bg-[#110600] border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-[#cc0000] text-sm"
+                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-[#cc0000] text-sm"
                 placeholder="instructor@g.batstate-u.edu.ph"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
             </div>
             <div className="mb-6">
-              <label className="text-sm text-gray-400 mb-1.5 block">Expires In</label>
+              <label className="text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <Clock3 size={14} /> Expires In
+              </label>
               <select
-                className="w-full bg-[#110600] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#cc0000] text-sm"
+                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#cc0000] text-sm"
                 value={hours}
                 onChange={e => setHours(Number(e.target.value))}
               >
@@ -91,16 +104,16 @@ export default function GenerateTokenModal({ token: jwt, onClose, onGenerated })
             {result.assigned_email ? (
               result.email_sent ? (
                 <p className="text-green-400 text-sm mb-3 bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2">
-                  ✅ Invite successfully sent to instructor's email.
+                  <span className="inline-flex items-center gap-1.5"><CheckCircle2 size={14} /> Invite successfully sent to instructor's email.</span>
                 </p>
               ) : (
                 <p className="text-yellow-400 text-sm mb-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2">
-                  ⚠️ Failed to send email. Copy the link below manually.
+                  <span className="inline-flex items-center gap-1.5"><AlertTriangle size={14} /> Failed to send email. Copy the link below manually.</span>
                 </p>
               )
             ) : (
               <p className="text-yellow-400 text-sm mb-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2">
-                ⚠️ This link will not be shown again. Copy it now.
+                <span className="inline-flex items-center gap-1.5"><AlertTriangle size={14} /> This link will not be shown again. Copy it now.</span>
               </p>
             )}
             
@@ -110,14 +123,15 @@ export default function GenerateTokenModal({ token: jwt, onClose, onGenerated })
             
             <div className="flex gap-2 mb-4">
               <input
-                className="flex-1 bg-[#110600] border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none"
+                className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none"
                 readOnly
                 value={result.invite_link}
               />
               <button
                 onClick={copyLink}
-                className="px-3 py-2 rounded-lg bg-[#cc0000] text-white text-xs font-medium hover:bg-[#a80000] transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#cc0000] text-white text-xs font-medium hover:bg-[#a80000] transition-colors whitespace-nowrap"
               >
+                {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
                 {copied ? 'Copied!' : 'Copy Link'}
               </button>
             </div>

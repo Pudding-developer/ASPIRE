@@ -5,6 +5,7 @@ export const studentService = {
   getClasses:      ()           => request('GET',   '/api/student/classes'),
   getScores:       ()           => request('GET',   '/api/student/scores'),
   getPredictions:  ()           => request('GET',   '/api/student/predictions'),
+  getCourseDashboard: (course)  => request('GET',   `/api/student/dashboard?course=${encodeURIComponent(course)}`),
   joinClass:       (classCode)  => request('POST',  '/api/student/join', { class_code: classCode }),
 
   // Career goal selection

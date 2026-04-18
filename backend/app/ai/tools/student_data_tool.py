@@ -37,11 +37,23 @@ class StudentDataTool(BaseTool):
             return "No student data loaded."
 
         if query == "academic":
+            scores = self._data.get("academic_scores", [])
+            if not scores:
+                return json.dumps({
+                    "student_id": self._data.get("student_id"),
+                    "academic": {
+                        "classes": [],
+                        "assessments": [],
+                        "scores": [],
+                        "ml_predictions": {},
+                        "note": "No academic data available yet"
+                    }
+                }, indent=2, default=str)
             subset = {
                 "student_id": self._data.get("student_id"),
                 "sr_code": self._data.get("sr_code"),
                 "full_name": self._data.get("full_name"),
-                "academic_scores": self._data.get("academic_scores", []),
+                "academic_scores": scores,
             }
         elif query == "github":
             subset = {

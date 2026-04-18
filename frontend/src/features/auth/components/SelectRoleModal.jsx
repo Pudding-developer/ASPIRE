@@ -94,7 +94,7 @@ export default function SelectRoleModal({ isOpen, onClose, token }) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md">
           {/* Backdrop click to close */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -109,21 +109,24 @@ export default function SelectRoleModal({ isOpen, onClose, token }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative w-full max-w-[460px] bg-[#0a0101] border border-[#FFFFFF66] shadow-[0_0_30px_#FFFFFF80] rounded-2xl p-8 z-10 flex flex-col items-center"
+            className="relative z-10 flex w-full max-w-115 flex-col items-center overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_35%,rgba(10,1,1,0.72)_100%)] p-8 shadow-[0_0_42px_rgba(255,255,255,0.5),0_20px_60px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-2xl"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full bg-[#bc1313]/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 -right-12 h-40 w-40 rounded-full bg-white/8 blur-3xl" />
+
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+              className="absolute right-4 top-4 rounded-md border border-white/10 bg-black/20 p-1 text-gray-400 transition-colors hover:text-white"
             >
               <X size={20} />
             </button>
 
-            <img src={aspireLogo} alt="ASPIRE" className="h-[145px] w-auto -mt-6 -mb-3" />
+            <img src={aspireLogo} alt="ASPIRE" className="relative h-36.25 w-auto -mt-6 -mb-3" />
             
-            <div className="text-center mb-6">
+            <div className="relative mb-6 text-center">
               <h2 className="text-xl font-medium text-white mb-2">Welcome back, {fullName}!</h2>
-              <p className="text-gray-400 text-sm">How would you like to log in today?</p>
+              <p className="text-gray-300 text-sm">How would you like to log in today?</p>
             </div>
 
             {error && (
@@ -154,7 +157,7 @@ export default function SelectRoleModal({ isOpen, onClose, token }) {
                       <span className="font-medium text-lg text-left">Log in as {config.label}</span>
                     </div>
                     {isLoading && (
-                      <div className="absolute left-[20px] top-1/2 -translate-y-1/2 bg-transparent p-2">
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 bg-transparent p-2">
                         <Loader2 size={24} className="animate-spin text-white" />
                       </div>
                     )}

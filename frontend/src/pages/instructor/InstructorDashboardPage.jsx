@@ -76,7 +76,12 @@ const InstructorDashboard = () => {
     <>
       <InstructorLayout activeView={activeView} setActiveView={setActiveView} classes={classes}>
         {activeView === 'instructor-portal' && (
-          <DashboardView onCreateClass={() => setIsCreateOpen(true)} stats={stats} loading={loading} />
+          <DashboardView
+            onCreateClass={() => setIsCreateOpen(true)}
+            stats={stats}
+            loading={loading}
+            classes={classes}
+          />
         )}
 
         {activeView === 'my-classes' && (

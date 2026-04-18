@@ -6,6 +6,7 @@ from app.models.github import GithubProfile, RepositoryCache, ContributionCache,
 from app.models.class_model import Class, ClassEnrollment, Assessment, AssessmentILO, StudentScore
 from app.models.pipeline_models import PipelineJob, CareerReport
 from app.models.knowledge import KnowledgeChunk
+from app.models.roadmap import RoadmapCache
 
 __all__ = [
     "User", "Instructor", "InstructorInviteToken", "Admin",
@@ -13,4 +14,5 @@ __all__ = [
     "Class", "ClassEnrollment", "Assessment", "AssessmentILO", "StudentScore",
     "PipelineJob", "CareerReport",
     "KnowledgeChunk",
+    "RoadmapCache",
 ]

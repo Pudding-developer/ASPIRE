@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../features/auth/hooks/useAuth';
-import StudentSidebar from '../../features/student/components/StudentSidebar';
-import StudentDashboardView from '../../features/student/views/StudentDashboardView';
-import StudentPerformanceView from '../../features/student/views/StudentPerformanceView';
-import StudentGitHubView from '../../features/student/views/StudentGitHubView';
-import StudentCareerView from '../../features/student/views/StudentCareerView';
-import EnrolledClassesView from '../../features/student/views/EnrolledClassesView';
-import useStudentData from '../../features/student/hooks/useStudentData';
+import StudentSidebar from '../../features/student/shared/StudentSidebar';
+import StudentDashboardView from '../../features/student/dashboard/views/StudentDashboardView';
+import StudentPerformanceView from '../../features/student/performance/views/StudentPerformanceView';
+import StudentGitHubView from '../../features/student/github/views/StudentGitHubView';
+import StudentCareerView from '../../features/student/career-coach/views/StudentCareerView';
+import EnrolledClassesView from '../../features/student/classes/views/EnrolledClassesView';
+import useStudentData from '../../features/student/dashboard/hooks/useStudentData';
 
 /* ─── Page Root ─── */
 export default function StudentDashboardPage() {

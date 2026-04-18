@@ -8,14 +8,8 @@ Provides two entry points:
 import json
 from pathlib import Path
 
-import joblib
-import numpy as np
-import pandas as pd
-
-from ml.config import (
-    ilo_weighted_avg,
-    map_avg_to_outcome,
-)
+from ml.config import map_avg_to_outcome, get_course_ilo_count
+from ml.predictor import SkillsPredictor
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 ML_ROOT             = Path(__file__).resolve().parents[2] / "ml"
@@ -23,18 +17,19 @@ ARTIFACTS           = ML_ROOT / "artifacts"
 META_PATH           = ARTIFACTS / "meta.json"
 SKILL_PIPELINE_PATH = ARTIFACTS / "skill_pipeline.joblib"
 
-# ── Singleton model loader ───────────────────────────────────────────────────
-_pipeline = None
-_skill_categories = None
+# ── Singletons ───────────────────────────────────────────────────────────────
+_predictor: SkillsPredictor | None = None
+_skill_categories: list[str] | None = None
 
 
 def _load_model():
-    global _pipeline, _skill_categories
-    if _pipeline is None:
-        _pipeline = joblib.load(SKILL_PIPELINE_PATH)
+    """Load the trained pipeline once and cache it."""
+    global _predictor, _skill_categories
+    if _predictor is None:
+        _predictor = SkillsPredictor()
         meta = json.loads(META_PATH.read_text(encoding="utf-8"))
         _skill_categories = meta["skill_categories"]
-    return _pipeline, _skill_categories
+    return _predictor, _skill_categories
 
 
 def predict_skills(course: str, ilo1: float, ilo2: float,
@@ -45,46 +40,34 @@ def predict_skills(course: str, ilo1: float, ilo2: float,
     Returns:
         {
             "course", "ilo_scores", "ilo_avg", "outcome_label",
-            "predicted_skills", "strongest_skill", "weakest_skill"
+            "predicted_skills", "strongest_skill", "weakest_skill",
+            "scenario_low", "scenario_high"
         }
     """
-    pipeline, skill_categories = _load_model()
-    avg = ilo_weighted_avg(ilo1, ilo2, ilo3, ilo4)
+    predictor, _ = _load_model()
+    result = predictor.predict(course, ilo1, ilo2, ilo3, ilo4, semester=semester)
 
-    X = pd.DataFrame([{
-        "Course":   course,
-        "Semester": semester,
-        "ILO1":     ilo1,
-        "ILO2":     ilo2,
-        "ILO3":     ilo3,
-        "ILO4":     ilo4,
-        "ILO_avg":  avg,
-    }])
+    skills        = {s: round(float(v), 2) for s, v in result.predicted_skills.items()}
+    scenario_low  = {s: round(float(v), 2) for s, v in result.scenario_low.items()}
+    scenario_high = {s: round(float(v), 2) for s, v in result.scenario_high.items()}
 
-    raw = np.clip(pipeline.predict(X)[0], 0.0, 100.0)
-    skills = {s: round(float(v), 2) for s, v in zip(skill_categories, raw)}
-
-    active = {s: v for s, v in skills.items() if v > 1.0}
-    if active:
-        strongest = max(active, key=active.get)
-        weakest   = min(active, key=active.get)
-    else:
-        strongest = max(skills, key=skills.get)
-        weakest   = min(skills, key=skills.get)
+    # Only echo back the ILOs this course actually uses (2, 3, or 4).
+    ilo_count = get_course_ilo_count(course)
+    raw_ilos  = [ilo1, ilo2, ilo3, ilo4]
+    ilo_scores = {
+        f"ilo{i + 1}": round(raw_ilos[i], 2) for i in range(ilo_count)
+    }
 
     return {
-        "course": course,
-        "ilo_scores": {
-            "ilo1": round(ilo1, 2),
-            "ilo2": round(ilo2, 2),
-            "ilo3": round(ilo3, 2),
-            "ilo4": round(ilo4, 2),
-        },
-        "ilo_avg": round(avg, 2),
-        "outcome_label": map_avg_to_outcome(avg),
+        "course":           course,
+        "ilo_scores":       ilo_scores,
+        "ilo_avg":          round(result.ilo_avg, 2),
+        "outcome_label":    result.outcome_label,
         "predicted_skills": skills,
-        "strongest_skill": strongest,
-        "weakest_skill": weakest,
+        "strongest_skill":  result.strongest_skill,
+        "weakest_skill":    result.weakest_skill,
+        "scenario_low":     scenario_low,
+        "scenario_high":    scenario_high,
     }
 
 

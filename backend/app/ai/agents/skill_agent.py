@@ -9,14 +9,14 @@ a single unified profile using weighted scoring:
 from crewai import Agent, LLM
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY
+from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
 
 
 def _get_llm() -> LLM:
     return LLM(
-        model="gemini/gemini-2.5-flash",
+        model=GEMINI_MODEL,
         api_key=GEMINI_API_KEY,
-        max_retries=3,
+        max_retries=5,
         timeout=120
     )
 
@@ -68,6 +68,7 @@ def create_skill_synthesis_task(
             "- weakest_skills = bottom 3 by final_score\n\n"
             "Return ONLY a JSON object in this exact schema — no explanation text:\n"
             "{\n"
+            '  "fusion_weights": {"academic": 0.6, "github": 0.4},\n'
             '  "unified_skills": [\n'
             "    {\n"
             '      "skill": "Python",\n'
@@ -85,14 +86,23 @@ def create_skill_synthesis_task(
             '    "on_track": 5,\n'
             '    "needs_attention": 2,\n'
             '    "critical": 1\n'
-            "  },\n"
+            '  },\n'
             '  "strongest_skills": ["Python", "FastAPI", "Algorithm Design"],\n'
-            '  "weakest_skills": ["Networking", "Embedded Systems", "DevOps"]\n'
-            "}"
+            '  "weakest_skills": ["Networking", "Embedded Systems", "DevOps"],\n'
+            '  "note": null\n'
+            "}\n\n"
+            "If academic_skills is empty or performance_tier is \"No Data\",\n"
+            "synthesize skills from GitHub data only. Set source=\"github_only\", "
+            "apply 100% GitHub weight, and set fusion_weights to {\"academic\": 0.0, \"github\": 1.0}.\n\n"
+            "If github_skills is empty or missing, synthesize skills from academic data only. "
+            "Set source=\"academic_only\", apply 100% academic weight, and set "
+            "fusion_weights to {\"academic\": 1.0, \"github\": 0.0}. Add a note explaining this.\n\n"
+            "Still produce a complete valid JSON output."
         ),
         expected_output=(
-            "A JSON object with keys: unified_skills (list), skill_summary (object), "
-            "strongest_skills (list), weakest_skills (list). Return ONLY the JSON."
+            "A JSON object with keys: fusion_weights (object), unified_skills (list), "
+            "skill_summary (object), strongest_skills (list), weakest_skills (list). "
+            "Return ONLY the JSON."
         ),
         agent=agent,
         context=[github_task, academic_task],

@@ -201,6 +201,91 @@ async def get_student_scores(
     return {"data": scores}
 
 
+# ── ML Course Dashboard Report ──────────────────────────────────────────────
+
+@router.get("/dashboard")
+async def get_course_dashboard(
+    course: str,
+    current_user: User = Depends(get_current_student),
+    db: AsyncSession = Depends(get_session),
+):
+    """
+    Return a full ASPIRE course report (JSON) for the student's chosen subject.
+    The frontend renders all charts from this payload.
+    """
+    from ml.config import COURSE_PROFILES, get_course_ilo_count
+    from ml.report import build_course_report
+
+    if course not in COURSE_PROFILES:
+        raise HTTPException(status_code=400, detail=f"Unknown course: {course}")
+
+    # Verify the student is enrolled in at least one class teaching this course.
+    enrollment_check = await db.execute(
+        select(Class.id)
+        .join(ClassEnrollment, ClassEnrollment.class_id == Class.id)
+        .where(
+            ClassEnrollment.student_id == current_user.id,
+            Class.subject_name == course,
+        )
+    )
+    enrolled_class_ids = [row[0] for row in enrollment_check.all()]
+    if not enrolled_class_ids:
+        raise HTTPException(status_code=403, detail=f"Not enrolled in {course}")
+
+    # Fetch this student's ILO rows for those classes.
+    score_rows = await db.execute(
+        select(StudentScore, AssessmentILO)
+        .join(AssessmentILO, StudentScore.ilo_id == AssessmentILO.id)
+        .join(Assessment, StudentScore.assessment_id == Assessment.id)
+        .where(
+            StudentScore.student_id == current_user.id,
+            Assessment.class_id.in_(enrolled_class_ids),
+        )
+    )
+    rows = score_rows.all()
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No scores recorded for {course}")
+
+    # Aggregate: per ILO number, sum raw score and sum max_score across all assessments.
+    ilo_count = get_course_ilo_count(course)
+    raw_totals: dict[int, float] = {i: 0.0 for i in range(1, ilo_count + 1)}
+    max_totals: dict[int, float] = {i: 0.0 for i in range(1, ilo_count + 1)}
+    for score, ilo in rows:
+        if ilo.ilo_number in raw_totals:
+            raw_totals[ilo.ilo_number] += score.score
+            max_totals[ilo.ilo_number] += ilo.max_score
+
+    missing = [n for n in range(1, ilo_count + 1) if max_totals[n] <= 0]
+    if missing:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No scores recorded for ILO {', '.join(map(str, missing))} of {course}",
+        )
+
+    ilo_raw    = [raw_totals[i] for i in range(1, ilo_count + 1)]
+    ilo_totals = [max_totals[i] for i in range(1, ilo_count + 1)]
+
+    # Take the semester of the first enrolled class teaching this course.
+    semester_row = await db.execute(
+        select(Class.semester).where(Class.id.in_(enrolled_class_ids)).limit(1)
+    )
+    semester = semester_row.scalar_one_or_none()
+
+    try:
+        report = await asyncio.to_thread(
+            build_course_report,
+            course,
+            ilo_raw,
+            ilo_totals,
+            current_user.full_name or "",
+            semester,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Failed to build report") from exc
+
+    return {"data": report}
+
+
 # ── ML Skill Predictions ────────────────────────────────────────────────────
 
 @router.get("/predictions")

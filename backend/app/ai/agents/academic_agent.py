@@ -7,14 +7,14 @@ a subject-mapped academic skill profile with threshold classifications.
 from crewai import Agent, LLM
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY
+from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
 
 
 def _get_llm() -> LLM:
     return LLM(
-        model="gemini/gemini-2.5-flash",
+        model=GEMINI_MODEL,
         api_key=GEMINI_API_KEY,
-        max_retries=3,
+        max_retries=5,
         timeout=120
     )
 
@@ -44,40 +44,46 @@ def create_academic_analyzer(student_data_tool) -> Agent:
 def create_academic_analysis_task(agent: Agent) -> Task:
     return Task(
         description=(
-            "Use the student_data_lookup tool with query='academic' to fetch the student's "
-            "ILO scores across all assessments.\n\n"
-            "For each subject/assessment:\n"
-            "- Group ILO scores by assessment name to identify the subject\n"
-            "- Map the subject to a real-world technical skill "
-            "(e.g., 'Data Structures' → 'Algorithm Design', "
-            "'Electronics Circuits' → 'Circuit Analysis', "
-            "'Programming 1/2' → 'Object-Oriented Programming')\n"
-            "- Compute the average ILO score across all ILOs for that assessment\n"
-            "- Apply threshold classification:\n"
-            "  EXCEEDING EXPECTATIONS >= 80%\n"
-            "  ON TRACK >= 60%\n"
-            "  NEEDS ATTENTION >= 40%\n"
-            "  CRITICAL < 40%\n\n"
-            "Compute overall_performance as the average of all assessment averages.\n"
-            "Assign performance_tier: Distinction >= 85%, Satisfactory >= 70%, "
-            "Developing >= 55%, At Risk < 55%.\n\n"
-            "Return ONLY a JSON object in this exact schema — no explanation text:\n"
+            "Use the student_data_lookup tool with query='academic' to fetch "
+            "the student's ILO scores across all assessments.\n\n"
+            "For each subject/assessment, use this DETERMINISTIC skill mapping "
+            "(do not guess or infer — use exactly what is provided):\n\n"
+            "{subject_skill_context}\n\n"
+            "For each subject:\n"
+            "- Get the primary_skills and skillset_categories from the mapping above\n"
+            "- Compute average ILO score as percentage: (raw_score / max_score) × 100\n"
+            "- Apply threshold: EXCEEDING >= 80, ON TRACK >= 60, "
+            "  NEEDS ATTENTION >= 40, CRITICAL < 40\n"
+            "- Use ml_predicted_score from the ML model output context if available (Agent 3 will merge them later)\n\n"
+            "Return ONLY this JSON — no explanation:\n"
             "{\n"
             '  "academic_skills": [\n'
             "    {\n"
             '      "skill": "Algorithm Design",\n'
             '      "source_subject": "Data Structures and Algorithms",\n'
-            '      "ilo_scores": {"ILO1": 82, "ILO2": 75, "ILO3": 90, "ILO4": 88},\n'
-            '      "avg_score": 83.75,\n'
-            '      "status": "EXCEEDING EXPECTATIONS",\n'
-            '      "ml_predicted_score": 87.2\n'
+            '      "primary_skills": ["Algorithm Design", "Data Structures"],\n'
+            '      "skillset_categories": ["Programming & Software Development"],\n'
+            '      "ilo_scores": {"ILO1": 82, "ILO2": 75},\n'
+            '      "avg_score": 78.5,\n'
+            '      "status": "ON TRACK",\n'
+            '      "ml_predicted_score": 80.2,\n'
+            '      "career_relevance": ["Backend Developer", "Software Architect"]\n'
             "    }\n"
             "  ],\n"
-            '  "overall_performance": 80.3,\n'
+            '  "overall_performance": 78.5,\n'
             '  "performance_tier": "Satisfactory",\n'
             '  "top_academic_skills": ["Algorithm Design", "OOP"],\n'
             '  "weak_academic_skills": ["Networking", "Embedded Systems"]\n'
-            "}"
+            "}\n"
+            "If no academic data exists return:\n"
+            "{\n"
+            '  "academic_skills": [],\n'
+            '  "overall_performance": 0,\n'
+            '  "performance_tier": "No Data",\n'
+            '  "top_academic_skills": [],\n'
+            '  "weak_academic_skills": [],\n'
+            '  "note": "No academic scores recorded yet."\n'
+            "}\n"
         ),
         expected_output=(
             "A JSON object with keys: academic_skills (list), overall_performance (float), "

@@ -71,12 +71,12 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
         {/* Instructor Portal */}
         <button
           onClick={() => setActiveView('instructor-portal')}
-          className={`w-full flex items-center ${isMinimized ? 'justify-center px-0' : 'gap-4 px-4'} py-3 rounded-xl transition-all ${activeView === 'instructor-portal'
-            ? 'bg-[#bc1313] text-white'
+          className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'gap-4 px-4'} py-3 rounded-xl transition-all ${activeView === 'instructor-portal'
+            ? 'bg-[#bc1313]/20 text-white border-[#bc1313]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
             : 'text-[#8592a3] hover:text-white hover:bg-white/5'
             }`}
         >
-          <LayoutDashboard size={20} className={`shrink-0 ${activeView === 'instructor-portal' ? 'text-white' : 'text-[#6a7a90]'}`} />
+          <LayoutDashboard size={20} className={`shrink-0 ${activeView === 'instructor-portal' ? 'text-[#ffe3e3]' : 'text-[#6a7a90]'}`} />
           {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap min-w-[150px] text-left">Instructor Portal</span>}
         </button>
 
@@ -93,13 +93,13 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
                 setClassesOpen(!classesOpen);
               }
             }}
-            className={`w-full flex items-center ${isMinimized ? 'justify-center px-0' : 'justify-between px-4'} py-3 rounded-xl transition-all ${activeView === 'my-classes' || activeView.startsWith('class-')
-              ? 'bg-[#bc1313] text-white shadow-[0_4px_20px_rgba(188,19,19,0.3)]'
+            className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'justify-between px-4'} py-3 rounded-xl transition-all ${activeView === 'my-classes' || activeView.startsWith('class-')
+              ? 'bg-[#bc1313]/20 text-white border-[#bc1313]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
               : 'text-[#8592a3] hover:text-white hover:bg-white/5'
               }`}
           >
             <div className={`flex items-center ${isMinimized ? 'justify-center' : 'gap-4'} shrink-0`}>
-              <BookOpen size={20} className={activeView === 'my-classes' || activeView.startsWith('class-') ? 'text-white' : 'text-[#6a7a90]'} />
+              <BookOpen size={20} className={activeView === 'my-classes' || activeView.startsWith('class-') ? 'text-[#ffe3e3]' : 'text-[#6a7a90]'} />
               {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap text-left">Classes</span>}
             </div>
             {!isMinimized && (
@@ -126,7 +126,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
                       key={cls.id}
                       onClick={() => setActiveView(viewId)}
                       className={`w-[calc(100%-24px)] ml-[24px] flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px] transition-all text-left ${isActive
-                        ? 'text-white bg-[#7a0f0f]'
+                        ? 'text-white bg-[#bc1313]/15 border border-[#bc1313]/30 backdrop-blur-sm'
                         : 'text-[#6a7a90] hover:text-[#a0acc0] hover:bg-white/5'
                         }`}
                     >
@@ -144,12 +144,12 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
         <button
           onClick={() => setActiveView('archived')}
           title={isMinimized ? "Archived Classes" : undefined}
-          className={`w-full flex items-center ${isMinimized ? 'justify-center px-0' : 'gap-4 px-4'} py-3 rounded-xl transition-all ${activeView === 'archived'
-            ? 'bg-[#bc1313] text-white'
+          className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'gap-4 px-4'} py-3 rounded-xl transition-all ${activeView === 'archived'
+            ? 'bg-[#bc1313]/20 text-white border-[#bc1313]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
             : 'text-[#8592a3] hover:text-white hover:bg-white/5'
             }`}
         >
-          <Archive size={20} className={`shrink-0 ${activeView === 'archived' ? 'text-white' : 'text-[#6a7a90]'}`} />
+          <Archive size={20} className={`shrink-0 ${activeView === 'archived' ? 'text-[#ffe3e3]' : 'text-[#6a7a90]'}`} />
           {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap min-w-[150px] text-left">Archived Classes</span>}
         </button>
       </div>

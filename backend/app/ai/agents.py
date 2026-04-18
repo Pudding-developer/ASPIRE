@@ -10,7 +10,7 @@ from app.core.config import GEMINI_API_KEY
 
 def _get_llm() -> LLM:
     return LLM(
-        model="gemini/gemini-2.0-flash",
+        model="gemini/gemini-2.5-flash",
         api_key=GEMINI_API_KEY,
     )
 

@@ -6,7 +6,7 @@ import usePipeline from '../../dashboard/hooks/usePipeline';
 import useStudentData from '../../dashboard/hooks/useStudentData';
 import {
   PROFICIENCY_PCT, inferCategory,
-  MARKET_DATA, MILESTONES_BY_CAT,
+  MILESTONES_BY_CAT,
 } from '../../../../data/careerConstants';
 import { studentService } from '../../../../services/studentService';
 
@@ -150,7 +150,6 @@ export default function useCareerCoach(userId) {
 
   const selectedPath = careerMatches[selectedIndex] || null;
   const category  = selectedPath ? inferCategory(selectedPath.title) : 'TECHNOLOGY';
-  const market     = MARKET_DATA[category]       || MARKET_DATA['TECHNOLOGY'];
   const milestones = MILESTONES_BY_CAT[category] || MILESTONES_BY_CAT['TECHNOLOGY'];
 
   const gaps = useMemo(
@@ -180,7 +179,6 @@ export default function useCareerCoach(userId) {
     setSelectedIndex,
     optimalIndex,
     category,
-    market,
     milestones,
     gaps,
     skills,

@@ -68,9 +68,7 @@ def create_report_generation_task(
             "  Be encouraging but honest. No bullet points — flowing paragraphs only.\n"
             "- skill_profile: take unified_skills, skill_summary, strongest_skills, "
             "  weakest_skills directly from Agent 3 output\n"
-            "- gap_analysis: take directly from Agent 5 output\n"
-            "- market_data: derive from Agent 4's recommended_career entry "
-            "  (ph_market_outlook, avg_salary_php); add top_locations list\n\n"
+            "- gap_analysis: take directly from Agent 5 output\n\n"
             "Return ONLY a JSON object in this exact schema — no explanation text:\n"
             "{\n"
             '  "career_matches": [...],\n'
@@ -85,18 +83,12 @@ def create_report_generation_task(
             '    "strongest_skills": [...],\n'
             '    "weakest_skills": [...]\n'
             "  },\n"
-            '  "gap_analysis": [...],\n'
-            '  "market_data": {\n'
-            '    "recommended_career": "...",\n'
-            '    "ph_market_outlook": "...",\n'
-            '    "avg_salary_php": 45000,\n'
-            '    "top_locations": ["Makati", "BGC", "Ortigas", "Cebu IT Park"]\n'
-            "  }\n"
+            '  "gap_analysis": [...]\n'
             "}"
         ),
         expected_output=(
             "A JSON object with keys: career_matches, recommendations, summary, "
-            "skill_profile, gap_analysis, market_data. "
+            "skill_profile, gap_analysis. "
             "This is the final output that will be stored in CareerReport.report_json "
             "and read by the frontend. Return ONLY the JSON."
         ),

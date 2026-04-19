@@ -63,9 +63,7 @@ def create_career_mapping_task(agent: Agent, skill_task) -> Task:
             '      "matched_skills": ["Python", "FastAPI", "PostgreSQL"],\n'
             '      "gap_skills": ["Docker", "Redis", "CI/CD"],\n'
             '      "reasoning": "Strong backend foundation with FastAPI and PostgreSQL...",\n'
-            '      "roadmap_url": "https://roadmap.sh/backend",\n'
-            '      "ph_market_outlook": "High demand",\n'
-            '      "avg_salary_php": 45000\n'
+            '      "roadmap_url": "https://roadmap.sh/backend"\n'
             "    }\n"
             "  ],\n"
             '  "recommended_career": "Backend Developer"\n'

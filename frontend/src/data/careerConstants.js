@@ -10,16 +10,8 @@ export const TABS = [
   { id: 'roadmap',  label: 'Roadmap' },
   { id: 'insights', label: 'Insights' },
   { id: 'chat',     label: 'AI Chat' },
-  { id: 'market',   label: 'Market Trends' },
 ];
 
-export const MARKET_DATA = {
-  'ENGINEERING':  { growth: '18%', salary: '₱46K', locations: 'Laguna Technopark · Clark · Cebu',       outlook: 'High Growth',     tenure: '4.1 Years' },
-  'DATA SCIENCE': { growth: '22%', salary: '₱40K', locations: 'BGC · Ortigas · Cebu Business District', outlook: 'High Growth',     tenure: '3.6 Years' },
-  'TECHNOLOGY':   { growth: '14%', salary: '₱44K', locations: 'BGC · Makati · Eastwood · Clark',         outlook: 'Moderate Growth', tenure: '3.8 Years' },
-  'NETWORKING':   { growth: '11%', salary: '₱42K', locations: 'Makati · Pasig · Cebu · Iloilo',          outlook: 'Stable',          tenure: '4.5 Years' },
-  'AI RESEARCH':  { growth: '34%', salary: '₱55K', locations: 'BGC · Makati · Remote (Global)',           outlook: 'High Growth',     tenure: '3.2 Years' },
-};
 
 export const MILESTONES_BY_CAT = {
   'ENGINEERING': [

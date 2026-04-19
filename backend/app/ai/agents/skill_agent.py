@@ -68,7 +68,7 @@ def create_skill_synthesis_task(
             "- weakest_skills = bottom 3 by final_score\n\n"
             "Return ONLY a JSON object in this exact schema — no explanation text:\n"
             "{\n"
-            '  "fusion_weights": {"academic": 0.6, "github": 0.4},\n'
+            '  "fusion_weights": {"academic": 0.7, "github": 0.3},\n'
             '  "unified_skills": [\n'
             "    {\n"
             '      "skill": "Python",\n'

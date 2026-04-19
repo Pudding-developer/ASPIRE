@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Target, TrendingUp, Layers, ChevronRight, Activity, Zap, CheckCircle2, ChevronDown, ListEnd, Star } from 'lucide-react';
 import useCareerCoach from '../hooks/useCareerCoach';
+import { chatService } from '../../../../services/chatService';
 
 import CareerEmptyState from '../components/CareerEmptyState';
 import CareerPathCard from '../components/CareerPathCard';
 import CareerMatchDonut from '../components/CareerMatchDonut';
-import CareerMarketTab from '../components/CareerMarketTab';
 import CareerAllPathsModal from '../components/CareerAllPathsModal';
 import CareerSectionHeading from '../components/CareerSectionHeading';
+
+const CHAT_SUGGESTIONS = [
+  'How do I improve my match score?',
+  'What should I focus on first?',
+  'Which path fits me best?',
+  'Show me my skill gaps',
+];
 
 export default function StudentCareerView({ user }) {
   const [showAllPaths, setShowAllPaths] = useState(false);
@@ -22,7 +29,6 @@ export default function StudentCareerView({ user }) {
     selectedIndex,
     setSelectedIndex,
     optimalIndex,
-    market,
     gaps,
     skills,
     insights,
@@ -34,6 +40,44 @@ export default function StudentCareerView({ user }) {
     setChosenCareer,
     careerLoading,
   } = useCareerCoach(user.id);
+
+  // ── AI Chat state ──────────────────────────────────────────────────────────
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatSending, setChatSending] = useState(false);
+  const [chatError, setChatError] = useState(null);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [chatMessages, chatSending]);
+
+  const sendChat = async (textOverride) => {
+    const text = (textOverride ?? chatInput).trim();
+    if (!text || chatSending) return;
+    const nextMessages = [...chatMessages, { role: 'user', content: text }];
+    setChatMessages(nextMessages);
+    setChatInput('');
+    setChatError(null);
+    setChatSending(true);
+    try {
+      const { reply } = await chatService.sendCareerMessage(
+        nextMessages,
+        {
+          career_matches: careerMatches,
+          skill_profile: pipelineData?.skill_profile,
+          gap_analysis: pipelineData?.gap_analysis,
+          summary: pipelineData?.summary,
+          chosen_career: chosenCareer,
+        },
+      );
+      setChatMessages([...nextMessages, { role: 'assistant', content: reply }]);
+    } catch (e) {
+      setChatError(e.message || 'Failed to reach the AI coach.');
+    } finally {
+      setChatSending(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -127,7 +171,6 @@ export default function StudentCareerView({ user }) {
               <span onClick={() => setActiveTab('Roadmap')} className={`cursor-pointer pb-3 px-1 border-b-[3px] transition-colors ${activeTab === 'Roadmap' ? 'text-[#bc1313] border-[#bc1313]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>Roadmap</span>
               <span onClick={() => setActiveTab('Insights')} className={`cursor-pointer pb-3 px-1 border-b-[3px] transition-colors ${activeTab === 'Insights' ? 'text-[#bc1313] border-[#bc1313]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>Insights</span>
               <span onClick={() => setActiveTab('AI Chat')} className={`cursor-pointer pb-3 px-1 border-b-[3px] transition-colors ${activeTab === 'AI Chat' ? 'text-[#bc1313] border-[#bc1313]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>AI Chat</span>
-              <span onClick={() => setActiveTab('Market Trends')} className={`cursor-pointer pb-3 px-1 border-b-[3px] transition-colors ${activeTab === 'Market Trends' ? 'text-[#bc1313] border-[#bc1313]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>Market Trends</span>
             </div>
             <span className="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer mb-3 font-semibold transition-colors">View All Trajectories</span>
           </div>
@@ -199,10 +242,6 @@ export default function StudentCareerView({ user }) {
             </div>
             
             <div className="flex gap-3 pt-3">
-              <div className="bg-[#fff5f5] border border-[#efd8d8] rounded-xl p-3 flex-1">
-                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block mb-1">MARKET OUTLOOK</span>
-                <span className="text-[13px] font-bold text-gray-900 flex items-center gap-1"><TrendingUp size={12} className="text-emerald-500" /> High Growth</span>
-              </div>
               <div className="bg-[#fff5f5] border border-[#efd8d8] rounded-xl p-3 flex-1">
                 <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block mb-1">MEDIAN TENURE</span>
                 <span className="text-[13px] font-bold text-gray-900">{selectedIndex === 0 ? '4.1 Years' : '3.6 Years'}</span>
@@ -339,25 +378,6 @@ export default function StudentCareerView({ user }) {
             </div>
           </div>
 
-          {/* Card 3 */}
-          <div className="bg-[#7a0e0e] rounded-2xl shadow-md p-6 flex flex-col h-full text-white cursor-pointer relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#bc1313] opacity-50 blur-[50px] rounded-full group-hover:opacity-75 transition-opacity" />
-            <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest mb-3 relative z-10">CAREER SENTIMENT</span>
-            <h4 className="text-[18px] font-medium leading-snug mb-2 relative z-10 pr-4 drop-shadow-sm">
-               Demand for Embedded Engineers has grown <strong className="font-extrabold">18%</strong> this quarter.
-            </h4>
-            <p className="text-[11px] text-white/60 leading-relaxed mb-6 flex-1 relative z-10 pr-2">
-               IoT and semiconductor sectors prioritize firmware expertise — aligned with your thesis direction.
-            </p>
-            <div className="flex justify-between items-center mt-auto relative z-10 w-full">
-               <div className="flex -space-x-2">
-                 <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center font-bold text-gray-700 text-[9px] border border-[#7a0e0e]">A</div>
-                 <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-700 text-[9px] border border-[#7a0e0e]">B</div>
-                 <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-700 text-[9px] border border-[#7a0e0e]">C</div>
-               </div>
-               <span className="text-[9px] uppercase tracking-widest font-bold text-white/60 text-right">3 ADVISORS</span>
-            </div>
-          </div>
         </div>
         </>
         )}
@@ -449,55 +469,6 @@ export default function StudentCareerView({ user }) {
           </>
         )}
 
-        {/* --- MARKET TRENDS TAB CONTENT --- */}
-        {activeTab === 'Market Trends' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-8">
-            {/* Job Demand Growth */}
-            <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-xl border border-[#f1d7d7] p-6 shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)]">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-2">JOB DEMAND GROWTH</span>
-              <h3 className="text-3xl font-extrabold text-gray-900 mb-1">18%</h3>
-              <p className="text-[11px] text-gray-500 mb-3">Year-over-year in the Philippine tech sector</p>
-              <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1"><TrendingUp size={12} /> Above average</span>
-            </div>
-            
-            {/* Average Monthly Salary */}
-            <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-xl border border-[#f1d7d7] p-6 shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)]">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-2">AVERAGE MONTHLY SALARY</span>
-              <h3 className="text-3xl font-extrabold text-gray-900 mb-1">₱46K</h3>
-              <p className="text-[11px] text-gray-500 mb-3">Mid-level {careerMatches[selectedIndex]?.title} in the Philippines</p>
-              <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1"><TrendingUp size={12} /> Growing</span>
-            </div>
-
-            {/* Median Tenure */}
-            <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-xl border border-[#f1d7d7] p-6 shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)]">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-2">MEDIAN TENURE</span>
-              <h3 className="text-3xl font-extrabold text-gray-900 mb-1">4.1 Years</h3>
-              <p className="text-[11px] text-gray-500">Average time before first promotion in this career track</p>
-            </div>
-
-            {/* Market Outlook (Dark Red) */}
-            <div className="bg-[#7a0e0e] rounded-xl shadow-md p-6 text-white relative overflow-hidden group flex flex-col justify-center">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[#bc1313] opacity-40 blur-[60px] rounded-full" />
-              <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest block mb-2 relative z-10">MARKET OUTLOOK</span>
-              <h3 className="text-3xl font-extrabold text-white mb-2 relative z-10">High Growth</h3>
-              <p className="text-[12px] text-white/70 mb-4 relative z-10">Based on current hiring trends aligned with your profile and trajectory</p>
-              <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1 relative z-10"><Zap size={12} fill="currentColor" /> AI Recommended</span>
-            </div>
-            
-            {/* Top PH Locations */}
-            <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-xl border border-[#f1d7d7] p-6 shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)]">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-2">TOP PH LOCATIONS</span>
-              <p className="text-[13px] font-bold text-gray-900 mt-2">Laguna Technopark · Clark · Cebu</p>
-            </div>
-
-            {/* Your Readiness Score */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-2">YOUR READINESS SCORE</span>
-              <h3 className="text-3xl font-extrabold text-gray-900 mb-1">{careerMatches[selectedIndex]?.match_score}%</h3>
-              <p className="text-[11px] text-gray-500">Combined ILO/SO attainment, GitHub analytics, and academic trajectory</p>
-            </div>
-          </div>
-        )}
 
         {/* --- AI CHAT TAB CONTENT --- */}
         {activeTab === 'AI Chat' && (
@@ -509,29 +480,88 @@ export default function StudentCareerView({ user }) {
 
             {/* Pill Recommendations */}
             <div className="flex flex-wrap gap-2 mb-6">
-              <span className="px-3 py-1.5 bg-white/80 border border-[#ead4d4] text-[#6f4a4a] text-[11px] font-medium rounded hover:bg-[#fff4f4] cursor-pointer shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)]">How do I improve my match score?</span>
-              <span className="px-3 py-1.5 bg-white/80 border border-[#ead4d4] text-[#6f4a4a] text-[11px] font-medium rounded hover:bg-[#fff4f4] cursor-pointer shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)]">What should I focus on first?</span>
-              <span className="px-3 py-1.5 bg-white/80 border border-[#ead4d4] text-[#6f4a4a] text-[11px] font-medium rounded hover:bg-[#fff4f4] cursor-pointer shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)]">Which path fits me best?</span>
-              <span className="px-3 py-1.5 bg-white/80 border border-[#ead4d4] text-[#6f4a4a] text-[11px] font-medium rounded hover:bg-[#fff4f4] cursor-pointer shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)]">Show me my skill gaps</span>
+              {CHAT_SUGGESTIONS.map(q => (
+                <button
+                  key={q}
+                  type="button"
+                  disabled={chatSending}
+                  onClick={() => sendChat(q)}
+                  className="px-3 py-1.5 bg-white/80 border border-[#ead4d4] text-[#6f4a4a] text-[11px] font-medium rounded hover:bg-[#fff4f4] cursor-pointer shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {q}
+                </button>
+              ))}
             </div>
 
-            {/* Chat History Box */}
-            <div className="flex items-start gap-4 mb-6 pt-2">
-              <div className="w-8 h-8 rounded-full bg-[#bc1313] text-white flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1">A</div>
-              <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] border border-[#f1d7d7] p-4 rounded-xl rounded-tl-none shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)] text-[13px] text-gray-700 leading-relaxed max-w-[85%]">
-                Hello Don Maxwell! I've analyzed your ILO/SO attainment and GitHub activity. You're aligned with <strong>{careerMatches[selectedIndex]?.title}</strong> ({careerMatches[selectedIndex]?.match_score}% match). Your strongest fit is <strong>{careerMatches[optimalIndex]?.title}</strong> at {careerMatches[optimalIndex]?.match_score}%. What would you like to explore?
+            {/* Chat History */}
+            <div className="flex flex-col gap-4 mb-6 pt-2 max-h-[420px] overflow-y-auto pr-1">
+              {/* Initial greeting (always shown first) */}
+              <div className="flex items-start gap-4">
+                <div className="w-8 h-8 rounded-full bg-[#bc1313] text-white flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1">A</div>
+                <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] border border-[#f1d7d7] p-4 rounded-xl rounded-tl-none shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)] text-[13px] text-gray-700 leading-relaxed max-w-[85%]">
+                  Hello {user?.full_name?.split(' ')[0] || 'there'}! I've analyzed your ILO/SO attainment and GitHub activity. You're aligned with <strong>{careerMatches[selectedIndex]?.title}</strong> ({careerMatches[selectedIndex]?.match_score}% match). Your strongest fit is <strong>{careerMatches[optimalIndex]?.title}</strong> at {careerMatches[optimalIndex]?.match_score}%. What would you like to explore?
+                </div>
               </div>
+
+              {chatMessages.map((m, i) => (
+                m.role === 'user' ? (
+                  <div key={i} className="flex items-start gap-4 justify-end">
+                    <div className="bg-[#bc1313] text-white p-4 rounded-xl rounded-tr-none text-[13px] leading-relaxed max-w-[85%] shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)]">
+                      {m.content}
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1">
+                      {user?.full_name?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                  </div>
+                ) : (
+                  <div key={i} className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-full bg-[#bc1313] text-white flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1">A</div>
+                    <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] border border-[#f1d7d7] p-4 rounded-xl rounded-tl-none shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)] text-[13px] text-gray-700 leading-relaxed max-w-[85%] whitespace-pre-wrap">
+                      {m.content}
+                    </div>
+                  </div>
+                )
+              ))}
+
+              {chatSending && (
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-[#bc1313] text-white flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1">A</div>
+                  <div className="bg-white/80 border border-[#f1d7d7] p-4 rounded-xl rounded-tl-none text-[13px] text-gray-500 italic">
+                    Thinking…
+                  </div>
+                </div>
+              )}
+
+              {chatError && (
+                <div className="text-[12px] text-red-600 px-2">{chatError}</div>
+              )}
+
+              <div ref={chatEndRef} />
             </div>
 
             {/* Input Box */}
-            <div className="relative mt-12 mb-12">
-              <input 
-                type="text" 
-                placeholder="Ask about your career, skills, roadmap..." 
-                className="w-full bg-white/90 border border-[#ead4d4] text-[13px] text-gray-900 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-1 focus:ring-[#bc1313] focus:border-[#bc1313] shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)] pr-20 transition-all font-medium placeholder:text-gray-400 placeholder:font-normal"
+            <div className="relative mt-8 mb-12">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChat();
+                  }
+                }}
+                disabled={chatSending}
+                placeholder="Ask about your career, skills, roadmap..."
+                className="w-full bg-white/90 border border-[#ead4d4] text-[13px] text-gray-900 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-1 focus:ring-[#bc1313] focus:border-[#bc1313] shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)] pr-20 transition-all font-medium placeholder:text-gray-400 placeholder:font-normal disabled:opacity-60"
               />
-              <button className="absolute right-1.5 top-1.5 bottom-1.5 bg-[#bc1313] hover:bg-[#9e1010] text-white text-[12px] font-bold px-5 rounded-lg transition-colors">
-                Send
+              <button
+                type="button"
+                onClick={() => sendChat()}
+                disabled={chatSending || !chatInput.trim()}
+                className="absolute right-1.5 top-1.5 bottom-1.5 bg-[#bc1313] hover:bg-[#9e1010] text-white text-[12px] font-bold px-5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {chatSending ? '...' : 'Send'}
               </button>
             </div>
           </div>

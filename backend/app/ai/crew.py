@@ -124,15 +124,12 @@ def build_and_run_crew(
         print(f"CREW PIPELINE FAILED: {e}")
         traceback.print_exc()
         print(f"{'='*60}\n")
-        # If crew fails produce minimal fallback report
-        fallback = _parse_combined_output("{}", "{}")
-        fallback["error"] = str(e)
-        fallback["note"] = "Pipeline partially completed. Some data may be missing."
-        return fallback
+        return {
+            "error": f"AI Pipeline execution failed: {str(e)}",
+            "note": "The crew failed to complete the analysis tasks."
+        }
 
     # Extract raw outputs from the result object
-    # result.tasks_output is a list of TaskOutput objects
-    # Index 5 = report_task, Index 6 = progress_task
     report_raw = ""
     progress_raw = ""
     
@@ -143,15 +140,29 @@ def build_and_run_crew(
         # Fallback if task structure changed
         progress_raw = result.raw if hasattr(result, "raw") else str(result)
 
-    return _parse_combined_output(report_raw, progress_raw)
+    try:
+        return _parse_combined_output(report_raw, progress_raw)
+    except ValueError as ve:
+        return {
+            "error": f"AI Pipeline parsing failed: {str(ve)}",
+            "note": "The agents produced an invalid output format."
+        }
 
 
 def _parse_combined_output(report_raw: str, progress_raw: str) -> dict:
     """
     Parses and merges outputs from the Report Generator and Progress Tracker.
     """
-    report_dict = _parse_json_snippet(report_raw)
-    progress_dict = _parse_json_snippet(progress_raw)
+    # Define required keys for validation
+    report_keys = [
+        "career_matches", "recommendations", "summary", 
+        "skill_profile", "gap_analysis"
+    ]
+    # We validate a minimal set for progress to allow for variations between agent versions
+    progress_keys = ["readiness_score_change", "summary"]
+
+    report_dict = _parse_json_snippet(report_raw, required_keys=report_keys)
+    progress_dict = _parse_json_snippet(progress_raw, required_keys=progress_keys)
 
     return {
         "career_matches":  report_dict.get("career_matches", []),
@@ -159,23 +170,57 @@ def _parse_combined_output(report_raw: str, progress_raw: str) -> dict:
         "summary":         report_dict.get("summary", ""),
         "skill_profile":   report_dict.get("skill_profile", {}),
         "gap_analysis":    report_dict.get("gap_analysis", []),
-        "market_data":     report_dict.get("market_data", {}),
-        "progress":        progress_dict if progress_dict else _default_progression(),
+        "progress":        progress_dict,
     }
 
 
-def _parse_json_snippet(raw: str) -> dict:
-    """Helper to extract JSON from markdown fences."""
+def _parse_json_snippet(raw: str, required_keys: list = None) -> dict:
+    """
+    Robustly extracts JSON from LLM output.
+    1. Tries direct json.loads()
+    2. Tries regex extraction between { and }
+    3. Validates required keys
+    4. Raises ValueError if all fails
+    """
+    import re
     cleaned = raw.strip()
-    if "```json" in cleaned:
-        cleaned = cleaned.split("```json", 1)[1].split("```", 1)[0]
-    elif "```" in cleaned:
-        cleaned = cleaned.split("```", 1)[1].split("```", 1)[0]
+    
+    # Try 1: Direct load (after stripping markdown code fences if present)
+    json_str = cleaned
+    if "```json" in json_str:
+        json_str = json_str.split("```json", 1)[1].split("```", 1)[0]
+    elif "```" in json_str:
+        json_str = json_str.split("```", 1)[1].split("```", 1)[0]
     
     try:
-        return json.loads(cleaned.strip())
+        data = json.loads(json_str.strip())
+        if _validate_keys(data, required_keys):
+            return data
     except Exception:
-        return {}
+        pass
+        
+    # Try 2: Regex fallback (find everything from first '{' to last '}')
+    match = re.search(r'(\{.*\})', cleaned, re.DOTALL)
+    if match:
+        try:
+            data = json.loads(match.group(1).strip())
+            if _validate_keys(data, required_keys):
+                return data
+        except Exception:
+            pass
+            
+    # Everything failed
+    msg = f"Failed to extract valid JSON with required keys {required_keys or []} from LLM output."
+    raise ValueError(msg)
+
+
+def _validate_keys(data: dict, required_keys: list) -> bool:
+    """Checks if all required keys exist in the dictionary."""
+    if not required_keys:
+        return True
+    if not isinstance(data, dict):
+        return False
+    return all(key in data for key in required_keys)
 
 
 def _default_progression() -> dict:

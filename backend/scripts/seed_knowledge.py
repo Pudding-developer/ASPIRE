@@ -3,15 +3,12 @@ import json
 import re
 from pathlib import Path
 import openpyxl
-import google.generativeai as genai
 from sqlmodel import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import async_session_factory
 from app.core.config import GEMINI_API_KEY
 from app.models.knowledge import KnowledgeChunk
 import time
-
-genai.configure(api_key=GEMINI_API_KEY)
 
 DOCUMENTS_DIR = Path(__file__).parent.parent / "Documents"
 ML_DIR = Path(__file__).parent.parent / "ml" / "artifacts"
@@ -171,8 +168,6 @@ CAREER_PATHS = [
         "title": "Backend Developer",
         "content": """Career Path: Backend Developer.
 Philippine market outlook: High demand — top tech career in PH 2024-2025.
-Average salary: PHP 45,000-85,000/month.
-Top hiring locations: BGC, Makati, Ortigas, Cebu IT Park, Remote.
 Required skills: Python or JavaScript, REST APIs, PostgreSQL,
 Docker, Git, Linux, Redis, CI/CD pipelines.
 BSCpE skillsets aligned: Programming & Software Development,
@@ -188,8 +183,6 @@ CpE 418 Software Design, CpE 424 Operating Systems, Database courses."""
         "title": "Full Stack Developer",
         "content": """Career Path: Full Stack Developer.
 Philippine market outlook: Very high demand — most versatile tech role in PH.
-Average salary: PHP 50,000-95,000/month.
-Top hiring locations: BGC, Makati, Remote.
 Required skills: React, Node.js or Python, PostgreSQL, REST APIs,
 Git, Docker, basic DevOps, HTML/CSS/JavaScript.
 BSCpE skillsets aligned: Programming & Software Development,
@@ -205,8 +198,6 @@ CpE 418 Software Design, Web Systems and Technologies."""
         "title": "Frontend Developer",
         "content": """Career Path: Frontend Developer.
 Philippine market outlook: High demand especially for React developers.
-Average salary: PHP 35,000-75,000/month.
-Top hiring locations: BGC, Makati, Cebu, Remote.
 Required skills: HTML, CSS, JavaScript, React or Vue,
 TypeScript, Git, REST API integration, responsive design, accessibility.
 BSCpE skillsets aligned: Programming & Software Development,
@@ -222,8 +213,6 @@ CpE 406 OOP, CpE 418 Software Design."""
         "title": "DevOps Engineer",
         "content": """Career Path: DevOps Engineer.
 Philippine market outlook: Growing — critical shortage of qualified DevOps in PH.
-Average salary: PHP 60,000-120,000/month.
-Top hiring locations: BGC, Remote.
 Required skills: Linux, Docker, Kubernetes, CI/CD,
 AWS or GCP, Terraform, monitoring tools, bash scripting, networking.
 BSCpE skillsets aligned: Operating Systems & Architecture,
@@ -239,8 +228,6 @@ CpE 423 CISCO 3, CpE 424 Operating Systems, CpE 427 CISCO 4."""
         "title": "Cybersecurity Analyst",
         "content": """Career Path: Cybersecurity Analyst.
 Philippine market outlook: Critical demand — PH ranks high in cyberattack targets.
-Average salary: PHP 50,000-100,000/month.
-Top hiring locations: BGC, Makati, Government agencies, Banks, BPO.
 Required skills: Networking, Linux, ethical hacking, penetration testing,
 SIEM tools, incident response, security frameworks, cryptography.
 BSCpE skillsets aligned: Networking & Communications,
@@ -256,8 +243,6 @@ CpE 424 Operating Systems, CpE 427 Connecting Networks and Security."""
         "title": "Data Scientist",
         "content": """Career Path: Data Scientist.
 Philippine market outlook: High growth — banking, BPO, and tech sectors.
-Average salary: PHP 55,000-100,000/month.
-Top hiring locations: BGC, Makati, Ortigas, Remote.
 Required skills: Python, pandas, scikit-learn, SQL,
 data visualization, statistical analysis, machine learning, Jupyter.
 BSCpE skillsets aligned: Data Science & AI/ML,
@@ -273,8 +258,6 @@ CpEE 403 Data Mining/AI Elective, MATH 403 Engineering Data Analysis."""
         "title": "AI Engineer",
         "content": """Career Path: AI Engineer.
 Philippine market outlook: Emerging — fastest growing tech role globally.
-Average salary: PHP 70,000-130,000/month.
-Top hiring locations: BGC, Remote.
 Required skills: Python, PyTorch or TensorFlow, LLMs,
 prompt engineering, vector databases, RAG pipelines, MLOps.
 BSCpE skillsets aligned: Data Science & AI/ML,
@@ -290,8 +273,6 @@ ENGG 414 Numerical Methods, MATH 403 Engineering Data Analysis."""
         "title": "Machine Learning Engineer",
         "content": """Career Path: Machine Learning Engineer.
 Philippine market outlook: Growing — fintech and healthtech sectors leading.
-Average salary: PHP 65,000-120,000/month.
-Top hiring locations: BGC, Remote.
 Required skills: Python, scikit-learn, TensorFlow or PyTorch,
 feature engineering, model deployment, Docker, REST APIs for ML, MLflow.
 BSCpE skillsets aligned: Data Science & AI/ML,
@@ -307,8 +288,6 @@ ENGG 414 Numerical Methods, CpE 411 Data Structures."""
         "title": "Software Architect",
         "content": """Career Path: Software Architect.
 Philippine market outlook: Senior role — 5+ years experience typically required.
-Average salary: PHP 100,000-200,000/month.
-Top hiring locations: BGC, Makati, Remote.
 Required skills: System design, microservices, distributed systems,
 cloud architecture, API design patterns, database design,
 security architecture, performance optimization.

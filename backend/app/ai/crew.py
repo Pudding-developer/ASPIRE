@@ -40,7 +40,8 @@ def _run_with_retry(crew: Crew, inputs: dict):
 def build_and_run_crew(
     student_data: dict, 
     previous_report: str = None,
-    subject_skill_context: str = "No subjects enrolled yet."
+    subject_skill_context: str = "No subjects enrolled yet.",
+    progress_callback=None
 ) -> dict:
     """
     Synchronous entry point — called via asyncio.to_thread() from pipeline_service.
@@ -86,6 +87,15 @@ def build_and_run_crew(
         subject_skill_context
     )
 
+    # ── Attach callbacks for granular progress updates ────────────────────────
+    if progress_callback:
+        github_task.callback = lambda _: progress_callback("Processing academic performance...", 25)
+        academic_task.callback = lambda _: progress_callback("Synthesizing skill profile...", 40)
+        skill_task.callback = lambda _: progress_callback("Mapping career paths...", 55)
+        career_task.callback = lambda _: progress_callback("Analyzing skill gaps...", 70)
+        gap_task.callback = lambda _: progress_callback("Generating career report...", 85)
+        report_task.callback = lambda _: progress_callback("Tracking your progress...", 95)
+
     # ── Assemble crew ─────────────────────────────────────────────────────────
     crew = Crew(
         agents=[
@@ -115,6 +125,7 @@ def build_and_run_crew(
         result = _run_with_retry(crew, inputs={
             "student_name": student_data.get("full_name", "Unknown"),
             "sr_code":      student_data.get("sr_code", "N/A"),
+            "chosen_career": student_data.get("chosen_career", "null"),
             "previous_report_json": previous_report or "null",
             "subject_skill_context": subject_skill_context,
         })
@@ -155,7 +166,7 @@ def _parse_combined_output(report_raw: str, progress_raw: str) -> dict:
     """
     # Define required keys for validation
     report_keys = [
-        "career_matches", "recommendations", "summary", 
+        "recommended_careers", "recommendations", "summary", 
         "skill_profile", "gap_analysis"
     ]
     # We validate a minimal set for progress to allow for variations between agent versions
@@ -165,7 +176,7 @@ def _parse_combined_output(report_raw: str, progress_raw: str) -> dict:
     progress_dict = _parse_json_snippet(progress_raw, required_keys=progress_keys)
 
     return {
-        "career_matches":  report_dict.get("career_matches", []),
+        "recommended_careers":  report_dict.get("recommended_careers", []),
         "recommendations": report_dict.get("recommendations", []),
         "summary":         report_dict.get("summary", ""),
         "skill_profile":   report_dict.get("skill_profile", {}),

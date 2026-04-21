@@ -21,6 +21,7 @@ _sync_engine = create_engine(_sync_url, pool_pre_ping=True)
 
 class RAGCareerInput(BaseModel):
     query: str = Field(
+        default="",
         description=(
             "A natural language question or skill description to search the knowledge base. "
             "Examples: 'What career paths match Python and machine learning skills?', "
@@ -52,6 +53,8 @@ class RAGCareerTool(BaseTool):
         Embed the query and run cosine similarity search against knowledge_chunks.
         Returns formatted results as a JSON string.
         """
+        if not query:
+            return "No query specified. Please provide a query argument."
         try:
             query_vec = embed_query(query)
         except Exception as e:

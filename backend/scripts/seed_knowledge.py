@@ -70,6 +70,27 @@ requiring {so_name.lower()} abilities in the Philippine tech industry."""
         })
     return chunks
 
+def clean_tech_skills(tech_str: str, subject: str) -> str:
+    """
+    Cleans the technical skills string. 
+    Prevents non-IT subjects (like Chemistry/Math) from inheriting every IT skill
+    due to Excel formatting artifacts or accidental checkmarks.
+    """
+    if not tech_str or tech_str == '—':
+        return 'General engineering competency'
+    
+    # Subjects that should focus on Science/Math foundations
+    science_subjects = ['Chemistry', 'Physics', 'Calculus', 'Mathematics', 'SCl ', 'MATH ']
+    is_science = any(k in subject for k in science_subjects)
+    
+    if is_science:
+        if 'Mathematics & Science Foundations' in tech_str:
+            return '✓ Mathematics & Science Foundations'
+        return 'Mathematics & Science Foundations'
+        
+    return tech_str
+
+
 def parse_curriculum(wb) -> list[dict]:
     ws = wb["ILO–Skillset Alignment"]
     chunks = []
@@ -131,7 +152,7 @@ which in turn align with specific tech career paths."""
             current_ilos.append({
                 'ilo': r2,
                 'statement': r3,
-                'tech': r5 if r5 and r5 != '—' else 'General engineering competency',
+                'tech': clean_tech_skills(r5, current_subject),
                 'prof': r6 if r6 and r6 != '—' else 'Professional development'
             })
 

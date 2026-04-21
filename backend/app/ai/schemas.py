@@ -19,7 +19,7 @@ class SkillProfile(BaseModel):
 
 
 class CareerMatch(BaseModel):
-    title: str
+    career_name: str
     match_score: float = Field(ge=0, le=100)
     reasoning: str
     matched_skills: list[str] = []
@@ -29,6 +29,6 @@ class CareerMatch(BaseModel):
 class PipelineResult(BaseModel):
     """Final structured output from the AI pipeline."""
     skill_profile: SkillProfile = Field(default_factory=SkillProfile)
-    career_matches: list[CareerMatch] = []
+    recommended_careers: list[CareerMatch] = []
     recommendations: list[str] = []
     summary: str = ""

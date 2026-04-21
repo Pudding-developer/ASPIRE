@@ -7,7 +7,9 @@ from app.api import instructor_auth_routes, admin_routes, github_routes
 from app.api import instructor_class_routes
 from app.api.pipeline_routes import router as pipeline_router
 from app.api.chat_routes import router as chat_router
-from app.core.database import init_db
+from app.core.database import init_db, async_session_factory
+from app.models.pipeline_models import PipelineJob
+from sqlmodel import update
 import app.models  # noqa: F401 — ensures all models are registered with SQLModel metadata
 
 
@@ -15,6 +17,20 @@ import app.models  # noqa: F401 — ensures all models are registered with SQLMo
 async def lifespan(app: FastAPI):
     print("Startup: initialising database tables...")
     await init_db()
+
+    # Cleanup orphaned pipeline jobs
+    async with async_session_factory() as db:
+        await db.execute(
+            update(PipelineJob)
+            .where(PipelineJob.status.in_(["pending", "running"]))
+            .values(
+                status="failed",
+                error="Server restarted while job was in progress"
+            )
+        )
+        await db.commit()
+        print("Startup: cleared orphaned pipeline jobs.")
+
     yield
     print("Shutdown.")
 

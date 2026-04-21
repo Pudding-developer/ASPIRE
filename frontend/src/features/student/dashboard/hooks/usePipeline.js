@@ -17,6 +17,8 @@ export default function usePipeline(studentId) {
   const [jobId, setJobId]               = useState(null);
   const [pipelineStatus, setPipelineStatus] = useState(null);
   const pollRef = useRef(null);
+  const pollFailuresRef = useRef(0);
+  const MAX_CONSECUTIVE_POLL_FAILURES = 20; // ~60s of continuous failure before giving up
 
   // Fetch existing reports on mount
   const fetchReports = useCallback(async () => {
@@ -50,11 +52,13 @@ export default function usePipeline(studentId) {
       const res = await pipelineApi.run(studentId);
       const newJobId = res.data.job_id;
       setJobId(newJobId);
+      pollFailuresRef.current = 0;
 
       pollRef.current = setInterval(async () => {
         try {
           const pollRes = await pipelineApi.getStatus(newJobId);
           const job = pollRes.data;
+          pollFailuresRef.current = 0;
           setPipelineStatus(job);
 
           if (job.status === 'completed' || job.status === 'failed') {
@@ -67,10 +71,13 @@ export default function usePipeline(studentId) {
             if (job.status === 'completed') fetchReports();
           }
         } catch {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
-          setError('Lost connection to the analysis server. Please check your network.');
-          setJobId(null);
+          pollFailuresRef.current += 1;
+          if (pollFailuresRef.current >= MAX_CONSECUTIVE_POLL_FAILURES) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+            setError('Lost connection to the analysis server. Please check your network.');
+            setJobId(null);
+          }
         }
       }, 3000);
     } catch (e) {

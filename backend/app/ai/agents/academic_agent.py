@@ -4,19 +4,10 @@ academic_agent.py — Agent 2: Academic Performance Analyst.
 Analyzes a student's ILO scores and ML model predictions to produce
 a subject-mapped academic skill profile with threshold classifications.
 """
-from crewai import Agent, LLM
+from crewai import Agent
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
-
-
-def _get_llm() -> LLM:
-    return LLM(
-        model=GEMINI_MODEL,
-        api_key=GEMINI_API_KEY,
-        max_retries=5,
-        timeout=120
-    )
+from app.ai.llm_factory import get_llm
 
 
 def create_academic_analyzer(student_data_tool) -> Agent:
@@ -34,18 +25,22 @@ def create_academic_analyzer(student_data_tool) -> Agent:
             "Exceeding Expectations >= 80%, On Track >= 60%, "
             "Needs Attention >= 40%, Critical < 40%."
         ),
-        llm=_get_llm(),
+        llm=get_llm(),
         tools=[student_data_tool],
         verbose=True,
         allow_delegation=False,
+        max_iter=3,
+        max_retry_limit=2,
     )
 
 
 def create_academic_analysis_task(agent: Agent) -> Task:
     return Task(
         description=(
-            "Use the student_data_lookup tool with query='academic' to fetch "
-            "the student's ILO scores across all assessments.\n\n"
+            "Make EXACTLY ONE call to student_data_lookup with query='academic' to fetch "
+            "the student's ILO scores across all assessments. After that single call, "
+            "do NOT call any tool again — proceed directly to producing the Final Answer "
+            "JSON described below.\n\n"
             "For each subject/assessment, use this DETERMINISTIC skill mapping "
             "(do not guess or infer — use exactly what is provided):\n\n"
             "{subject_skill_context}\n\n"

@@ -6,19 +6,10 @@ a single unified profile using weighted scoring:
   GitHub contribution = 40%
   Academic performance = 60%
 """
-from crewai import Agent, LLM
+from crewai import Agent
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
-
-
-def _get_llm() -> LLM:
-    return LLM(
-        model=GEMINI_MODEL,
-        api_key=GEMINI_API_KEY,
-        max_retries=5,
-        timeout=120
-    )
+from app.ai.llm_factory import get_llm
 
 
 def create_skill_synthesizer() -> Agent:
@@ -36,10 +27,12 @@ def create_skill_synthesizer() -> Agent:
             "conflicts between the two sources — if a student has strong GitHub Python "
             "skills but weak academic scores in programming, you report both honestly."
         ),
-        llm=_get_llm(),
+        llm=get_llm(),
         tools=[],
         verbose=True,
         allow_delegation=False,
+        max_iter=3,
+        max_retry_limit=2,
     )
 
 

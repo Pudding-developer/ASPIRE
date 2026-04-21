@@ -7,7 +7,8 @@ background thread, and persists results.
 import asyncio
 import json
 import uuid
-from datetime import datetime
+import logging
+from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -19,6 +20,10 @@ from app.models.github import GithubProfile, RepositoryCache, ContributionCache
 from app.models.pipeline_models import PipelineJob, CareerReport
 from app.ai.data.subject_skill_map import build_subject_skill_context
 from app.repositories.class_repository import get_enrolled_subjects
+
+
+STALE_JOB_THRESHOLD_MINUTES = 60
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -114,6 +119,7 @@ async def _fetch_student_data(db: AsyncSession, student_id: int) -> dict:
         "sr_code": student.sr_code,
         "full_name": student.full_name,
         "email": student.email,
+        "chosen_career": student.chosen_career,
         "academic_scores": academic_scores,
         "github": github_data,
     }
@@ -180,18 +186,11 @@ async def run_pipeline_job(
             if previous_report:
                 days_since = (datetime.utcnow() - previous_report.created_at).days
 
-            # ── Step 1 progress label ─────────────────────────────────────────
+            # ── Initial progress label before blocking thread ─────────────────
             await _update_job(
                 db, job_id,
                 current_step="Analyzing GitHub repositories...",
                 percentage=10,
-            )
-
-            # ── Step 2 progress label (set before blocking thread) ────────────
-            await _update_job(
-                db, job_id,
-                current_step="Processing academic performance...",
-                percentage=25,
             )
 
             # --- fetch previous report for tracking ---
@@ -201,6 +200,16 @@ async def run_pipeline_job(
             enrolled_subjects = await get_enrolled_subjects(db, student_id)
             subject_context = build_subject_skill_context(enrolled_subjects)
 
+            # ── Define a callback for the background thread to update the DB ──
+            loop = asyncio.get_running_loop()
+            
+            def progress_callback(step_name: str, percentage: int):
+                # Schedules the async DB update back on the main event loop
+                asyncio.run_coroutine_threadsafe(
+                    _update_job(db, job_id, current_step=step_name, percentage=percentage),
+                    loop
+                )
+
             # ── Run the entire 7-agent crew in a background thread ────────────
             from app.ai.crew import build_and_run_crew
 
@@ -208,7 +217,8 @@ async def run_pipeline_job(
                 build_and_run_crew, 
                 student_data, 
                 prev_report_json,
-                subject_context
+                subject_context,
+                progress_callback
             )
 
             # ── If crew returned a fallback error, propagate it ──────────────
@@ -222,33 +232,6 @@ async def run_pipeline_job(
                     completed_at=datetime.utcnow(),
                 )
                 return
-
-            # ── Post-pipeline progress labels (fast — just DB writes) ─────────
-            await _update_job(
-                db, job_id,
-                current_step="Synthesizing skill profile...",
-                percentage=40,
-            )
-            await _update_job(
-                db, job_id,
-                current_step="Mapping career paths...",
-                percentage=55,
-            )
-            await _update_job(
-                db, job_id,
-                current_step="Analyzing skill gaps...",
-                percentage=70,
-            )
-            await _update_job(
-                db, job_id,
-                current_step="Generating career report...",
-                percentage=85,
-            )
-            await _update_job(
-                db, job_id,
-                current_step="Tracking your progress...",
-                percentage=95,
-            )
 
             # ── Persist the report + progression ─────────────────────────────
             progress_data = pipeline_result.get("progress", {})
@@ -325,7 +308,23 @@ async def get_running_job(db: AsyncSession, student_id: int) -> PipelineJob | No
             PipelineJob.status.in_(["pending", "running"]),
         )
     )
-    return result.scalar_one_or_none()
+    job = result.scalar_one_or_none()
+
+    if job:
+        # Calculate how long it has been since job.started_at
+        elapsed = datetime.utcnow() - job.started_at
+        if elapsed > timedelta(minutes=STALE_JOB_THRESHOLD_MINUTES):
+            logger.warning(f"Cleaning up stale job {job.id} for student {student_id} (elapsed: {elapsed})")
+            job.status = "failed"
+            job.error = (
+                "Job timed out — exceeded 60 minute threshold. "
+                "This is usually caused by LLM rate limits, network issues, or server restart."
+            )
+            job.completed_at = datetime.utcnow()
+            await db.commit()
+            return None
+
+    return job
 
 
 async def get_latest_report(db: AsyncSession, student_id: int) -> CareerReport | None:

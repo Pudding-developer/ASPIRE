@@ -3,7 +3,10 @@ import httpx
 from pydantic import BaseModel, Field
 
 class GitHubSearchInput(BaseModel):
-    skill_name: str = Field(description="The name of the skill to search for tutorials on GitHub")
+    skill_name: str = Field(
+        default="",
+        description="The name of the skill to search for tutorials on GitHub"
+    )
 
 class GitHubSearchTool(BaseTool):
     name: str = "github_search"
@@ -18,6 +21,8 @@ class GitHubSearchTool(BaseTool):
         Makes an unauthenticated request to the GitHub Search API to find 
         the top 3 repositories related to a skill tutorial.
         """
+        if not skill_name:
+            return "No skill specified. Please provide a skill_name argument."
         try:
             # Construct the query: [skill] + tutorial
             query = f"{skill_name} tutorial"

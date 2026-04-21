@@ -3,16 +3,9 @@ progress_tracker_agent.py — Longitudinal Progress Tracker.
 
 Compares current pipeline results with previous report data to calculate growth.
 """
-from crewai import Agent, Task, LLM
-from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
+from crewai import Agent, Task
 
-def _get_llm() -> LLM:
-    return LLM(
-        model=GEMINI_MODEL,
-        api_key=GEMINI_API_KEY,
-        max_retries=5,
-        timeout=120
-    )
+from app.ai.llm_factory import get_llm
 
 def create_progress_tracker() -> Agent:
     return Agent(
@@ -23,9 +16,11 @@ def create_progress_tracker() -> Agent:
             "progress over time at BSU CpE. You identify what has improved, what has "
             "regressed, and what new gaps have emerged since the last assessment."
         ),
-        llm=_get_llm(),
+        llm=get_llm(),
         verbose=True,
-        allow_delegation=False
+        allow_delegation=False,
+        max_iter=3,
+        max_retry_limit=2
     )
 
 def create_progress_tracking_task(agent: Agent, current_report_task) -> Task:

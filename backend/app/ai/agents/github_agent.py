@@ -4,19 +4,10 @@ github_agent.py — Agent 1: GitHub Repository Analyst.
 Analyzes a student's cached GitHub repositories and contribution data
 to extract concrete, evidence-backed technical skills.
 """
-from crewai import Agent, LLM
+from crewai import Agent
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
-
-
-def _get_llm() -> LLM:
-    return LLM(
-        model=GEMINI_MODEL,
-        api_key=GEMINI_API_KEY,
-        max_retries=5,
-        timeout=120
-    )
+from app.ai.llm_factory import get_llm
 
 
 def create_github_analyzer(student_data_tool) -> Agent:
@@ -35,18 +26,21 @@ def create_github_analyzer(student_data_tool) -> Agent:
             "'the student demonstrates intermediate Python proficiency based on async "
             "usage and OOP patterns across 4 repositories'."
         ),
-        llm=_get_llm(),
+        llm=get_llm(),
         tools=[student_data_tool],
         verbose=True,
         allow_delegation=False,
+        max_iter=3,
+        max_retry_limit=2,
     )
 
 
 def create_github_analysis_task(agent: Agent) -> Task:
     return Task(
         description=(
-            "Use the student_data_lookup tool with query='github' to fetch the student's "
-            "full GitHub data.\n\n"
+            "Make EXACTLY ONE call to student_data_lookup with query='github' to fetch the "
+            "student's full GitHub data. After that single call, do NOT call any tool again — "
+            "proceed directly to producing the Final Answer JSON described below.\n\n"
             "For each repository analyze:\n"
             "- primary language and all used languages\n"
             "- dependencies extracted from package.json / requirements.txt / pom.xml / pubspec.yaml\n"

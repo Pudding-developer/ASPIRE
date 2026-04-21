@@ -4,19 +4,10 @@ report_agent.py — Agent 6: Career Report Generator.
 Synthesizes all previous agent outputs into the final CareerReport JSON
 that matches the schema the frontend already expects.
 """
-from crewai import Agent, LLM
+from crewai import Agent
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
-
-
-def _get_llm() -> LLM:
-    return LLM(
-        model=GEMINI_MODEL,
-        api_key=GEMINI_API_KEY,
-        max_retries=5,
-        timeout=120
-    )
+from app.ai.llm_factory import get_llm
 
 
 def create_report_generator() -> Agent:
@@ -33,10 +24,12 @@ def create_report_generator() -> Agent:
             "You are honest about weaknesses but always frame them as opportunities. "
             "Your reports are read by students, so use clear language — no jargon."
         ),
-        llm=_get_llm(),
+        llm=get_llm(),
         tools=[],
         verbose=True,
         allow_delegation=False,
+        max_iter=3,
+        max_retry_limit=2,
     )
 
 
@@ -54,12 +47,12 @@ def create_report_generation_task(
             "  - github_skills (Agent 1 — GitHub Analyst)\n"
             "  - academic_skills (Agent 2 — Academic Analyst)\n"
             "  - unified_skills (Agent 3 — Skill Synthesizer)\n"
-            "  - career_matches (Agent 4 — Career Mapper)\n"
+            "  - recommended_careers (Agent 4 — Career Mapper)\n"
             "  - gap_analysis (Agent 5 — Gap Analyst)\n\n"
             "Produce the final CareerReport JSON.\n\n"
             "Rules:\n"
-            "- career_matches: take from Agent 4, enhanced by adding the gap data "
-            "  for the recommended career from Agent 5\n"
+            "- recommended_careers: take from Agent 4, enhanced by adding the gap data "
+            "  for the top recommended career from Agent 5\n"
             "- recommendations: write 3–5 specific, actionable items derived from the "
             "  gap_analysis. Each must reference a specific resource or step "
             "  (e.g., 'Complete the Docker getting-started tutorial — estimated 3 weeks')\n"
@@ -71,7 +64,7 @@ def create_report_generation_task(
             "- gap_analysis: take directly from Agent 5 output\n\n"
             "Return ONLY a JSON object in this exact schema — no explanation text:\n"
             "{\n"
-            '  "career_matches": [...],\n'
+            '  "recommended_careers": [...],\n'
             '  "recommendations": [\n'
             '    "Complete the Docker getting started tutorial (3 weeks)...",\n'
             '    "Build a REST API project using FastAPI and deploy to Render..."\n'
@@ -87,7 +80,7 @@ def create_report_generation_task(
             "}"
         ),
         expected_output=(
-            "A JSON object with keys: career_matches, recommendations, summary, "
+            "A JSON object with keys: recommended_careers, recommendations, summary, "
             "skill_profile, gap_analysis. "
             "This is the final output that will be stored in CareerReport.report_json "
             "and read by the frontend. Return ONLY the JSON."

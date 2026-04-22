@@ -15,16 +15,20 @@ from google.genai import types
 from google.genai import errors as genai_errors
 
 from app.api.deps import get_current_student
-from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
+from app.core.config import GEMINI_MODEL, VERTEX_AI_PROJECT, VERTEX_AI_LOCATION
 from app.models.user import User
 
-router = APIRouter(prefix="/api/chat", tags=["Chat"])
+router = APIRouter(prefix="/chat", tags=["Chat"])
 
 
-# The project's GEMINI_MODEL is stored in litellm format ("gemini/gemini-2.0-flash").
-# google-genai wants the bare model id.
+# Strip "vertex_ai/" litellm prefix to get the bare model id for google-genai.
 _MODEL_ID = GEMINI_MODEL.split("/", 1)[1] if "/" in GEMINI_MODEL else GEMINI_MODEL
-_client = genai.Client(api_key=GEMINI_API_KEY)
+# Auth via GOOGLE_APPLICATION_CREDENTIALS (service account JSON) — no explicit key needed.
+_client = genai.Client(
+    vertexai=True,
+    project=VERTEX_AI_PROJECT,
+    location=VERTEX_AI_LOCATION,
+)
 
 
 class ChatMessage(BaseModel):
@@ -95,8 +99,7 @@ async def career_chat(
     body: ChatRequest,
     current_user: User = Depends(get_current_student),
 ):
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=503, detail="AI service is not configured.")
+    # Vertex AI ADC — always available once gcloud auth application-default login is done.
 
     system_prompt = _build_system_prompt(current_user.full_name or "Student", body.context)
 

@@ -7,6 +7,7 @@ from app.api import instructor_auth_routes, admin_routes, github_routes
 from app.api import instructor_class_routes
 from app.api.pipeline_routes import router as pipeline_router
 from app.api.chat_routes import router as chat_router
+from app.api.roadmap_routes import router as roadmap_router
 from app.core.database import init_db
 import app.models  # noqa: F401 — ensures all models are registered with SQLModel metadata
 
@@ -53,10 +54,13 @@ app.include_router(github_routes.router, prefix="/api/github", tags=["GitHub"])
 app.include_router(instructor_class_routes.router, tags=["Instructor Classes"])
 
 # AI career-mapping pipeline
-app.include_router(pipeline_router)
+app.include_router(pipeline_router, prefix="/api")
 
 # AI career-coach chatbot
-app.include_router(chat_router)
+app.include_router(chat_router, prefix="/api")
+
+# Career roadmap overlays
+app.include_router(roadmap_router, prefix="/api")
 
 
 @app.exception_handler(HTTPException)

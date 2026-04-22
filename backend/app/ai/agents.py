@@ -5,13 +5,13 @@ from crewai import Agent, LLM
 
 from app.ai.tools.student_data_tool import StudentDataTool
 from app.ai.tools.rag_career_tool import RAGCareerTool
-from app.core.config import GEMINI_API_KEY
+from app.core.config import GEMINI_MODEL
 
 
 def _get_llm() -> LLM:
     return LLM(
-        model="gemini/gemini-2.5-flash",
-        api_key=GEMINI_API_KEY,
+        model=GEMINI_MODEL,
+        # Auth via GOOGLE_APPLICATION_CREDENTIALS (service account JSON)
     )
 
 

@@ -9,13 +9,12 @@ If this is the student's first report, produces an encouraging baseline instead.
 from crewai import Agent, LLM
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
+from app.core.config import GEMINI_MODEL
 
 
 def _get_llm() -> LLM:
     return LLM(
         model=GEMINI_MODEL,
-        api_key=GEMINI_API_KEY,
         max_retries=5,
         timeout=120
     )

@@ -6,7 +6,6 @@ import openpyxl
 from sqlmodel import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import async_session_factory
-from app.core.config import GEMINI_API_KEY
 from app.models.knowledge import KnowledgeChunk
 import time
 
@@ -303,6 +302,139 @@ CpE 430 CpE Practice and Design 2, Capstone."""
     }
 ]
 
+HARDWARE_CAREER_PATHS = [
+    {
+        "title": "Embedded Systems Engineer",
+        "content": """Career Path: Embedded Systems Engineer.
+Philippine market outlook: Steady demand in manufacturing and consumer electronics.
+Required skills: C/C++, RTOS (FreeRTOS/Zephyr), Microcontrollers (STM32, ESP32, AVR),
+I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes.
+BSCpE skillsets aligned: Embedded & Microprocessor Systems,
+Hardware & Circuit Design, Operating Systems & Architecture.
+ABET SOs: SO1, SO2, SO3, SO5.
+Roadmap: https://roadmap.sh/embedded
+BSU CpE subjects most relevant: CpE 417 Microprocessors,
+CpE 428 Embedded Systems, CpE 413 Fundamentals of Mixed Signals and Sensors."""
+    },
+    {
+        "title": "VLSI Design Engineer",
+        "content": """Career Path: VLSI Design Engineer.
+Philippine market outlook: Specialized demand in semiconductor design houses (Laguna/Cavite).
+Required skills: Verilog/SystemVerilog, VHDL, Digital Logic Design,
+CMOS fundamentals, EDA tools (Cadence, Synopsys), Static Timing Analysis.
+BSCpE skillsets aligned: Hardware & Circuit Design,
+Embedded & Microprocessor Systems, Engineering Design & Research.
+ABET SOs: SO1, SO2, SO3.
+BSU CpE subjects most relevant: CpE 410 Logic Circuits and Design,
+CpE 415 Introduction to HDL, CpE 425 Computer Architecture and Organization."""
+    },
+    {
+        "title": "FPGA Engineer",
+        "content": """Career Path: FPGA Engineer.
+Philippine market outlook: Growing niche in telecommunications and high-speed trading.
+Required skills: HDL (Verilog/VHDL), FPGA Architecture (Xilinx/Altera),
+Digital Signal Processing, High-speed interfaces, Timing closure.
+BSCpE skillsets aligned: Hardware & Circuit Design,
+Signal Processing & Control Systems, Modern Engineering Tools.
+ABET SOs: SO1, SO2, SO3, SO5.
+BSU CpE subjects most relevant: CpE 415 Introduction to HDL,
+CpE 420 Digital Signal Processing, CpE 410 Logic Circuits and Design."""
+    },
+    {
+        "title": "IoT Systems Engineer",
+        "content": """Career Path: IoT Systems Engineer.
+Philippine market outlook: High potential in smart agriculture and industrial automation.
+Required skills: Embedded C, Wireless protocols (LoRaWAN, Zigbee, BLE),
+Cloud integration (AWS IoT, Google Cloud IoT), Sensors, MQTT.
+BSCpE skillsets aligned: Networking & Communications,
+Embedded & Microprocessor Systems, Data Science & AI/ML.
+ABET SOs: SO1, SO3, SO5, SO11.
+BSU CpE subjects most relevant: CpE 412-427 CISCO track,
+CpE 428 Embedded Systems, CpE 413 Fundamentals of Mixed Signals and Sensors."""
+    }
+]
+
+GAP_CLOSER_PROJECTS = [
+    {
+        "title": "Dockerization Project for BSCpE",
+        "content": """Project: "Containerized Microservice Deployment"
+Target Gap: Docker & Containerization.
+Description: Take an existing Python (FastAPI) or Node.js project and
+create a Dockerfile. Use docker-compose to link it with a PostgreSQL database.
+Key learning: Images, Containers, Volumes, Networking, Docker Compose.
+Relevance: Critical for Backend, DevOps, and Full Stack roles."""
+    },
+    {
+        "title": "CI/CD Pipeline Project for BSCpE",
+        "content": """Project: "Automated Testing and Linting Pipeline"
+Target Gap: CI/CD.
+Description: Create a GitHub repository and set up GitHub Actions.
+Configure it to run automated tests (Pytest/Jest) and linting (Flake8/ESLint)
+on every pull request.
+Key learning: YAML configuration, GitHub Actions, Workflow automation.
+Relevance: Essential for modern software engineering and DevOps."""
+    },
+    {
+        "title": "Cloud Deployment Project for BSCpE",
+        "content": """Project: "Full-stack Production Deployment"
+Target Gap: Cloud Infrastructure.
+Description: Deploy a frontend (React) to Vercel and a backend (FastAPI)
+to Render or AWS App Runner. Configure environment variables and CORS.
+Key learning: DNS, SSL/TLS, Environment management, Cloud providers.
+Relevance: Necessary for all web-focused career paths."""
+    }
+]
+
+PH_TECH_ECOSYSTEM = [
+    {
+        "title": "Philippine Tech Hubs",
+        "content": """Knowledge: Major Tech Hubs in the Philippines.
+Locations: Makati City (Fintech/Banking), BGC Taguig (Multinationals/Startups),
+Ortigas Center (BPO/IT Services), Cebu City (Emerging Tech/Software Houses).
+Significance: Understanding where companies are located helps in job searching
+and deciding on relocation or remote work opportunities."""
+    },
+    {
+        "title": "Philippine Tech Communities",
+        "content": """Knowledge: Active Tech Communities for Networking in PH.
+Groups: Python Philippines, Google Developer Groups (GDG) Philippines,
+AWS User Group Philippines, React Philippines, Women Who Code Manila.
+Advice: Joining these groups on Facebook, Meetup, or Discord helps students
+find mentors and stay updated on local industry trends."""
+    }
+]
+
+PROFESSIONAL_SKILLS_MAPPING = [
+    {
+        "title": "Professional Communication for Engineers",
+        "content": """Competency: Technical Communication.
+Aligned Subject: GEd 106 Purposive Communication.
+Description: Beyond basic speaking, this subject prepares BSCpE students
+for technical writing, client presentations, and documentation.
+Relevance: Essential for Senior roles, Project Management, and Client-facing engineering."""
+    },
+    {
+        "title": "Ethics in the Digital Age",
+        "content": """Competency: Ethics & Professionalism.
+Aligned Subject: GEd 107 Ethics.
+Description: Focuses on engineering ethics, data privacy (Data Privacy Act of 2012),
+and professional responsibility in software and hardware design.
+Relevance: Critical for Cybersecurity, AI Engineering, and Lead Developer roles."""
+    }
+]
+
+LEARNING_RESOURCES = [
+    {
+        "title": "Free Learning Resources for BSCpE Gaps",
+        "content": """Resources: Recommended Platforms for Self-Paced Learning.
+- Roadmap.sh: Comprehensive visual roadmaps for all tech roles.
+- FreeCodeCamp: Project-based learning for Web Development and Data Science.
+- MDN Web Docs: The gold standard for frontend (HTML/CSS/JS) documentation.
+- Cisco Networking Academy: Deep dives into networking and security."""
+    }
+]
+
+
 ROADMAP_LEARNING_PATHS = [
     {
         "title": "Backend Developer learning path for BSU CpE",
@@ -524,15 +656,22 @@ async def main():
 
     total = (
         len(skillsets) + len(outcomes) + len(curriculum) +
-        len(ml_skills) + len(CAREER_PATHS) + len(ROADMAP_LEARNING_PATHS)
+        len(ml_skills) + len(CAREER_PATHS) + len(ROADMAP_LEARNING_PATHS) +
+        len(HARDWARE_CAREER_PATHS) + len(GAP_CLOSER_PROJECTS) +
+        len(PH_TECH_ECOSYSTEM) + len(PROFESSIONAL_SKILLS_MAPPING) +
+        len(LEARNING_RESOURCES)
     )
     print(f"Total chunks to seed: {total}")
     print(f"  skillset: {len(skillsets)}")
     print(f"  ilo: {len(outcomes)}")
     print(f"  curriculum: {len(curriculum)}")
     print(f"  skillset_ml: {len(ml_skills)}")
-    print(f"  career_path: {len(CAREER_PATHS)}")
+    print(f"  career_path: {len(CAREER_PATHS) + len(HARDWARE_CAREER_PATHS)}")
     print(f"  roadmap: {len(ROADMAP_LEARNING_PATHS)}")
+    print(f"  gap_closer: {len(GAP_CLOSER_PROJECTS)}")
+    print(f"  ph_tech_eco: {len(PH_TECH_ECOSYSTEM)}")
+    print(f"  prof_skills: {len(PROFESSIONAL_SKILLS_MAPPING)}")
+    print(f"  resources: {len(LEARNING_RESOURCES)}")
 
     async with async_session_factory() as session:
         print("\nClearing existing knowledge chunks...")
@@ -546,7 +685,12 @@ async def main():
         total_seeded += await seed_category(session, "curriculum", curriculum)
         total_seeded += await seed_category(session, "skillset_ml", ml_skills)
         total_seeded += await seed_category(session, "career_path", CAREER_PATHS)
+        total_seeded += await seed_category(session, "career_path", HARDWARE_CAREER_PATHS)
         total_seeded += await seed_category(session, "roadmap", ROADMAP_LEARNING_PATHS)
+        total_seeded += await seed_category(session, "gap_closer", GAP_CLOSER_PROJECTS)
+        total_seeded += await seed_category(session, "ph_tech_eco", PH_TECH_ECOSYSTEM)
+        total_seeded += await seed_category(session, "prof_skills", PROFESSIONAL_SKILLS_MAPPING)
+        total_seeded += await seed_category(session, "resources", LEARNING_RESOURCES)
 
     print("\n" + "=" * 40)
     print(f"✅ Knowledge base seeded: {total_seeded}/{total} chunks")

@@ -29,7 +29,15 @@ GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:8000/ap
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "ASPIRE <onboarding@resend.dev>")
 
-# Gemini AI (for CrewAI pipeline)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini/gemini-2.0-flash")
+# Gemini AI — Vertex AI via Service Account JSON
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "vertex_ai/gemini-2.5-flash")
+VERTEX_AI_PROJECT = os.getenv("VERTEX_AI_PROJECT", "aspire-494019")
+VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1")
+
+# Service account key — both LiteLLM and google-genai read GOOGLE_APPLICATION_CREDENTIALS.
+_sa_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+if _sa_path:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = _sa_path
+os.environ["VERTEXAI_PROJECT"] = VERTEX_AI_PROJECT
+os.environ["VERTEXAI_LOCATION"] = VERTEX_AI_LOCATION
 

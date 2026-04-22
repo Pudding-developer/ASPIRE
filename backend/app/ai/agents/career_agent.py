@@ -7,13 +7,12 @@ to the top 3 relevant BSU CpE career paths with calculated match scores.
 from crewai import Agent, LLM
 from crewai import Task
 
-from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
+from app.core.config import GEMINI_MODEL
 
 
 def _get_llm() -> LLM:
     return LLM(
         model=GEMINI_MODEL,
-        api_key=GEMINI_API_KEY,
         max_retries=5,
         timeout=120
     )

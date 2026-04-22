@@ -30,7 +30,10 @@ class RAGCareerInput(BaseModel):
     )
     category: str = Field(
         default="all",
-        description="Filter by category: 'all', 'career_path', 'ilo', or 'curriculum'",
+        description=(
+            "Filter by category: 'all', 'career_path', 'ilo', 'curriculum', "
+            "'gap_closer', 'ph_tech_eco', 'prof_skills', or 'resources'"
+        ),
     )
     top_k: int = Field(default=5, description="Number of top results to return (1-10)")
 

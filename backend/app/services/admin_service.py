@@ -1,6 +1,6 @@
 """
 admin_service.py — Admin business logic for dashboard, token management,
-instructor management, and student listing.
+and instructor management.
 """
 import secrets
 from datetime import datetime, timedelta
@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories import admin_repository, token_repository, instructor_repository, user_repository
+from app.repositories import admin_repository, token_repository, instructor_repository
 from app.services.email_service import send_instructor_invite
 
 FRONTEND_BASE_URL = "http://localhost:5173"
@@ -151,28 +151,3 @@ async def remove_instructor(db: AsyncSession, instructor_id: int) -> None:
             )
 
     await instructor_repository.delete(db, instructor_id)
-
-
-# ---------------------------------------------------------------------------
-# Student listing
-# ---------------------------------------------------------------------------
-
-async def list_students(db: AsyncSession, page: int = 1, limit: int = 20) -> dict:
-    students, total = await user_repository.get_all(db, page, limit)
-    return {
-        "students": [
-            {
-                "id": s.id,
-                "email": s.email,
-                "sr_code": s.sr_code,
-                "full_name": s.full_name,
-                "avatar_url": s.avatar_url,
-                "created_at": s.created_at.isoformat() if hasattr(s, "created_at") and s.created_at else None,
-            }
-            for s in students
-        ],
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "total_pages": (total + limit - 1) // limit,
-    }

@@ -3,7 +3,7 @@ admin_routes.py — Admin-only management endpoints.
 
 Routes call services only — no direct DB queries or business logic.
 """
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 from typing import Optional
@@ -96,14 +96,3 @@ async def remove_instructor(
 ):
     await admin_service.remove_instructor(session, instructor_id)
     return {"data": {}, "message": "Instructor role removed. This account no longer has instructor access."}
-
-
-@router.get("/students")
-async def list_students(
-    admin: Admin = Depends(get_current_admin),
-    session: AsyncSession = Depends(get_session),
-    page: int = Query(default=1, ge=1),
-    limit: int = Query(default=20, ge=1, le=100),
-):
-    data = await admin_service.list_students(session, page, limit)
-    return {"data": data}

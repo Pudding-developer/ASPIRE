@@ -53,7 +53,7 @@ async def seed():
         admin = Admin(email=email, full_name=full_name)
         session.add(admin)
         await session.commit()
-        print(f"\n✅ Admin account created for {full_name} <{email}>")
+        print(f"\n Admin account created for {full_name} <{email}>")
         print("They can now log in via Google on the landing page.")
 
     await engine.dispose()

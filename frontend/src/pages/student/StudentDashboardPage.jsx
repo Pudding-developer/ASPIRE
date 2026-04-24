@@ -18,15 +18,27 @@ export default function StudentDashboardPage() {
 
   const handleLogout = () => { logout(); navigate('/'); };
 
+  if (!user) return <div className="h-screen flex items-center justify-center bg-[#f8f9fb]">Loading session...</div>;
+
   return (
     <div className="h-screen flex bg-[#f8f9fb] font-sans overflow-hidden">
       <StudentSidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} user={user} />
       <main className="flex-1 overflow-y-auto bg-[#f8f9fb] h-full">
-        {activeView === 'dashboard'        && <StudentDashboardView user={user} onNavigate={setActiveView} />}
-        {activeView === 'my-performance'   && <StudentPerformanceView user={user} />}
-        {activeView === 'github-analytics' && <StudentGitHubView user={user} />}
-        {activeView === 'enrolled-classes'  && <EnrolledClassesView classes={classesLoading ? null : classes} onRefresh={refetch} />}
-        {activeView === 'career-coach'     && <StudentCareerView user={user} />}
+        <div className={activeView === 'dashboard' ? '' : 'hidden'}>
+          <StudentDashboardView user={user} onNavigate={setActiveView} />
+        </div>
+        <div className={activeView === 'my-performance' ? '' : 'hidden'}>
+          <StudentPerformanceView user={user} />
+        </div>
+        <div className={activeView === 'github-analytics' ? '' : 'hidden'}>
+          <StudentGitHubView user={user} />
+        </div>
+        <div className={activeView === 'enrolled-classes' ? '' : 'hidden'}>
+          <EnrolledClassesView classes={classesLoading ? null : classes} onRefresh={refetch} />
+        </div>
+        <div className={activeView === 'career-coach' ? '' : 'hidden'}>
+          <StudentCareerView user={user} />
+        </div>
       </main>
     </div>
   );

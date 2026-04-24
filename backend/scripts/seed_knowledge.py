@@ -677,7 +677,7 @@ async def main():
         print("\nClearing existing knowledge chunks...")
         await session.execute(delete(KnowledgeChunk))
         await session.commit()
-        print("  ✅ Cleared")
+        print("  Cleared")
 
         total_seeded = 0
         total_seeded += await seed_category(session, "skillset", skillsets)
@@ -693,7 +693,7 @@ async def main():
         total_seeded += await seed_category(session, "resources", LEARNING_RESOURCES)
 
     print("\n" + "=" * 40)
-    print(f"✅ Knowledge base seeded: {total_seeded}/{total} chunks")
+    print(f"Knowledge base seeded: {total_seeded}/{total} chunks")
     print("Run 'python scripts/seed_knowledge.py' again to re-seed")
 
 if __name__ == "__main__":

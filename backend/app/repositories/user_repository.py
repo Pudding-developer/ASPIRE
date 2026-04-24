@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select, func
+from sqlmodel import select
 
 from app.models.user import User
 
@@ -38,10 +38,3 @@ async def update(db: AsyncSession, user_id: int, **kwargs) -> User:
     await db.commit()
     await db.refresh(user)
     return user
-
-
-async def get_all(db: AsyncSession, page: int = 1, limit: int = 20) -> tuple[list[User], int]:
-    total = (await db.execute(select(func.count()).select_from(User))).scalar()
-    offset = (page - 1) * limit
-    result = await db.execute(select(User).offset(offset).limit(limit))
-    return result.scalars().all(), total

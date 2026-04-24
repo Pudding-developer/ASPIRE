@@ -3,7 +3,7 @@
  */
 import { request } from './api';
 
-const BASE = '/pipeline';
+const BASE = '/api/pipeline';
 
 export const pipelineApi = {
   /** Launch AI pipeline for a student — returns { job_id } */

@@ -115,7 +115,6 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
           {[
             'Career path matching with compatibility scores',
             'Skill gap analysis and learning recommendations',
-            'Market trends aligned with your profile',
             'AI-powered career guidance chat',
           ].map(f => (
             <div key={f} className="flex items-center gap-2 text-[11px] text-gray-600">

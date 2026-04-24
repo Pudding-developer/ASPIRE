@@ -7,6 +7,7 @@ from app.models.class_model import Class, ClassEnrollment, Assessment, Assessmen
 from app.models.pipeline_models import PipelineJob, CareerReport
 from app.models.knowledge import KnowledgeChunk
 from app.models.roadmap import RoadmapCache
+from app.models.chat import ChatSession, ChatMessage
 
 __all__ = [
     "User", "Instructor", "InstructorInviteToken", "Admin",
@@ -15,4 +16,5 @@ __all__ = [
     "PipelineJob", "CareerReport",
     "KnowledgeChunk",
     "RoadmapCache",
+    "ChatSession", "ChatMessage",
 ]

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Target, TrendingUp, Layers, ChevronRight, Activity, Zap, CheckCircle2, ChevronDown, ListEnd, Star, Plus, MessageSquare, AlertCircle, Loader2 } from 'lucide-react';
+import { Target, TrendingUp, Layers, ChevronRight, Activity, Zap, CheckCircle2, ChevronDown, ListEnd, Star, Plus, MessageSquare, AlertCircle, Loader2, Trash2, Square, Bot } from 'lucide-react';
 import useCareerCoach from '../hooks/useCareerCoach';
 import { chatService } from '../../../../services/chatService';
 
@@ -8,6 +8,7 @@ import CareerPathCard from '../components/CareerPathCard';
 import CareerMatchDonut from '../components/CareerMatchDonut';
 import CareerAllPathsModal from '../components/CareerAllPathsModal';
 import CareerSectionHeading from '../components/CareerSectionHeading';
+import RoadmapViewer from '../components/RoadmapViewer';
 
 const CHAT_SUGGESTIONS = [
   'How do I improve my match score?',
@@ -18,20 +19,50 @@ const CHAT_SUGGESTIONS = [
 
 const TypewriterText = ({ text, onComplete }) => {
   const [displayedText, setDisplayedText] = useState('');
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
   useEffect(() => {
+    setDisplayedText('');
     let index = 0;
     const interval = setInterval(() => {
       setDisplayedText(text.slice(0, index));
       index++;
       if (index > text.length) {
         clearInterval(interval);
-        if (onComplete) onComplete();
+        onCompleteRef.current?.();
       }
     }, 12);
     return () => clearInterval(interval);
-  }, [text, onComplete]);
-  return <>{displayedText}</>;
+  }, [text]);
+
+  return <span dangerouslySetInnerHTML={{ __html: formatChatMarkdown(displayedText) }} />;
 };
+
+/**
+ * Lightweight Markdown → HTML formatter for chat messages.
+ * Handles **bold**, *italic*, `inline code`, leading bullet markers, and line breaks.
+ * HTML-escapes the input first so model output can't inject arbitrary tags.
+ */
+function formatChatMarkdown(text) {
+  if (!text) return '';
+  let s = String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // **bold** — must come before italic so single-* doesn't eat the wrappers
+  s = s.replace(/\*\*([^\n*][^\n]*?)\*\*/g, '<strong>$1</strong>');
+  // *italic* — single * not adjacent to another *
+  s = s.replace(/(^|[^*])\*(?!\s)([^\n*]+?)\*(?!\*)/g, '$1<em>$2</em>');
+  // `inline code`
+  s = s.replace(/`([^`\n]+?)`/g, '<code class="bg-gray-100 px-1 rounded text-[11px]">$1</code>');
+  // leading bullet markers on a line: "* item" or "- item" → "• item"
+  s = s.replace(/(^|<br\/>)\s*[*-]\s+/g, '$1• ');
+  // newlines — done last so the bullet replacement above can rely on raw \n
+  s = s.replace(/\n/g, '<br/>');
+  return s;
+}
 
 export default function StudentCareerView({ user }) {
   const [showAllPaths, setShowAllPaths] = useState(false);
@@ -66,11 +97,33 @@ export default function StudentCareerView({ user }) {
   const [sessionId, setSessionId] = useState(null);
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionList, setSessionList] = useState([]);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [thinkingPhrase, setThinkingPhrase] = useState('Thinking');
   const chatEndRef = useRef(null);
+  const abortRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [chatMessages, chatSending]);
+
+  // Rotate the "thinking..." phrase every 2.5s while the AI is replying.
+  useEffect(() => {
+    if (!chatSending) return;
+    const phrases = [
+      'Thinking',
+      'Reviewing your skills',
+      'Checking your roadmap',
+      'Analyzing your data',
+      'Crafting a response',
+    ];
+    let i = 0;
+    setThinkingPhrase(phrases[0]);
+    const tick = setInterval(() => {
+      i = (i + 1) % phrases.length;
+      setThinkingPhrase(phrases[i]);
+    }, 2500);
+    return () => clearInterval(tick);
+  }, [chatSending]);
 
   // Load session list
   useEffect(() => {
@@ -89,6 +142,21 @@ export default function StudentCareerView({ user }) {
       setChatError('Failed to load chat history.');
     } finally {
       setSessionLoading(false);
+    }
+  };
+
+  const deleteSession = async (id) => {
+    try {
+      await chatService.deleteSession(id);
+      setSessionList(prev => prev.filter(s => s.session_id !== id));
+      if (sessionId === id) {
+        setSessionId(null);
+        setChatMessages([]);
+      }
+    } catch (e) {
+      setChatError(e.message || 'Failed to delete session.');
+    } finally {
+      setPendingDeleteId(null);
     }
   };
 
@@ -117,6 +185,7 @@ export default function StudentCareerView({ user }) {
     const text = (textOverride ?? chatInput).trim();
     if (!text || chatSending) return;
 
+    const wasFirstMessage = chatMessages.length === 0;
     let targetSessionId = sessionId;
     setChatInput('');
     setChatError(null);
@@ -140,6 +209,9 @@ export default function StudentCareerView({ user }) {
       const nextMessages = [...chatMessages, { role: 'user', content: text }];
       setChatMessages(nextMessages);
 
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const { reply } = await chatService.sendCareerMessage(
         targetSessionId,
         text,
@@ -149,14 +221,37 @@ export default function StudentCareerView({ user }) {
           summary: pipelineData?.report?.summary,
           chosen_career: chosenCareer,
         },
+        { signal: controller.signal },
       );
 
       setChatMessages([...nextMessages, { role: 'assistant', content: reply, isNew: true }]);
+
+      // Backend auto-titles the session from the first exchange — refresh so the new label appears.
+      if (wasFirstMessage) {
+        try {
+          const refreshed = await chatService.listSessions();
+          setSessionList(refreshed);
+        } catch {
+          // non-critical; the new title shows up on next page load anyway
+        }
+      }
     } catch (e) {
-      setChatError(e.message || 'Failed to reach the AI coach.');
+      // User pressed Cancel — drop the in-flight request silently.
+      if (e?.name === 'AbortError') {
+        // Roll back the optimistic user message so they can retry.
+        setChatMessages(chatMessages);
+        setChatInput(text);
+      } else {
+        setChatError(e.message || 'Failed to reach the AI coach.');
+      }
     } finally {
+      abortRef.current = null;
       setChatSending(false);
     }
+  };
+
+  const cancelChat = () => {
+    abortRef.current?.abort();
   };
 
   if (!user) return null;
@@ -272,6 +367,9 @@ export default function StudentCareerView({ user }) {
               </div>
               <div className="shrink-0 scale-125"><CareerMatchDonut score={careerMatches[selectedIndex]?.match_score || 0} /></div>
             </div>
+            <CareerSectionHeading title="LEARNING ROADMAP" />
+            <RoadmapViewer careerTitle={careerMatches[selectedIndex]?.title} />
+
             <CareerSectionHeading title="SKILL GAP ANALYSIS" />
             {/* Gaps grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -313,21 +411,64 @@ export default function StudentCareerView({ user }) {
                 <Plus size={14} /> NEW SESSION
               </button>
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                {sessionList.map(s => (
-                  <button
-                    key={s.session_id}
-                    onClick={() => loadSession(s.session_id)}
-                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-center gap-3 ${
-                      sessionId === s.session_id ? 'bg-white border-[#f1d7d7] shadow-sm' : 'bg-transparent border-transparent hover:bg-gray-50'
-                    }`}
-                  >
-                    <MessageSquare size={14} className={sessionId === s.session_id ? 'text-[#bc1313]' : 'text-gray-400'} />
-                    <div className="flex-1 truncate">
-                      <p className={`text-[11px] font-bold truncate ${sessionId === s.session_id ? 'text-gray-900' : 'text-gray-500'}`}>{s.label}</p>
-                      <p className="text-[9px] text-gray-400 mt-0.5">{new Date(s.created_at).toLocaleDateString()}</p>
+                {sessionList.map(s => {
+                  const isActive = sessionId === s.session_id;
+                  const isConfirming = pendingDeleteId === s.session_id;
+
+                  if (isConfirming) {
+                    return (
+                      <div
+                        key={s.session_id}
+                        className="w-full p-3 rounded-xl border border-red-200 bg-red-50 flex items-center gap-2"
+                      >
+                        <p className="flex-1 text-[11px] font-bold text-red-700 truncate">Delete this chat?</p>
+                        <button
+                          type="button"
+                          onClick={() => deleteSession(s.session_id)}
+                          className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-md hover:bg-red-700 transition-colors"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPendingDeleteId(null)}
+                          className="px-2 py-1 bg-white text-gray-600 border border-gray-200 text-[10px] font-bold rounded-md hover:bg-gray-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={s.session_id}
+                      className={`group w-full p-3 rounded-xl border transition-all flex items-center gap-3 ${
+                        isActive ? 'bg-white border-[#f1d7d7] shadow-sm' : 'bg-transparent border-transparent hover:bg-gray-50'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => loadSession(s.session_id)}
+                        className="flex-1 min-w-0 flex items-center gap-3 text-left"
+                      >
+                        <MessageSquare size={14} className={isActive ? 'text-[#bc1313]' : 'text-gray-400'} />
+                        <div className="flex-1 truncate">
+                          <p className={`text-[11px] font-bold truncate ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>{s.label}</p>
+                          <p className="text-[9px] text-gray-400 mt-0.5">{new Date(s.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setPendingDeleteId(s.session_id); }}
+                        aria-label="Delete chat"
+                        className="shrink-0 p-1 rounded-md text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -349,7 +490,15 @@ export default function StudentCareerView({ user }) {
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1 overflow-hidden ${
                         msg.role === 'user' ? 'bg-gray-100' : 'bg-[#bc1313] text-white'
                       }`}>
-                        {msg.role === 'user' ? 'U' : 'A'}
+                        {msg.role === 'user' ? (
+                          user?.avatar_url ? (
+                            <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            user?.full_name?.charAt(0).toUpperCase() || 'U'
+                          )
+                        ) : (
+                          <Bot size={16} />
+                        )}
                       </div>
                       <div className={`max-w-[85%] p-4 rounded-2xl text-[12px] leading-relaxed shadow-xs ${
                         msg.role === 'user' ? 'bg-gray-50 text-gray-800 border border-gray-100 rounded-tr-none' : 'bg-white text-gray-700 border border-[#f1d7d7] rounded-tl-none'
@@ -357,7 +506,7 @@ export default function StudentCareerView({ user }) {
                         {msg.role === 'assistant' && msg.isNew ? (
                           <TypewriterText text={msg.content} onComplete={() => { msg.isNew = false; }} />
                         ) : (
-                          <p dangerouslySetInnerHTML={{ __html: (msg.content || '').replace(/\n/g, '<br/>') }} />
+                          <p dangerouslySetInnerHTML={{ __html: formatChatMarkdown(msg.content || '') }} />
                         )}
                       </div>
                     </div>
@@ -366,21 +515,67 @@ export default function StudentCareerView({ user }) {
                 <div ref={chatEndRef} />
               </div>
               <div className="p-4 border-t border-gray-50 bg-white">
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {CHAT_SUGGESTIONS.map(q => (
-                    <button key={q} disabled={chatSending} onClick={() => sendChat(q)} className="px-3 py-1.5 bg-[#fff3f3] border border-[#f1d7d7] text-[#bc1313] text-[10px] font-bold rounded-full hover:bg-[#ffebeb] transition-all disabled:opacity-50">{q}</button>
-                  ))}
-                </div>
+                {chatError && (
+                  <div className="mb-3 flex items-start gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200">
+                    <AlertCircle size={14} className="text-red-600 shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-bold text-red-700 mb-0.5">The coach didn't reply</p>
+                      <p className="text-[11px] text-red-600 leading-snug break-words">{chatError}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setChatError(null)}
+                      className="text-red-400 hover:text-red-600 shrink-0"
+                      aria-label="Dismiss error"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+                {chatMessages.length === 0 && !chatSending && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {CHAT_SUGGESTIONS.map(q => (
+                      <button key={q} disabled={chatSending} onClick={() => sendChat(q)} className="px-3 py-1.5 bg-[#fff3f3] border border-[#f1d7d7] text-[#bc1313] text-[10px] font-bold rounded-full hover:bg-[#ffebeb] transition-all disabled:opacity-50">{q}</button>
+                    ))}
+                  </div>
+                )}
+                {chatSending && (
+                  <div className="flex items-center gap-2 mb-3 text-[11px] text-gray-500">
+                    <span className="flex gap-1" aria-hidden="true">
+                      <span className="w-1.5 h-1.5 bg-[#bc1313] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-1.5 h-1.5 bg-[#bc1313] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-1.5 h-1.5 bg-[#bc1313] rounded-full animate-bounce" />
+                    </span>
+                    <span className="font-semibold text-gray-600">{thinkingPhrase}…</span>
+                  </div>
+                )}
                 <form onSubmit={(e) => { e.preventDefault(); sendChat(); }} className="relative">
                   <input
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask your career coach..."
+                    placeholder={chatSending ? `${thinkingPhrase}…` : "Ask your career coach..."}
                     disabled={chatSending}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[12px] focus:outline-none focus:ring-2 focus:ring-[#bc1313]/20 focus:border-[#bc1313] transition-all pr-12"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[12px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#bc1313]/20 focus:border-[#bc1313] transition-all pr-12"
                   />
-                  <button type="submit" disabled={!chatInput.trim() || chatSending} className="absolute right-2 top-2 bottom-2 px-3 bg-[#bc1313] text-white rounded-lg hover:bg-[#890E0E] transition-colors"><ChevronRight size={16} /></button>
+                  {chatSending ? (
+                    <button
+                      type="button"
+                      onClick={cancelChat}
+                      aria-label="Stop generating"
+                      className="absolute right-2 top-2 bottom-2 px-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center"
+                    >
+                      <Square size={12} fill="currentColor" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!chatInput.trim()}
+                      className="absolute right-2 top-2 bottom-2 px-3 bg-[#bc1313] text-white rounded-lg hover:bg-[#890E0E] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  )}
                 </form>
               </div>
             </div>

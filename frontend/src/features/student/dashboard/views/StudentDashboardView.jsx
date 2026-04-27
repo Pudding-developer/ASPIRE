@@ -472,9 +472,19 @@ export default function StudentDashboardView({ user, onNavigate }) {
     <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(188,19,19,0.35)]">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Student Overview</p>
-          <h1 className="text-[2.2rem] font-extrabold text-gray-900 leading-tight">Welcome back, {fullName}.</h1>
+        <div className="flex items-center gap-5">
+          {user?.avatar_url && (
+            <img 
+              src={user.avatar_url} 
+              alt={fullName} 
+              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#bc1313]/10" 
+              referrerPolicy="no-referrer" 
+            />
+          )}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Student Overview</p>
+            <h1 className="text-[2.2rem] font-extrabold text-gray-900 leading-tight">Welcome back, {fullName}.</h1>
+          </div>
         </div>
         <div className="flex items-center gap-3 mt-2">
           <button className="flex items-center gap-2 px-4 py-2 border border-[#ead3d3] rounded-xl text-[13px] font-semibold text-[#7a5454] hover:bg-[#fff5f5] transition-colors">

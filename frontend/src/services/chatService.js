@@ -6,8 +6,8 @@ export const chatService = {
     request('POST', '/api/chat/session', { context }),
 
   /** Send a message in an existing session. History is loaded from the DB. */
-  sendCareerMessage: (sessionId, message, context) =>
-    request('POST', '/api/chat/career', { session_id: sessionId, message, context }),
+  sendCareerMessage: (sessionId, message, context, options) =>
+    request('POST', '/api/chat/career', { session_id: sessionId, message, context }, options),
 
   /** Load the full message history for a session. */
   getSession: (sessionId) =>
@@ -16,4 +16,8 @@ export const chatService = {
   /** List all sessions for the current student. */
   listSessions: () =>
     request('GET', '/api/chat/sessions'),
+
+  /** Delete a session and all its messages. */
+  deleteSession: (sessionId) =>
+    request('DELETE', `/api/chat/session/${sessionId}`),
 };

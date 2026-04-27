@@ -8,6 +8,7 @@ from app.models.pipeline_models import PipelineJob, CareerReport
 from app.models.knowledge import KnowledgeChunk
 from app.models.roadmap import RoadmapCache
 from app.models.chat import ChatSession, ChatMessage
+from app.models.student_interventions import StudentInterventions
 
 __all__ = [
     "User", "Instructor", "InstructorInviteToken", "Admin",
@@ -17,4 +18,5 @@ __all__ = [
     "KnowledgeChunk",
     "RoadmapCache",
     "ChatSession", "ChatMessage",
+    "StudentInterventions",
 ]

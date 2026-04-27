@@ -108,7 +108,7 @@ def build_and_run_crew(
         ],
         process=Process.sequential,
         verbose=True,
-        max_rpm=3,
+        max_rpm=15,
     )
 
     try:
@@ -132,7 +132,7 @@ def build_and_run_crew(
     # Extract raw outputs from the result object
     report_raw = ""
     progress_raw = ""
-    
+
     if hasattr(result, 'tasks_output') and len(result.tasks_output) >= 7:
         report_raw = result.tasks_output[5].raw
         progress_raw = result.tasks_output[6].raw
@@ -155,7 +155,7 @@ def _parse_combined_output(report_raw: str, progress_raw: str) -> dict:
     """
     # Define required keys for validation
     report_keys = [
-        "career_matches", "recommendations", "summary", 
+        "career_matches", "recommendations", "summary",
         "skill_profile", "gap_analysis"
     ]
     # We validate a minimal set for progress to allow for variations between agent versions

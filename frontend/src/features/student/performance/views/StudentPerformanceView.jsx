@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 
 import useStudentData from '../../dashboard/hooks/useStudentData';
+import useInterventions from '../hooks/useInterventions';
 import { StudentPerformanceSkeleton } from '../../shared/StudentPageSkeletons';
 import StudentCourseDetailView from './StudentCourseDetailView';
 
@@ -295,10 +296,6 @@ function CourseBreakdownCard({ course, onViewDetails }) {
   const ilos      = course.ilo_scores || {};
   const iloKeys   = Object.keys(ilos).sort();
   const skills    = course.predicted_skills || {};
-  const topSkills = Object.entries(skills)
-    .filter(([, v]) => v > 1)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
 
   const mastery   = Math.round(course.ilo_avg || 0);
   const strongest = course.strongest_skill;
@@ -374,31 +371,6 @@ function CourseBreakdownCard({ course, onViewDetails }) {
                 <p className="text-[12px] font-semibold text-gray-900 truncate">{weakest || '—'}</p>
               </div>
             </div>
-          </div>
-
-          {/* Predicted skill bars */}
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Predicted Skills</p>
-            {topSkills.length === 0 ? (
-              <p className="text-[11px] text-gray-400">No predicted skills above threshold.</p>
-            ) : (
-              <div className="space-y-3">
-                {topSkills.map(([name, val]) => (
-                  <div key={name}>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[12px] font-medium text-gray-800 truncate mr-2">{name}</span>
-                      <span className="text-[11px] font-bold text-gray-900">{val.toFixed(1)}</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#bc1313] rounded-full"
-                        style={{ width: `${Math.min(val, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Potential hint */}
@@ -629,6 +601,7 @@ export default function StudentPerformanceView({ user }) {
   }, []);
 
   const { classes, predictions, iloCoverage, loading } = useStudentData();
+  const { interventions: skillInterventions, updatedAt: interventionsUpdatedAt } = useInterventions(user?.id);
   const notifications = []; // Mock left empty as requested dynamically
   const unreadCount = 0;
 
@@ -637,7 +610,15 @@ export default function StudentPerformanceView({ user }) {
   }
 
   if (selectedCourse) {
-    return <StudentCourseDetailView courseName={selectedCourse} user={user} onBack={() => setSelectedCourse(null)} />;
+    return (
+      <StudentCourseDetailView
+        courseName={selectedCourse}
+        user={user}
+        interventions={skillInterventions}
+        interventionsUpdatedAt={interventionsUpdatedAt}
+        onBack={() => setSelectedCourse(null)}
+      />
+    );
   }
 
   const hasActiveFilters = semester !== 'All Semesters' || category !== 'All Subjects';
@@ -958,7 +939,11 @@ export default function StudentPerformanceView({ user }) {
         ) : (
           <div className="space-y-3">
             {predictions.per_course.map((course, i) => (
-              <CourseBreakdownCard key={course.course || i} course={course} onViewDetails={setSelectedCourse} />
+              <CourseBreakdownCard
+                key={course.course || i}
+                course={course}
+                onViewDetails={setSelectedCourse}
+              />
             ))}
           </div>
         )}

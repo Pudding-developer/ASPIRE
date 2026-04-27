@@ -18,12 +18,14 @@ function authHeaders() {
 
 /**
  * Generic fetch wrapper. Throws on non-OK responses with server error detail.
+ * Pass `{ signal }` in `options` to make a request abortable via AbortController.
  */
-async function request(method, path, body) {
+async function request(method, path, body, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers: authHeaders(),
     ...(body ? { body: JSON.stringify(body) } : {}),
+    ...(options.signal ? { signal: options.signal } : {}),
   });
 
   if (!res.ok) {

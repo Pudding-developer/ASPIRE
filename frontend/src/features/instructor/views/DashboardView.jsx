@@ -51,9 +51,19 @@ export default function DashboardView({ onCreateClass, stats, loading, classes =
     <div className="p-8">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Instructor Portal</h1>
-          <p className="text-gray-600 mt-1">Welcome back, {user?.full_name || 'Professor'}</p>
+        <div className="flex items-center gap-5">
+          {user?.avatar_url && (
+            <img 
+              src={user.avatar_url} 
+              alt={user?.full_name} 
+              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#bc1313]/10" 
+              referrerPolicy="no-referrer" 
+            />
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Instructor Portal</h1>
+            <p className="text-gray-600 mt-1">Welcome back, {user?.full_name || 'Professor'}</p>
+          </div>
         </div>
         <Button 
           onClick={onCreateClass}

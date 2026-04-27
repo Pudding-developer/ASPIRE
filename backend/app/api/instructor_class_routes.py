@@ -3,14 +3,14 @@ instructor_class_routes.py — Instructor class management endpoints.
 
 Routes call services only — no direct DB queries or business logic.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_session
+from app.core.database import async_session_factory, get_session
 from app.api.deps import get_current_instructor
 from app.models.instructor import Instructor
 from app.schemas.class_schema import ClassCreate, ClassOut, DashboardStats, AssessmentBatchSubmit
-from app.services import class_service
+from app.services import class_service, interventions_service
 
 router = APIRouter()
 
@@ -81,10 +81,17 @@ async def get_class_students(
 async def submit_assessment(
     class_id: int,
     data: AssessmentBatchSubmit,
+    background_tasks: BackgroundTasks,
     instructor: Instructor = Depends(get_current_instructor),
     session: AsyncSession = Depends(get_session),
 ):
     await class_service.submit_assessment_scores(session, instructor.id, class_id, data)
+    for student_id in data.scores.keys():
+        background_tasks.add_task(
+            interventions_service.generate_in_background,
+            student_id,
+            async_session_factory,
+        )
     return {"data": {}, "message": "Scores submitted successfully."}
 
 
@@ -116,12 +123,19 @@ async def update_assessment(
     class_id: int,
     assessment_id: int,
     data: AssessmentBatchSubmit,
+    background_tasks: BackgroundTasks,
     instructor: Instructor = Depends(get_current_instructor),
     session: AsyncSession = Depends(get_session),
 ):
     await class_service.update_assessment_scores(
         session, instructor.id, class_id, assessment_id, data
     )
+    for student_id in data.scores.keys():
+        background_tasks.add_task(
+            interventions_service.generate_in_background,
+            student_id,
+            async_session_factory,
+        )
     return {"data": {}, "message": "Assessment updated successfully."}
 
 

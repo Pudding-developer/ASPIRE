@@ -334,6 +334,57 @@ async def get_skill_predictions(
     return {"data": predictions}
 
 
+# ── Skill Interventions (standalone, RAG + Gemini) ────────────────────────────
+
+@router.get("/interventions/{student_id}")
+async def get_skill_interventions(
+    student_id: int,
+    current_user: User = Depends(get_current_student),
+    db: AsyncSession = Depends(get_session),
+):
+    """
+    Return the student's most recently saved skill interventions.
+    Returns 404 if generation has never run (typical before the first score).
+    """
+    if current_user.id != student_id:
+        raise HTTPException(status_code=403, detail="You can only view your own interventions.")
+
+    from app.services import interventions_service
+    saved = await interventions_service.get_for_student(db, student_id)
+    if saved is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No interventions yet. They will be generated automatically once your instructor submits scores.",
+        )
+    return {"data": saved}
+
+
+@router.post("/interventions/{student_id}")
+async def run_skill_interventions(
+    student_id: int,
+    current_user: User = Depends(get_current_student),
+    db: AsyncSession = Depends(get_session),
+):
+    """
+    Synchronously generate fresh interventions and return them. Independent of
+    the 7-agent CrewAI pipeline — single Gemini call with curriculum RAG context.
+    """
+    if current_user.id != student_id:
+        raise HTTPException(status_code=403, detail="You can only generate interventions for your own account.")
+
+    from app.services import interventions_service
+    try:
+        result = await interventions_service.generate_for_student(db, student_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate interventions: {exc}",
+        )
+    return {"data": result}
+
+
 # ── Career goal selection ─────────────────────────────────────────────────────
 
 class CareerChoicePayload(BaseModel):

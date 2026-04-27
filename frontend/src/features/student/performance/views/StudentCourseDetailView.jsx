@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Target, Award, BarChart2, CheckCircle2, ChevronRight } from 'lucide-react';
 import { studentService } from '../../../../services/studentService';
+import SkillInterventions from '../components/SkillInterventions';
 
 /* ─── Shared UI Components ─── */
 const Skeleton = () => (
@@ -13,7 +14,9 @@ const Skeleton = () => (
 
 const panelBase = 'bg-white rounded-xl border border-gray-200 shadow-sm';
 
-export default function StudentCourseDetailView({ courseName, user, onBack }) {
+export default function StudentCourseDetailView({ courseName, user, interventions, interventionsUpdatedAt, onBack }) {
+  const courseInterventions = (interventions || []).filter(i => i.subject_name === courseName);
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,7 +29,7 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
       })
       .catch(err => {
         console.error(err);
-        setError("Failed to load course details.");
+        setError(err?.message || "Failed to load course details.");
         setLoading(false);
       });
   }, [courseName]);
@@ -98,6 +101,14 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
              <p className="text-[13px] text-gray-500 mt-1">Algorithmic Confidence</p>
           </div>
         </div>
+      </div>
+
+      {/* Skill Interventions for this course */}
+      <div className={`${panelBase} p-8 mb-10 w-full`}>
+        <SkillInterventions
+          interventions={courseInterventions}
+          updatedAt={interventionsUpdatedAt}
+        />
       </div>
 
       {/* Main Layout Grid */}

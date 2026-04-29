@@ -1,9 +1,15 @@
 import React from 'react';
-import { inferCategory } from '../../../../data/careerConstants';
+import { X } from 'lucide-react';
+import { inferCategory, CAREER_OPTIONS } from '../../../../data/careerConstants';
 
-export default function CareerPathCard({ match, index, selected, optimal, onSelect, isChosenGoal, onSetAsGoal, careerLoading }) {
+export default function CareerPathCard({ match, index, selected, optimal, onSelect, isChosenGoal, onSetAsGoal, onHide, unanalyzed, careerLoading }) {
   const cat  = inferCategory(match.title);
-  const tags = (match.matched_skills || []).slice(0, 2);
+  // Fall back to the static CAREER_OPTIONS skill list when the AI hasn't
+  // produced match data for this title yet.
+  const fallback = unanalyzed ? CAREER_OPTIONS.find(o => o.title === match.title) : null;
+  const tags = unanalyzed
+    ? (fallback?.skills || []).slice(0, 2)
+    : (match.matched_skills || []).slice(0, 2);
 
   return (
     <div
@@ -17,6 +23,19 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
               ? 'bg-white border-emerald-300/60 hover:shadow-md'
               : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md'}`}
     >
+      {onHide && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onHide(); }}
+          aria-label="Hide this career path"
+          className={`absolute top-2 left-2 w-6 h-6 rounded-md flex items-center justify-center transition-colors z-10
+            ${selected && !isChosenGoal
+              ? 'text-white/70 hover:text-white hover:bg-white/15'
+              : 'text-gray-300 hover:text-red-600 hover:bg-red-50'}`}
+        >
+          <X size={12} />
+        </button>
+      )}
       {isChosenGoal && (
         <div className="absolute top-0 right-0 bg-[#bc1313] text-white text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-bl-lg z-10 shadow-sm">
           Your Goal
@@ -27,12 +46,18 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
         <span className={`text-[8px] font-bold tracking-widest uppercase ${selected ? 'text-white/60' : 'text-gray-400'}`}>
           {cat}
         </span>
-        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded
-          ${selected ? 'bg-white/20 text-white'
-            : optimal ? 'bg-emerald-50 text-emerald-700'
-            : 'bg-red-50/80 text-[#bc1313]'}`}>
-          {match.match_score}% MATCH
-        </span>
+        {unanalyzed ? (
+          <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+            Not analyzed
+          </span>
+        ) : (
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded
+            ${selected ? 'bg-white/20 text-white'
+              : optimal ? 'bg-emerald-50 text-emerald-700'
+              : 'bg-red-50/80 text-[#bc1313]'}`}>
+            {match.match_score}% MATCH
+          </span>
+        )}
       </div>
 
       <p className={`text-[13px] font-extrabold leading-snug mb-1.5 ${(selected && !isChosenGoal) ? 'text-white' : 'text-gray-900'}`}>
@@ -40,7 +65,9 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
       </p>
 
       <p className={`text-[11px] leading-relaxed mb-2 line-clamp-3 ${(selected && !isChosenGoal) ? 'text-white/70' : 'text-gray-500'}`}>
-        {(match.reasoning || 'Matched based on your academic profile and skills.').split('.')[0]}.
+        {unanalyzed
+          ? (fallback?.blurb || 'Run the AI report to see how your profile fits this path.')
+          : (match.reasoning || 'Matched based on your academic profile and skills.').split('.')[0] + '.'}
       </p>
 
       <div className="flex gap-1 flex-wrap mt-auto pt-3 mb-4">
@@ -63,11 +90,11 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
           }}
           disabled={careerLoading}
           className={`w-full py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors
-            ${(selected && !isChosenGoal) 
-              ? 'bg-white/10 text-white hover:bg-white/20' 
+            ${(selected && !isChosenGoal)
+              ? 'bg-white/10 text-white hover:bg-white/20'
               : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'}`}
         >
-          {careerLoading ? 'Saving...' : 'Choose This Path'}
+          {careerLoading ? 'Saving...' : unanalyzed ? 'Set as Goal' : 'Choose This Path'}
         </button>
       )}
     </div>

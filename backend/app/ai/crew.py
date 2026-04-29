@@ -108,7 +108,7 @@ def build_and_run_crew(
         ],
         process=Process.sequential,
         verbose=True,
-        max_rpm=15,
+        max_rpm=5,
     )
 
     try:

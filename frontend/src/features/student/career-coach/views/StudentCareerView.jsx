@@ -4,6 +4,7 @@ import useCareerCoach from '../hooks/useCareerCoach';
 import { chatService } from '../../../../services/chatService';
 
 import CareerEmptyState from '../components/CareerEmptyState';
+import CareerPicker from '../components/CareerPicker';
 import CareerPathCard from '../components/CareerPathCard';
 import CareerMatchDonut from '../components/CareerMatchDonut';
 import CareerAllPathsModal from '../components/CareerAllPathsModal';
@@ -76,6 +77,7 @@ export default function StudentCareerView({ user }) {
     selectedPath,
     selectedIndex,
     setSelectedIndex,
+    activeTitle,
     optimalIndex,
     gaps,
     skills,
@@ -87,6 +89,9 @@ export default function StudentCareerView({ user }) {
     chosenCareer,
     setChosenCareer,
     careerLoading,
+    visibleCareerTitles,
+    showCareer,
+    hideCareer,
   } = useCareerCoach(user.id);
 
   // ── AI Chat state ──────────────────────────────────────────────────────────
@@ -268,12 +273,24 @@ export default function StudentCareerView({ user }) {
   }
 
   if (!pipelineData || !careerMatches || careerMatches.length === 0) {
+    if (isRunning) {
+      return (
+        <CareerEmptyState
+          onGenerate={runPipeline}
+          isRunning={isRunning}
+          pipelineStatus={pipelineStatus}
+          error={error}
+        />
+      );
+    }
     return (
-      <CareerEmptyState 
-        onGenerate={runPipeline} 
-        isRunning={isRunning} 
-        pipelineStatus={pipelineStatus} 
-        error={error}
+      <CareerPicker
+        chosenCareer={chosenCareer}
+        onChoose={setChosenCareer}
+        careerLoading={careerLoading}
+        onGenerateReport={runPipeline}
+        isRunning={isRunning}
+        pipelineError={error}
       />
     );
   }
@@ -291,20 +308,47 @@ export default function StudentCareerView({ user }) {
           <p className="text-[12px] text-gray-500 mt-2 font-medium">Personalized roadmap based on your academic performance & GitHub activity</p>
         </div>
         
-        <div className="flex gap-3">
-          <button 
-            onClick={() => setShowAllPaths(true)}
-            className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[12px] font-bold text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2 shadow-xs"
-          >
-            <Layers size={14} className="text-[#bc1313]" /> VIEW ALL PATHS
-          </button>
-          <button 
-            onClick={runPipeline}
-            disabled={isRunning}
-            className="px-5 py-2.5 bg-[#bc1313] text-white rounded-xl text-[12px] font-bold hover:bg-[#890E0E] transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
-          >
-            <Zap size={14} /> {isRunning ? 'ANALYZING...' : 'REFRESH ANALYSIS'}
-          </button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowAllPaths(true)}
+              className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[12px] font-bold text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2 shadow-xs"
+            >
+              <Layers size={14} className="text-[#bc1313]" /> VIEW ALL PATHS
+            </button>
+            <button
+              onClick={runPipeline}
+              disabled={isRunning}
+              className="px-5 py-2.5 bg-[#bc1313] text-white rounded-xl text-[12px] font-bold hover:bg-[#890E0E] transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
+            >
+              <Zap size={14} className={isRunning ? 'animate-pulse' : ''} /> {isRunning ? 'ANALYZING...' : 'REFRESH ANALYSIS'}
+            </button>
+          </div>
+
+          {isRunning && pipelineStatus && (
+            <div className="w-full max-w-xs bg-white border border-gray-200 rounded-lg p-2.5 shadow-sm">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10px] font-bold text-gray-700 truncate pr-2">
+                  {pipelineStatus.current_step || 'Starting...'}
+                </span>
+                <span className="text-[10px] font-bold text-[#bc1313]">
+                  {pipelineStatus.percentage ?? 0}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#bc1313] transition-all duration-500"
+                  style={{ width: `${pipelineStatus.percentage ?? 0}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {!isRunning && error && (
+            <div className="text-[10px] font-medium text-[#bc1313] bg-red-50 border border-red-100 rounded-lg px-3 py-1.5 max-w-xs">
+              {error}
+            </div>
+          )}
         </div>
       </div>
 
@@ -328,7 +372,7 @@ export default function StudentCareerView({ user }) {
         {/* Path Card Warning & Selection (Show for all tabs except Chat maybe? No, show always) */}
         {activeTab !== 'AI Chat' && (
           <>
-            {selectedIndex !== optimalIndex && (
+            {selectedIndex >= 0 && selectedIndex !== optimalIndex && (
               <div className="bg-[#fff4f4] border border-[#f2cdcd] p-3.5 mb-6 rounded-lg flex items-start gap-3">
                 <div className="w-4.5 h-4.5 rounded-full bg-[#bc1313] text-white flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-extrabold italic">!</div>
                 <p className="text-[12px] text-gray-800 leading-relaxed">
@@ -336,21 +380,60 @@ export default function StudentCareerView({ user }) {
                 </p>
               </div>
             )}
-            <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x mb-8">
-              {careerMatches.map((match, idx) => (
-                <CareerPathCard
-                  key={idx}
-                  match={match}
-                  index={idx}
-                  selected={selectedIndex === idx}
-                  optimal={idx === optimalIndex}
-                  onSelect={setSelectedIndex}
-                  isChosenGoal={chosenCareer === match.title}
-                  onSetAsGoal={() => setChosenCareer(match.title)}
-                  careerLoading={careerLoading}
-                />
-              ))}
-            </div>
+            {(() => {
+              if (visibleCareerTitles.size === 0) {
+                return (
+                  <div className="bg-white border border-dashed border-gray-200 rounded-2xl p-8 mb-8 text-center">
+                    <p className="text-[12px] text-gray-500 mb-3">
+                      No career paths pinned yet. Open <strong>View All Paths</strong> to add one.
+                    </p>
+                    <button
+                      onClick={() => setShowAllPaths(true)}
+                      className="px-4 py-2 bg-[#bc1313] text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#890E0E] transition-colors inline-flex items-center gap-2"
+                    >
+                      <Layers size={12} /> Browse All Paths
+                    </button>
+                  </div>
+                );
+              }
+
+              // Build a card entry for every pinned title. If the AI scored
+              // that title we use the analysis; otherwise we render a stub
+              // card flagged as `unanalyzed` so the student still sees what
+              // they pinned.
+              const matchByTitle = new Map(careerMatches.map((m, i) => [m.title, { match: m, idx: i }]));
+              const visibleEntries = [...visibleCareerTitles].map((title) => {
+                const hit = matchByTitle.get(title);
+                if (hit) return { ...hit, unanalyzed: false };
+                return {
+                  match: { title, match_score: null, matched_skills: [], gap_skills: [], reasoning: '' },
+                  idx: -1,
+                  unanalyzed: true,
+                };
+              });
+
+              return (
+                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x mb-8">
+                  {visibleEntries.map(({ match, idx, unanalyzed }) => (
+                    <CareerPathCard
+                      key={match.title}
+                      match={match}
+                      index={idx}
+                      selected={selectedIndex === idx && !unanalyzed
+                        ? true
+                        : selectedIndex === -1 && unanalyzed && match.title === activeTitle}
+                      optimal={!unanalyzed && idx === optimalIndex}
+                      onSelect={() => setSelectedIndex(match.title)}
+                      isChosenGoal={chosenCareer === match.title}
+                      onSetAsGoal={() => setChosenCareer(match.title)}
+                      onHide={() => hideCareer(match.title)}
+                      unanalyzed={unanalyzed}
+                      careerLoading={careerLoading}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
           </>
         )}
 
@@ -359,16 +442,18 @@ export default function StudentCareerView({ user }) {
             <CareerSectionHeading title="PRIMARY OBJECTIVE" />
             <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm flex flex-col lg:flex-row items-center gap-10">
               <div className="flex-1 space-y-4">
-                <h2 className="text-[22px] font-extrabold text-gray-900 leading-tight">Senior {careerMatches[selectedIndex]?.title}</h2>
+                <h2 className="text-[22px] font-extrabold text-gray-900 leading-tight">Senior {activeTitle}</h2>
                 <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
                   <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block mb-1">MATCH SCORE</span>
-                  <span className="text-[18px] font-black text-[#bc1313]">{careerMatches[selectedIndex]?.match_score}%</span>
+                  <span className="text-[18px] font-black text-[#bc1313]">
+                    {selectedPath ? `${selectedPath.match_score}%` : '—'}
+                  </span>
                 </div>
               </div>
-              <div className="shrink-0 scale-125"><CareerMatchDonut score={careerMatches[selectedIndex]?.match_score || 0} /></div>
+              <div className="shrink-0 scale-125"><CareerMatchDonut score={selectedPath?.match_score || 0} /></div>
             </div>
             <CareerSectionHeading title="LEARNING ROADMAP" />
-            <RoadmapViewer careerTitle={careerMatches[selectedIndex]?.title} />
+            <RoadmapViewer careerTitle={activeTitle} />
 
             <CareerSectionHeading title="SKILL GAP ANALYSIS" />
             {/* Gaps grid */}
@@ -584,11 +669,18 @@ export default function StudentCareerView({ user }) {
       </div>
 
       {showAllPaths && (
-        <CareerAllPathsModal 
+        <CareerAllPathsModal
           matches={careerMatches}
           optimalIndex={optimalIndex}
-          onSelect={(idx) => { setSelectedIndex(idx); setShowAllPaths(false); }}
-          onClose={() => setShowAllPaths(false)} 
+          visibleTitles={visibleCareerTitles}
+          onSelect={(idx) => {
+            const title = careerMatches[idx]?.title;
+            if (title) showCareer(title);
+            setSelectedIndex(idx);
+          }}
+          onPin={(title) => showCareer(title)}
+          onUnpin={(title) => hideCareer(title)}
+          onClose={() => setShowAllPaths(false)}
         />
       )}
     </div>

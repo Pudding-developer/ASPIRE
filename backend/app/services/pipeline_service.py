@@ -7,7 +7,7 @@ background thread, and persists results.
 import asyncio
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -318,6 +318,9 @@ async def get_job(db: AsyncSession, job_id: str) -> PipelineJob | None:
     return result.scalar_one_or_none()
 
 
+ORPHAN_THRESHOLD = timedelta(minutes=10)
+
+
 async def get_running_job(db: AsyncSession, student_id: int) -> PipelineJob | None:
     result = await db.execute(
         select(PipelineJob).where(
@@ -325,7 +328,19 @@ async def get_running_job(db: AsyncSession, student_id: int) -> PipelineJob | No
             PipelineJob.status.in_(["pending", "running"]),
         )
     )
-    return result.scalar_one_or_none()
+    job = result.scalar_one_or_none()
+    if not job:
+        return None
+    # Auto-fail orphans: a real crew run completes well under 10 min, so anything
+    # older was almost certainly killed by a server restart or crash.
+    if job.started_at and datetime.utcnow() - job.started_at > ORPHAN_THRESHOLD:
+        job.status = "failed"
+        job.error = "Job orphaned (server restart or crash)"
+        job.completed_at = datetime.utcnow()
+        db.add(job)
+        await db.commit()
+        return None
+    return job
 
 
 async def get_latest_report(db: AsyncSession, student_id: int) -> CareerReport | None:

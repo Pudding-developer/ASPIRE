@@ -10,12 +10,19 @@ NOTE: Uses `google-genai` (the new unified SDK) instead of the legacy
 from google import genai
 from google.genai import types
 
-from app.core.config import VERTEX_AI_PROJECT, VERTEX_AI_LOCATION
+from app.core.config import (
+    VERTEX_AI_PROJECT, VERTEX_AI_LOCATION,
+    GEMINI_API_KEY, USE_GEMINI_API_KEY,
+)
 
-_client = genai.Client(
-    vertexai=True,
-    project=VERTEX_AI_PROJECT,
-    location=VERTEX_AI_LOCATION,
+_client = (
+    genai.Client(api_key=GEMINI_API_KEY)
+    if USE_GEMINI_API_KEY
+    else genai.Client(
+        vertexai=True,
+        project=VERTEX_AI_PROJECT,
+        location=VERTEX_AI_LOCATION,
+    )
 )
 
 EMBEDDING_MODEL = "gemini-embedding-001"

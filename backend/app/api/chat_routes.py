@@ -23,7 +23,10 @@ from sqlalchemy import create_engine, text as sql_text
 
 from app.api.deps import get_current_student
 from app.ai.embeddings import embed_query
-from app.core.config import DATABASE_URL, GEMINI_MODEL, VERTEX_AI_PROJECT, VERTEX_AI_LOCATION
+from app.core.config import (
+    DATABASE_URL, GEMINI_MODEL, VERTEX_AI_PROJECT, VERTEX_AI_LOCATION,
+    GEMINI_API_KEY, USE_GEMINI_API_KEY,
+)
 from app.core.database import get_session, async_session_factory
 from app.models.user import User
 from app.models.chat import ChatSession, ChatMessage
@@ -38,12 +41,16 @@ _sync_kb_engine = create_engine(_sync_kb_url, pool_pre_ping=True)
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
-# Gemini client
+# Gemini client — AI Studio API key when available, else Vertex AI.
 _MODEL_ID = GEMINI_MODEL.split("/", 1)[1] if "/" in GEMINI_MODEL else GEMINI_MODEL
-_client = genai.Client(
-    vertexai=True,
-    project=VERTEX_AI_PROJECT,
-    location=VERTEX_AI_LOCATION,
+_client = (
+    genai.Client(api_key=GEMINI_API_KEY)
+    if USE_GEMINI_API_KEY
+    else genai.Client(
+        vertexai=True,
+        project=VERTEX_AI_PROJECT,
+        location=VERTEX_AI_LOCATION,
+    )
 )
 
 class ChatMessageSchema(BaseModel):

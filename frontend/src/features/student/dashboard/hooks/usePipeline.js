@@ -74,8 +74,14 @@ export default function usePipeline(studentId) {
         }
       }, 3000);
     } catch (e) {
-      setPipelineStatus({ status: 'failed', error: e.message });
-      setError(`Failed to start AI Pipeline: ${e.message}`);
+      const msg = String(e.message || '');
+      if (msg.includes('409')) {
+        setPipelineStatus(null);
+        setError('A previous analysis is still running. Please wait a moment and try again.');
+      } else {
+        setPipelineStatus({ status: 'failed', error: msg });
+        setError(`Failed to start AI Pipeline: ${msg}`);
+      }
     }
   }, [studentId, fetchReports]);
 

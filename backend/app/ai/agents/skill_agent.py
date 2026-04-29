@@ -15,8 +15,8 @@ from app.core.config import GEMINI_MODEL
 def _get_llm() -> LLM:
     return LLM(
         model=GEMINI_MODEL,
-        max_retries=5,
-        timeout=120
+        max_retries=2,
+        timeout=300
     )
 
 

@@ -25,10 +25,10 @@ function NodePill({ node }) {
   const { status, label, score, recently_closed, improvement, is_next_milestone } = node
 
   const statusMeta = {
-    has_skill:   { icon: '✓', cls: 'rm-pill--has'   },
-    gap_skill:   { icon: '✗', cls: 'rm-pill--gap'   },
-    weak_skill:  { icon: '⚡', cls: 'rm-pill--weak'  },
-    unassessed:  { icon: '?', cls: 'rm-pill--none'  },
+    has_skill: { icon: '✓', cls: 'rm-pill--has' },
+    gap_skill: { icon: '✗', cls: 'rm-pill--gap' },
+    weak_skill: { icon: '⚡', cls: 'rm-pill--weak' },
+    unassessed: { icon: '?', cls: 'rm-pill--none' },
   }
   const { icon, cls } = statusMeta[status] || statusMeta.unassessed
 

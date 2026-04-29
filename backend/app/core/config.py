@@ -29,15 +29,30 @@ GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:8000/ap
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "ASPIRE <onboarding@resend.dev>")
 
-# Gemini AI — Vertex AI via Service Account JSON
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "vertex_ai/gemini-2.5-flash")
+# Gemini AI — supports two auth modes:
+#   1. AI Studio API key   → set GEMINI_API_KEY in .env (simpler, separate quota)
+#   2. Vertex AI service account → set GOOGLE_APPLICATION_CREDENTIALS (legacy)
+# If GEMINI_API_KEY is present, the codebase prefers AI Studio across LiteLLM,
+# google-genai embeddings, and the chat client.
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+USE_GEMINI_API_KEY = bool(GEMINI_API_KEY)
+
+# Default model name depends on the active provider — litellm uses different prefixes.
+_default_model = "gemini/gemini-2.5-flash" if USE_GEMINI_API_KEY else "vertex_ai/gemini-2.5-flash"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", _default_model)
+
 VERTEX_AI_PROJECT = os.getenv("VERTEX_AI_PROJECT", "aspire-494019")
 VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1")
 
-# Service account key — both LiteLLM and google-genai read GOOGLE_APPLICATION_CREDENTIALS.
-_sa_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
-if _sa_path:
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = _sa_path
-os.environ["VERTEXAI_PROJECT"] = VERTEX_AI_PROJECT
-os.environ["VERTEXAI_LOCATION"] = VERTEX_AI_LOCATION
+if USE_GEMINI_API_KEY:
+    # LiteLLM and google-genai both read these.
+    os.environ["GEMINI_API_KEY"] = GEMINI_API_KEY
+    os.environ["GOOGLE_API_KEY"] = GEMINI_API_KEY
+else:
+    # Vertex AI path — service account auth.
+    _sa_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    if _sa_path:
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = _sa_path
+    os.environ["VERTEXAI_PROJECT"] = VERTEX_AI_PROJECT
+    os.environ["VERTEXAI_LOCATION"] = VERTEX_AI_LOCATION
 

@@ -5,6 +5,7 @@ Fetches student data from existing tables, runs the CrewAI pipeline in a
 background thread, and persists results.
 """
 import asyncio
+import hashlib
 import json
 import uuid
 from datetime import datetime, timedelta
@@ -119,6 +120,22 @@ async def _fetch_student_data(db: AsyncSession, student_id: int) -> dict:
     }
 
 
+def _compute_input_hash(student_data: dict, subject_context: str) -> str:
+    """Stable hash of the inputs that determine the AI report.
+
+    If the same student runs Refresh Analysis twice without any new academic
+    scores or GitHub activity, the hash is identical and we can short-circuit
+    by returning their previous report instead of re-running the crew.
+    """
+    payload = {
+        "academic_scores": student_data.get("academic_scores", []),
+        "github": student_data.get("github"),
+        "subject_context": subject_context,
+    }
+    blob = json.dumps(payload, sort_keys=True, default=str)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
 async def _fetch_previous_report(student_id: int, db: AsyncSession) -> str | None:
     """
     Fetches the most recent completed CareerReport for the student
@@ -201,15 +218,36 @@ async def run_pipeline_job(
             enrolled_subjects = await get_enrolled_subjects(db, student_id)
             subject_context = build_subject_skill_context(enrolled_subjects)
 
+            # ── Short-circuit: if inputs haven't changed since last report, reuse it ─
+            input_hash = _compute_input_hash(student_data, subject_context)
+            if previous_report and previous_report.report_json:
+                try:
+                    prev_payload = json.loads(previous_report.report_json)
+                    if prev_payload.get("_input_hash") == input_hash:
+                        print(f"[pipeline] Input unchanged — returning cached report (hash={input_hash[:8]})")
+                        await _update_job(
+                            db, job_id,
+                            status="completed",
+                            current_step="No new data — returning previous report",
+                            percentage=100,
+                            completed_at=datetime.utcnow(),
+                        )
+                        return
+                except (json.JSONDecodeError, AttributeError):
+                    pass  # Fall through to a real run.
+
             # ── Run the entire 7-agent crew in a background thread ────────────
             from app.ai.crew import build_and_run_crew
 
             pipeline_result = await asyncio.to_thread(
-                build_and_run_crew, 
-                student_data, 
+                build_and_run_crew,
+                student_data,
                 prev_report_json,
                 subject_context
             )
+
+            # Stamp the input hash so the next run can detect "no change".
+            pipeline_result["_input_hash"] = input_hash
 
             # ── If crew returned a fallback error, propagate it ──────────────
             if pipeline_result.get("error"):

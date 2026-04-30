@@ -166,6 +166,7 @@ CAREER_PATHS = [
     {
         "title": "Backend Developer",
         "content": """Career Path: Backend Developer.
+Also known as: Backend Engineer, Server-side Developer, API Developer, Backend Software Engineer.
 Philippine market outlook: High demand — top tech career in PH 2024-2025.
 Required skills: Python or JavaScript, REST APIs, PostgreSQL,
 Docker, Git, Linux, Redis, CI/CD pipelines.
@@ -173,6 +174,7 @@ BSCpE skillsets aligned: Programming & Software Development,
 Operating Systems & Architecture, Networking & Communications.
 ABET SOs: SO1, SO5, SO11.
 Roadmap: https://roadmap.sh/backend
+Demonstrative GitHub projects: REST API with FastAPI/Express + PostgreSQL + JWT auth; webhook server with rate limiting; CRUD application with Docker Compose; URL shortener with Redis caching.
 Learning order: Programming Language → Databases → REST APIs →
 Authentication → Containerization → CI/CD → Cloud deployment.
 BSU CpE subjects most relevant: CpE 406 OOP, CpE 411 Data Structures,
@@ -181,6 +183,7 @@ CpE 418 Software Design, CpE 424 Operating Systems, Database courses."""
     {
         "title": "Full Stack Developer",
         "content": """Career Path: Full Stack Developer.
+Also known as: Full Stack Engineer, Full Stack Software Developer, Web Developer, Full-stack Application Developer.
 Philippine market outlook: Very high demand — most versatile tech role in PH.
 Required skills: React, Node.js or Python, PostgreSQL, REST APIs,
 Git, Docker, basic DevOps, HTML/CSS/JavaScript.
@@ -188,6 +191,7 @@ BSCpE skillsets aligned: Programming & Software Development,
 Operating Systems & Architecture, Modern Engineering Tools.
 ABET SOs: SO1, SO3, SO5, SO11.
 Roadmap: https://roadmap.sh/full-stack
+Demonstrative GitHub projects: SPA + REST API + database deployed end-to-end (React + Node/Python + Postgres); marketplace clone with auth; SaaS dashboard with Stripe-style billing; blog/CMS with admin panel.
 Learning order: HTML/CSS/JS → React → Backend Language →
 Database → APIs → Authentication → Deployment.
 BSU CpE subjects most relevant: CpE 406 OOP, CpE 411 Data Structures,
@@ -196,6 +200,7 @@ CpE 418 Software Design, Web Systems and Technologies."""
     {
         "title": "Frontend Developer",
         "content": """Career Path: Frontend Developer.
+Also known as: Frontend Engineer, UI Developer, Web Frontend Developer, JavaScript Developer, React Developer.
 Philippine market outlook: High demand especially for React developers.
 Required skills: HTML, CSS, JavaScript, React or Vue,
 TypeScript, Git, REST API integration, responsive design, accessibility.
@@ -203,6 +208,7 @@ BSCpE skillsets aligned: Programming & Software Development,
 Modern Engineering Tools.
 ABET SOs: SO1, SO5, SO11.
 Roadmap: https://roadmap.sh/frontend
+Demonstrative GitHub projects: Responsive React or Vue SPA with state management and routing; component library with Storybook; accessible form-heavy app (a11y compliant); progressive web app (PWA) with service workers; portfolio site with animations.
 Learning order: HTML → CSS → JavaScript → React →
 TypeScript → Build Tools → Testing → Performance.
 BSU CpE subjects most relevant: CpE 401 Programming 1,
@@ -211,6 +217,7 @@ CpE 406 OOP, CpE 418 Software Design."""
     {
         "title": "DevOps Engineer",
         "content": """Career Path: DevOps Engineer.
+Also known as: Site Reliability Engineer (SRE), Platform Engineer, Cloud Engineer, Infrastructure Engineer, Build & Release Engineer.
 Philippine market outlook: Growing — critical shortage of qualified DevOps in PH.
 Required skills: Linux, Docker, Kubernetes, CI/CD,
 AWS or GCP, Terraform, monitoring tools, bash scripting, networking.
@@ -218,6 +225,7 @@ BSCpE skillsets aligned: Operating Systems & Architecture,
 Networking & Communications, Modern Engineering Tools.
 ABET SOs: SO1, SO3, SO5, SO11.
 Roadmap: https://roadmap.sh/devops
+Demonstrative GitHub projects: Multi-container docker-compose stack; CI/CD pipeline with GitHub Actions or Jenkins; Terraform module deploying AWS/GCP infrastructure; Kubernetes manifest set with Helm chart; Prometheus/Grafana monitoring setup.
 Learning order: Linux → Networking → Git → Docker →
 CI/CD → Kubernetes → Cloud → Monitoring → Infrastructure as Code.
 BSU CpE subjects most relevant: CpE 412 CISCO 1, CpE 419 CISCO 2,
@@ -226,6 +234,7 @@ CpE 423 CISCO 3, CpE 424 Operating Systems, CpE 427 CISCO 4."""
     {
         "title": "Cybersecurity Analyst",
         "content": """Career Path: Cybersecurity Analyst.
+Also known as: Security Analyst, SOC Analyst, Information Security Analyst, Penetration Tester, Cybersecurity Engineer.
 Philippine market outlook: Critical demand — PH ranks high in cyberattack targets.
 Required skills: Networking, Linux, ethical hacking, penetration testing,
 SIEM tools, incident response, security frameworks, cryptography.
@@ -233,6 +242,7 @@ BSCpE skillsets aligned: Networking & Communications,
 Operating Systems & Architecture, Ethics & Professionalism.
 ABET SOs: SO1, SO2, SO3, SO5, SO6.
 Roadmap: https://roadmap.sh/cyber-security
+Demonstrative GitHub projects: CTF challenge writeups; vulnerability scanner script; SIEM/log analysis dashboard with ELK stack; small-scale penetration testing report on a vulnerable VM (e.g., Metasploitable); home network IDS with Suricata.
 Learning order: Networking Fundamentals → Linux → Security Basics →
 Ethical Hacking → Penetration Testing → Incident Response → Certifications.
 BSU CpE subjects most relevant: CpE 412-427 CISCO track,
@@ -241,6 +251,7 @@ CpE 424 Operating Systems, CpE 427 Connecting Networks and Security."""
     {
         "title": "Data Scientist",
         "content": """Career Path: Data Scientist.
+Also known as: Data Analyst, Quantitative Analyst, Research Scientist, Applied Scientist, Analytics Engineer.
 Philippine market outlook: High growth — banking, BPO, and tech sectors.
 Required skills: Python, pandas, scikit-learn, SQL,
 data visualization, statistical analysis, machine learning, Jupyter.
@@ -248,6 +259,7 @@ BSCpE skillsets aligned: Data Science & AI/ML,
 Mathematics & Science Foundations, Programming & Software Development.
 ABET SOs: SO1, SO2, SO5.
 Roadmap: https://roadmap.sh/data-scientist
+Demonstrative GitHub projects: Jupyter notebook with EDA + ML model + visualization (Kaggle-style competition); time-series forecasting on real PH datasets (PSE stocks, weather); A/B test analysis report; recommendation system; SQL analytics dashboard.
 Learning order: Python → Statistics → SQL → Data Analysis →
 Machine Learning → Deep Learning → Model Deployment.
 BSU CpE subjects most relevant: MATH 401-404, ENGG 414 Numerical Methods,
@@ -256,6 +268,7 @@ CpEE 403 Data Mining/AI Elective, MATH 403 Engineering Data Analysis."""
     {
         "title": "AI Engineer",
         "content": """Career Path: AI Engineer.
+Also known as: GenAI Engineer, LLM Engineer, ML Platform Engineer, Applied AI Engineer, AI Software Engineer.
 Philippine market outlook: Emerging — fastest growing tech role globally.
 Required skills: Python, PyTorch or TensorFlow, LLMs,
 prompt engineering, vector databases, RAG pipelines, MLOps.
@@ -263,6 +276,7 @@ BSCpE skillsets aligned: Data Science & AI/ML,
 Mathematics & Science Foundations, Programming & Software Development.
 ABET SOs: SO1, SO2, SO3, SO5.
 Roadmap: https://roadmap.sh/ai-engineer
+Demonstrative GitHub projects: RAG chatbot with vector database (pgvector/Pinecone); LLM fine-tuning pipeline; multi-agent framework using LangChain/CrewAI; prompt-engineering experiments; semantic search engine; RAG-based Q&A on custom documents.
 Learning order: Python → ML Fundamentals → Deep Learning →
 Transformers/LLMs → Prompt Engineering → RAG → MLOps → Cloud AI.
 BSU CpE subjects most relevant: CpEE 403 Data Mining/AI Elective,
@@ -271,6 +285,7 @@ ENGG 414 Numerical Methods, MATH 403 Engineering Data Analysis."""
     {
         "title": "Machine Learning Engineer",
         "content": """Career Path: Machine Learning Engineer.
+Also known as: ML Engineer, Applied Machine Learning Engineer, MLOps Engineer, Production ML Engineer.
 Philippine market outlook: Growing — fintech and healthtech sectors leading.
 Required skills: Python, scikit-learn, TensorFlow or PyTorch,
 feature engineering, model deployment, Docker, REST APIs for ML, MLflow.
@@ -278,6 +293,7 @@ BSCpE skillsets aligned: Data Science & AI/ML,
 Mathematics & Science Foundations, Engineering Design & Research.
 ABET SOs: SO1, SO2, SO3, SO5.
 Roadmap: https://roadmap.sh/machine-learning
+Demonstrative GitHub projects: scikit-learn pipeline deployed via FastAPI/Flask; MLflow experiment tracking with reproducible runs; feature store demo; automated retraining pipeline; model monitoring dashboard with drift detection.
 Learning order: Python → Statistics → ML Algorithms →
 Model Training → Feature Engineering → Model Deployment → MLOps.
 BSU CpE subjects most relevant: CpEE 403 Data Mining/AI Elective,
@@ -286,6 +302,7 @@ ENGG 414 Numerical Methods, CpE 411 Data Structures."""
     {
         "title": "Software Architect",
         "content": """Career Path: Software Architect.
+Also known as: Principal Engineer, Tech Lead, Solutions Architect, Senior Software Engineer (Architecture track), Staff Engineer.
 Philippine market outlook: Senior role — 5+ years experience typically required.
 Required skills: System design, microservices, distributed systems,
 cloud architecture, API design patterns, database design,
@@ -294,6 +311,7 @@ BSCpE skillsets aligned: Programming & Software Development,
 Engineering Design & Research, Operating Systems & Architecture.
 ABET SOs: SO1, SO3, SO5, SO11, SO12.
 Roadmap: https://roadmap.sh/software-architect
+Demonstrative GitHub projects: System design documents (architecture diagrams + ADRs); reference microservices implementation with API gateway; performance optimization case study with benchmarks; distributed system demo (e.g., consensus algorithm, leader election).
 Learning order: Strong backend foundation → System Design →
 Distributed Systems → Cloud → Security → Leadership.
 BSU CpE subjects most relevant: CpE 418 Software Design,
@@ -306,6 +324,7 @@ HARDWARE_CAREER_PATHS = [
     {
         "title": "Embedded Systems Engineer",
         "content": """Career Path: Embedded Systems Engineer.
+Also known as: Firmware Engineer, Microcontroller Engineer, Hardware-Software Integration Engineer, Embedded Software Engineer.
 Philippine market outlook: Steady demand in manufacturing and consumer electronics.
 Required skills: C/C++, RTOS (FreeRTOS/Zephyr), Microcontrollers (STM32, ESP32, AVR),
 I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes.
@@ -313,42 +332,56 @@ BSCpE skillsets aligned: Embedded & Microprocessor Systems,
 Hardware & Circuit Design, Operating Systems & Architecture.
 ABET SOs: SO1, SO2, SO3, SO5.
 Roadmap: https://roadmap.sh/embedded
+Demonstrative GitHub projects: STM32/ESP32 firmware with peripherals (I2C/SPI sensor reading); RTOS-based scheduler demo (FreeRTOS tasks); bootloader implementation; sensor fusion project (IMU + Kalman filter); custom HAL driver.
+Learning order: C programming → Digital Logic → Microcontroller fundamentals → Communication Protocols (I2C/SPI/UART) → RTOS → Embedded Linux → IoT Integration.
 BSU CpE subjects most relevant: CpE 417 Microprocessors,
 CpE 428 Embedded Systems, CpE 413 Fundamentals of Mixed Signals and Sensors."""
     },
     {
         "title": "VLSI Design Engineer",
         "content": """Career Path: VLSI Design Engineer.
+Also known as: Digital Design Engineer, ASIC Design Engineer, Chip Design Engineer, RTL Design Engineer.
 Philippine market outlook: Specialized demand in semiconductor design houses (Laguna/Cavite).
 Required skills: Verilog/SystemVerilog, VHDL, Digital Logic Design,
 CMOS fundamentals, EDA tools (Cadence, Synopsys), Static Timing Analysis.
 BSCpE skillsets aligned: Hardware & Circuit Design,
 Embedded & Microprocessor Systems, Engineering Design & Research.
 ABET SOs: SO1, SO2, SO3.
+Roadmap: https://roadmap.sh/computer-science
+Demonstrative GitHub projects: Verilog modules (ALU, FIFO, AXI bus master) with testbenches; UVM verification environment; pipelined RISC-V core implementation; synthesis and STA reports.
+Learning order: Digital Logic → HDL fundamentals (Verilog/VHDL) → CMOS basics → Synthesis → EDA tooling → Static Timing Analysis → Verification (UVM) → Physical Design.
 BSU CpE subjects most relevant: CpE 410 Logic Circuits and Design,
 CpE 415 Introduction to HDL, CpE 425 Computer Architecture and Organization."""
     },
     {
         "title": "FPGA Engineer",
         "content": """Career Path: FPGA Engineer.
+Also known as: FPGA Developer, Hardware Engineer (FPGA), Digital Hardware Engineer, RTL Engineer, FPGA Firmware Engineer.
 Philippine market outlook: Growing niche in telecommunications and high-speed trading.
 Required skills: HDL (Verilog/VHDL), FPGA Architecture (Xilinx/Altera),
 Digital Signal Processing, High-speed interfaces, Timing closure.
 BSCpE skillsets aligned: Hardware & Circuit Design,
 Signal Processing & Control Systems, Modern Engineering Tools.
 ABET SOs: SO1, SO2, SO3, SO5.
+Roadmap: https://roadmap.sh/computer-science
+Demonstrative GitHub projects: Xilinx Vivado/Altera Quartus designs; DSP module on FPGA (FIR/IIR filters); high-speed serial protocol implementation (UART, SPI, AXI); FPGA-based image processing demo; HDMI/VGA controller.
+Learning order: Digital Logic → HDL (Verilog/VHDL) → Synthesis → FPGA tooling (Vivado/Quartus) → Timing closure → DSP fundamentals → High-speed interfaces.
 BSU CpE subjects most relevant: CpE 415 Introduction to HDL,
 CpE 420 Digital Signal Processing, CpE 410 Logic Circuits and Design."""
     },
     {
         "title": "IoT Systems Engineer",
         "content": """Career Path: IoT Systems Engineer.
+Also known as: IoT Developer, Connected Devices Engineer, Edge Computing Engineer, Smart Systems Engineer, IoT Solutions Architect.
 Philippine market outlook: High potential in smart agriculture and industrial automation.
 Required skills: Embedded C, Wireless protocols (LoRaWAN, Zigbee, BLE),
 Cloud integration (AWS IoT, Google Cloud IoT), Sensors, MQTT.
 BSCpE skillsets aligned: Networking & Communications,
 Embedded & Microprocessor Systems, Data Science & AI/ML.
 ABET SOs: SO1, SO3, SO5, SO11.
+Roadmap: https://roadmap.sh/embedded
+Demonstrative GitHub projects: ESP32/Arduino with MQTT to AWS IoT or Google Cloud IoT; sensor data dashboard (Grafana + InfluxDB); LoRaWAN gateway demo; smart home prototype with multiple devices; edge ML on microcontroller (TensorFlow Lite Micro).
+Learning order: Embedded fundamentals → Wireless protocols → Sensors and actuators → Cloud integration → MQTT/CoAP → Edge processing → Security for IoT.
 BSU CpE subjects most relevant: CpE 412-427 CISCO track,
 CpE 428 Embedded Systems, CpE 413 Fundamentals of Mixed Signals and Sensors."""
     }

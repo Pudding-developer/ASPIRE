@@ -1,6 +1,7 @@
 """
 knowledge.py — SQLModel for storing RAG knowledge chunks with pgvector embeddings.
 """
+from datetime import datetime
 from typing import Optional
 from sqlmodel import SQLModel, Field
 from sqlalchemy import Column, Text
@@ -28,3 +29,17 @@ class KnowledgeChunk(SQLModel, table=True):
         default=None,
         sa_column=Column(Vector(EMBEDDING_DIM), nullable=True)
     )
+
+
+class EmbeddingCache(SQLModel, table=True):
+    """Caches Gemini embedding results so repeat queries skip the API.
+
+    Key is sha256(task_type + ':' + text) — deterministic and avoids storing
+    the raw query text. Survives across restarts; safe to wipe at any time
+    (the next call simply re-populates).
+    """
+    __tablename__ = "embedding_cache"
+
+    query_hash: str = Field(primary_key=True, max_length=64)
+    vector: list = Field(sa_column=Column(Vector(EMBEDDING_DIM), nullable=False))
+    created_at: datetime = Field(default_factory=datetime.utcnow)

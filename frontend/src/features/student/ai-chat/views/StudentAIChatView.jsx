@@ -215,8 +215,8 @@ export default function StudentAIChatView({ user }) {
       {/* HEADER SECTION */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
-          <div className="w-2 h-2 rounded-full bg-[#70170f] animate-pulse"></div>
-          <span className="text-[10px] font-bold text-[#70170f] uppercase tracking-[0.2em]">AI CAREER COACH ACTIVE</span>
+          <div className="w-2 h-2 rounded-full bg-[#bc1313] animate-pulse"></div>
+          <span className="text-[10px] font-bold text-[#bc1313] uppercase tracking-[0.2em]">AI CAREER COACH ACTIVE</span>
         </div>
         <h1 className="text-[28px] font-black text-gray-900 tracking-tight leading-none">Career Coach Chat</h1>
         <p className="text-[12px] text-gray-500 mt-2 font-medium">Chat directly with your personalized AI Career Coach</p>
@@ -225,10 +225,10 @@ export default function StudentAIChatView({ user }) {
       <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-[500px]">
         {/* Session Sidebar */}
         <div className="w-full md:w-64 flex flex-col gap-3 shrink-0 h-full">
-          <button 
+          <button
             onClick={createNewSession}
             disabled={sessionLoading}
-            className="flex items-center justify-center gap-2 w-full py-3 bg-[#fcf4f2] border-2 border-dashed border-[#eed7d3] rounded-xl text-[#70170f] text-[12px] font-bold hover:bg-[#faebe8] transition-all"
+            className="flex items-center justify-center gap-2 w-full py-3 bg-[#fff3f3] border-2 border-dashed border-[#f1d7d7] rounded-xl text-[#bc1313] text-[12px] font-bold hover:bg-[#ffebeb] transition-all"
           >
             <Plus size={16} /> NEW SESSION
           </button>
@@ -265,16 +265,15 @@ export default function StudentAIChatView({ user }) {
               return (
                 <div
                   key={s.session_id}
-                  className={`group w-full p-3 rounded-xl border transition-all flex items-center gap-3 ${
-                    isActive ? 'bg-white border-[#eed7d3] shadow-sm' : 'bg-transparent border-transparent hover:bg-white/50'
-                  }`}
+                  className={`group w-full p-3 rounded-xl border transition-all flex items-center gap-3 ${isActive ? 'bg-white border-[#f1d7d7] shadow-sm' : 'bg-transparent border-transparent hover:bg-white/50'
+                    }`}
                 >
                   <button
                     type="button"
                     onClick={() => loadSession(s.session_id)}
                     className="flex-1 min-w-0 flex items-center gap-3 text-left"
                   >
-                    <MessageSquare size={16} className={isActive ? 'text-[#70170f]' : 'text-gray-400'} />
+                    <MessageSquare size={16} className={isActive ? 'text-[#bc1313]' : 'text-gray-400'} />
                     <div className="flex-1 truncate">
                       <p className={`text-[12px] font-bold truncate ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>{s.label}</p>
                       <p className="text-[10px] text-gray-400 mt-0.5">{new Date(s.created_at).toLocaleDateString()}</p>
@@ -295,26 +294,23 @@ export default function StudentAIChatView({ user }) {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-white border border-[#eed7d3] rounded-2xl shadow-sm overflow-hidden h-full">
+        <div className="flex-1 flex flex-col bg-white border border-[#f1d7d7] rounded-2xl shadow-sm overflow-hidden h-full">
           <div className="p-4 border-b border-gray-50 bg-[#fffbfc] flex justify-between items-center">
             <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400">AI CAREER ASSISTANT</span>
-            {sessionLoading && <div className="animate-spin w-4 h-4 border-2 border-[#70170f] border-t-transparent rounded-full" />}
+            {sessionLoading && <div className="animate-spin w-4 h-4 border-2 border-[#bc1313] border-t-transparent rounded-full" />}
           </div>
           <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar">
             {chatMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6">
-                <div className="w-24 h-24 mb-6 flex items-center justify-center">
-                  <img src={aiChatLogo} alt="AI Chat" className="w-full h-full object-contain drop-shadow-sm scale-[2.5]" />
-                </div>
+                <div className="w-18 h-18 mb-6 flex items-center justify-center"><img src={aiChatLogo} alt="AI Chat" className="w-full h-full object-contain drop-shadow-sm scale-[3.5]" /></div>
                 <p className="text-[15px] font-bold text-gray-900 mb-2">How can I help you today?</p>
                 <p className="text-[13px] text-gray-500 max-w-md leading-relaxed">Select a suggested topic below or ask any question about your career roadmap, skill gaps, or learning path.</p>
               </div>
             ) : (
               chatMessages.map((msg, i) => (
                 <div key={i} className={`flex items-start gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 shadow-sm mt-1 overflow-hidden ${
-                    msg.role === 'user' ? 'bg-gray-100' : 'bg-[#70170f] text-white'
-                  }`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 shadow-sm mt-1 overflow-hidden ${msg.role === 'user' ? 'bg-gray-100' : 'bg-[#bc1313] text-white'
+                    }`}>
                     {msg.role === 'user' ? (
                       user?.avatar_url ? (
                         <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -322,12 +318,11 @@ export default function StudentAIChatView({ user }) {
                         user?.full_name?.charAt(0).toUpperCase() || 'U'
                       )
                     ) : (
-                      <img src={aiChatLogo} alt="AI Coach" className="w-full h-full object-cover scale-[2.5]" />
+                      <img src={aiChatLogo} alt="AI Coach" className="w-full h-full object-cover scale-[1.8]" />
                     )}
                   </div>
-                  <div className={`max-w-[80%] p-5 rounded-2xl text-[13px] leading-relaxed shadow-sm ${
-                    msg.role === 'user' ? 'bg-gray-50 text-gray-800 border border-gray-100 rounded-tr-none' : 'bg-white text-gray-700 border border-[#eed7d3] rounded-tl-none'
-                  }`}>
+                  <div className={`max-w-[80%] p-5 rounded-2xl text-[13px] leading-relaxed shadow-sm ${msg.role === 'user' ? 'bg-gray-50 text-gray-800 border border-gray-100 rounded-tr-none' : 'bg-white text-gray-700 border border-[#f1d7d7] rounded-tl-none'
+                    }`}>
                     {msg.role === 'assistant' && msg.isNew ? (
                       <TypewriterText text={msg.content} onComplete={() => { msg.isNew = false; }} />
                     ) : (
@@ -360,16 +355,16 @@ export default function StudentAIChatView({ user }) {
             {chatMessages.length === 0 && !chatSending && (
               <div className="flex flex-wrap gap-2 mb-5">
                 {CHAT_SUGGESTIONS.map(q => (
-                  <button key={q} disabled={chatSending} onClick={() => sendChat(q)} className="px-4 py-2 bg-[#fcf4f2] border border-[#eed7d3] text-[#70170f] text-[11px] font-bold rounded-full hover:bg-[#faebe8] transition-all shadow-sm disabled:opacity-50">{q}</button>
+                  <button key={q} disabled={chatSending} onClick={() => sendChat(q)} className="px-4 py-2 bg-[#fff3f3] border border-[#f1d7d7] text-[#bc1313] text-[11px] font-bold rounded-full hover:bg-[#ffebeb] transition-all shadow-sm disabled:opacity-50">{q}</button>
                 ))}
               </div>
             )}
             {chatSending && (
               <div className="flex items-center gap-2 mb-3 text-[12px] text-gray-500 ml-2">
                 <span className="flex gap-1" aria-hidden="true">
-                  <span className="w-1.5 h-1.5 bg-[#70170f] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <span className="w-1.5 h-1.5 bg-[#70170f] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <span className="w-1.5 h-1.5 bg-[#70170f] rounded-full animate-bounce" />
+                  <span className="w-1.5 h-1.5 bg-[#bc1313] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-1.5 h-1.5 bg-[#bc1313] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-1.5 h-1.5 bg-[#bc1313] rounded-full animate-bounce" />
                 </span>
                 <span className="font-semibold text-gray-600">{thinkingPhrase}…</span>
               </div>
@@ -381,7 +376,7 @@ export default function StudentAIChatView({ user }) {
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder={chatSending ? `${thinkingPhrase}…` : "Ask your career coach..."}
                 disabled={chatSending}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-[13px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70170f]/20 focus:border-[#70170f] transition-all pr-14 shadow-inner"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-[13px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#bc1313]/20 focus:border-[#bc1313] transition-all pr-14 shadow-inner"
               />
               {chatSending ? (
                 <button
@@ -396,7 +391,7 @@ export default function StudentAIChatView({ user }) {
                 <button
                   type="submit"
                   disabled={!chatInput.trim()}
-                  className="absolute right-2.5 top-2.5 bottom-2.5 px-4 bg-[#70170f] text-white rounded-lg hover:bg-[#4a0e09] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="absolute right-2.5 top-2.5 bottom-2.5 px-4 bg-[#bc1313] text-white rounded-lg hover:bg-[#890E0E] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                   <ChevronRight size={18} />
                 </button>

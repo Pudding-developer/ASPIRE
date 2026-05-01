@@ -1,5 +1,130 @@
 {
-  "note": "Trained on synthetic BSU CpE curriculum data. Real student validation is planned as future work.",
-  "cv_r2_mean": 0.92,
-  "mae": 3.24
+  "skills_regression": {
+    "cv_r2_mean": 0.9818474387872763,
+    "cv_r2_std": 0.00045443355915849584,
+    "cv_mae_mean": 2.0387654971992015,
+    "cv_rmse_mean": 3.7325637103123936,
+    "per_skill": [
+      {
+        "skill": "Mathematics & Science Foundations",
+        "mae": 4.360446369008097,
+        "rmse": 5.803486882932786,
+        "r2": 0.973815192856597
+      },
+      {
+        "skill": "Programming & Software Development",
+        "mae": 1.8386880523644835,
+        "rmse": 3.5670060079638017,
+        "r2": 0.9881461746269676
+      },
+      {
+        "skill": "Hardware & Circuit Design",
+        "mae": 1.1479936259688934,
+        "rmse": 2.5540829326802905,
+        "r2": 0.9924880380228188
+      },
+      {
+        "skill": "Embedded & Microprocessor Systems",
+        "mae": 0.6939576706609558,
+        "rmse": 1.8717991113588135,
+        "r2": 0.9936510330485938
+      },
+      {
+        "skill": "Networking & Communications",
+        "mae": 0.7903386716350458,
+        "rmse": 2.2178654327890395,
+        "r2": 0.9905986012399262
+      },
+      {
+        "skill": "Operating Systems & Architecture",
+        "mae": 1.3251663894414918,
+        "rmse": 2.994347748870645,
+        "r2": 0.9884133021420303
+      },
+      {
+        "skill": "Signal Processing & Control Systems",
+        "mae": 1.0104107178420765,
+        "rmse": 2.8239023428470236,
+        "r2": 0.9864971734076511
+      },
+      {
+        "skill": "Data Science & AI/ML",
+        "mae": 0.983194902030965,
+        "rmse": 2.201875570600211,
+        "r2": 0.9927881420533659
+      },
+      {
+        "skill": "Engineering Design & Research",
+        "mae": 1.7873061168987134,
+        "rmse": 3.2788401625141086,
+        "r2": 0.9899116704588125
+      },
+      {
+        "skill": "Modern Engineering Tools",
+        "mae": 3.4293491975020167,
+        "rmse": 4.698620347786233,
+        "r2": 0.981275200338625
+      },
+      {
+        "skill": "Technical Communication",
+        "mae": 3.628789853941272,
+        "rmse": 4.789088289980144,
+        "r2": 0.9715507158070102
+      },
+      {
+        "skill": "Ethics & Professionalism",
+        "mae": 4.59861795584051,
+        "rmse": 5.67269164833017,
+        "r2": 0.941774465445325
+      },
+      {
+        "skill": "Critical Thinking & Problem-Solving",
+        "mae": 5.066406469653547,
+        "rmse": 6.239599442404344,
+        "r2": 0.946308200482325
+      },
+      {
+        "skill": "Leadership & Teamwork",
+        "mae": 1.4316633047262426,
+        "rmse": 3.427416785705729,
+        "r2": 0.9834221629977565
+      },
+      {
+        "skill": "Project Management",
+        "mae": 0.7221941052968479,
+        "rmse": 2.1499250385557143,
+        "r2": 0.9881995523064914
+      },
+      {
+        "skill": "Lifelong Learning",
+        "mae": 2.2033462013890808,
+        "rmse": 3.998838946148058,
+        "r2": 0.9849323043450373
+      },
+      {
+        "skill": "Societal & National Responsibility",
+        "mae": 1.7900354107889198,
+        "rmse": 3.4642534792128634,
+        "r2": 0.9833787087081242
+      },
+      {
+        "skill": "Sustainability Awareness",
+        "mae": 1.6451851624861271,
+        "rmse": 3.459192505945361,
+        "r2": 0.9755550885173474
+      },
+      {
+        "skill": "Cultural & Global Competence",
+        "mae": 1.6216318061223398,
+        "rmse": 3.2839837793123343,
+        "r2": 0.987622795667254
+      },
+      {
+        "skill": "Entrepreneurial Mindset",
+        "mae": 1.6721948224068814,
+        "rmse": 3.5824445307262223,
+        "r2": 0.9854577460010429
+      }
+    ]
+  }
 }

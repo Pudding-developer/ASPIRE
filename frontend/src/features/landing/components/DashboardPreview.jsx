@@ -146,19 +146,19 @@ export default function DashboardPreview() {
         </div>
 
         {/* Floating Stat: 680+ Students Tracked */}
-        <div className="stat-card opacity-0 absolute top-1/3 left-4 md:left-10 backdrop-blur-md bg-[#bc1313] border border-[#ff3333]/30 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.4)] z-50 pointer-events-none">
+        <div className="stat-card opacity-0 absolute top-1/3 left-4 md:left-10 backdrop-blur-md bg-[#70170f] border border-[#ff3333]/30 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.4)] z-50 pointer-events-none">
           <div className="text-2xl md:text-3xl font-bold mb-1">680+</div>
           <div className="text-xs opacity-90">Students Tracked</div>
         </div>
 
         {/* Floating Stat: 95% Accuracy Rate */}
-        <div className="stat-card opacity-0 absolute bottom-24 md:bottom-32 left-[15%] backdrop-blur-md bg-linear-to-br from-[#890E0E] to-[#bc1313] border border-white/10 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.3)] z-50 text-center pointer-events-none">
+        <div className="stat-card opacity-0 absolute bottom-24 md:bottom-32 left-[15%] backdrop-blur-md bg-linear-to-br from-[#4a0e09] to-[#70170f] border border-white/10 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.3)] z-50 text-center pointer-events-none">
           <div className="text-2xl md:text-3xl font-bold mb-1">95%</div>
           <div className="text-xs opacity-90">Accuracy Rate</div>
         </div>
 
         {/* Floating Stat: 64 Active Courses */}
-        <div className="stat-card opacity-0 absolute bottom-8 md:bottom-16 right-10 md:right-24 backdrop-blur-md bg-[#430202] border border-[#bc1313]/30 rounded-xl px-5 py-4 shadow-2xl text-center z-50 pointer-events-none">
+        <div className="stat-card opacity-0 absolute bottom-8 md:bottom-16 right-10 md:right-24 backdrop-blur-md bg-[#430202] border border-[#70170f]/30 rounded-xl px-5 py-4 shadow-2xl text-center z-50 pointer-events-none">
           <div className="text-white text-2xl md:text-3xl font-bold mb-1">64</div>
           <div className="text-gray-300 text-xs">Active Courses</div>
         </div>

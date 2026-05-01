@@ -42,7 +42,7 @@ export default function Navbar({ scrollToSection, onLogin }) {
           </div>
 
           <div className="hidden md:flex items-center gap-4 flex-shrink-0">
-            <Button onClick={onLogin} className="bg-[#bc1313] hover:bg-[#890E0E] text-white px-6 rounded-md">Log in</Button>
+            <Button onClick={onLogin} className="bg-[#70170f] hover:bg-[#4a0e09] text-white px-6 rounded-md">Log in</Button>
           </div>
 
           <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden">
@@ -58,18 +58,18 @@ export default function Navbar({ scrollToSection, onLogin }) {
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-[#0a0101] z-40 flex flex-col items-center justify-center gap-8 md:hidden"
         >
-          <button onClick={() => { setMenuOpen(false); scrollToSection('features'); }} className="text-2xl hover:text-[#bc1313] transition-colors">
+          <button onClick={() => { setMenuOpen(false); scrollToSection('features'); }} className="text-2xl hover:text-[#70170f] transition-colors">
             Features
           </button>
-          <button onClick={() => { setMenuOpen(false); scrollToSection('how-it-works'); }} className="text-2xl hover:text-[#bc1313] transition-colors">
+          <button onClick={() => { setMenuOpen(false); scrollToSection('how-it-works'); }} className="text-2xl hover:text-[#70170f] transition-colors">
             How it works
           </button>
-          <button onClick={() => { setMenuOpen(false); scrollToSection('faq'); }} className="text-2xl hover:text-[#bc1313] transition-colors">
+          <button onClick={() => { setMenuOpen(false); scrollToSection('faq'); }} className="text-2xl hover:text-[#70170f] transition-colors">
             FAQs
           </button>
           <Button
             onClick={() => { setMenuOpen(false); onLogin(); }}
-            className="w-full bg-[#bc1313] hover:bg-[#890E0E] text-white py-6 rounded-md text-lg"
+            className="w-full bg-[#70170f] hover:bg-[#4a0e09] text-white py-6 rounded-md text-lg"
           >
             Log in
           </Button>

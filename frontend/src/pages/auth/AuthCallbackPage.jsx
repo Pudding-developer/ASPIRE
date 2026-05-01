@@ -110,7 +110,7 @@ export default function AuthCallbackPage() {
           <div className="text-center">
             <div className="animate-pulse text-white text-lg font-medium mb-2">Signing you in...</div>
             <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-[#bc1313] rounded-full animate-pulse w-2/3"></div>
+              <div className="h-full bg-[#70170f] rounded-full animate-pulse w-2/3"></div>
             </div>
           </div>
         )}

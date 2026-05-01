@@ -46,7 +46,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
           {user?.avatar_url ? (
             <img src={user.avatar_url} alt={fullName} className="w-10 h-10 rounded-full flex-shrink-0 object-cover" referrerPolicy="no-referrer" />
           ) : (
-            <div className="w-10 h-10 rounded-full flex-shrink-0 bg-[#bc1313] flex items-center justify-center text-white font-medium text-sm">
+            <div className="w-10 h-10 rounded-full flex-shrink-0 bg-[#70170f] flex items-center justify-center text-white font-medium text-sm">
               {initial}
             </div>
           )}
@@ -72,7 +72,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
         <button
           onClick={() => setActiveView('instructor-portal')}
           className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'gap-4 px-4'} py-3 rounded-xl transition-all ${activeView === 'instructor-portal'
-            ? 'bg-[#bc1313]/20 text-white border-[#bc1313]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
+            ? 'bg-[#70170f]/20 text-white border-[#70170f]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
             : 'text-[#8592a3] hover:text-white hover:bg-white/5'
             }`}
         >
@@ -94,7 +94,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
               }
             }}
             className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'justify-between px-4'} py-3 rounded-xl transition-all ${activeView === 'my-classes' || activeView.startsWith('class-')
-              ? 'bg-[#bc1313]/20 text-white border-[#bc1313]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
+              ? 'bg-[#70170f]/20 text-white border-[#70170f]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
               : 'text-[#8592a3] hover:text-white hover:bg-white/5'
               }`}
           >
@@ -126,7 +126,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
                       key={cls.id}
                       onClick={() => setActiveView(viewId)}
                       className={`w-[calc(100%-24px)] ml-[24px] flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px] transition-all text-left ${isActive
-                        ? 'text-white bg-[#bc1313]/15 border border-[#bc1313]/30 backdrop-blur-sm'
+                        ? 'text-white bg-[#70170f]/15 border border-[#70170f]/30 backdrop-blur-sm'
                         : 'text-[#6a7a90] hover:text-[#a0acc0] hover:bg-white/5'
                         }`}
                     >
@@ -145,7 +145,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
           onClick={() => setActiveView('archived')}
           title={isMinimized ? "Archived Classes" : undefined}
           className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'gap-4 px-4'} py-3 rounded-xl transition-all ${activeView === 'archived'
-            ? 'bg-[#bc1313]/20 text-white border-[#bc1313]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
+            ? 'bg-[#70170f]/20 text-white border-[#70170f]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
             : 'text-[#8592a3] hover:text-white hover:bg-white/5'
             }`}
         >

@@ -164,6 +164,7 @@ export default function useCareerCoach(userId) {
     try {
       const data = await studentService.setChosenCareer(career);
       setChosenCareerState(data.chosen_career);
+      window.dispatchEvent(new CustomEvent('aspire_career_chosen', { detail: data.chosen_career }));
     } catch (err) {
       console.error('Failed to save career choice:', err);
     } finally {

@@ -9,7 +9,7 @@ import useInterventions from '../hooks/useInterventions';
 import { StudentPerformanceSkeleton } from '../../shared/StudentPageSkeletons';
 import StudentCourseDetailView from './StudentCourseDetailView';
 
-const panelBase = 'bg-gradient-to-br from-white via-[#fffbfb] to-[#fff3f3] border border-[#f1d7d7] rounded-2xl shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)]';
+const panelBase = 'bg-gradient-to-br from-white via-[#fffbfb] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)]';
 
 /* ─── Constants ─── */
 const SEMESTERS = ['All Semesters', '1st Semester 2024-2025', '2nd Semester 2024-2025', '1st Semester 2023-2024', '2nd Semester 2023-2024'];
@@ -28,7 +28,7 @@ function FilterDropdown({ open, onClose, semester, setSemester, category, setCat
   if (!open) return null;
 
   return (
-    <div ref={ref} className="absolute right-0 top-full mt-2 w-72 bg-linear-to-br from-white via-[#fff9f9] to-[#fff3f3] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(188,19,19,0.45)] z-50 p-5 space-y-5">
+    <div ref={ref} className="absolute right-0 top-full mt-2 w-72 bg-linear-to-br from-white via-[#fff9f9] to-[#fcf4f2] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(188,19,19,0.45)] z-50 p-5 space-y-5">
       <div className="flex items-center justify-between">
         <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filters</h4>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={14} /></button>
@@ -92,12 +92,12 @@ function NotificationDropdown({ open, onClose, notifications }) {
   if (!open) return null;
 
   return (
-    <div ref={ref} className="absolute right-0 top-full mt-2 w-80 bg-linear-to-br from-white via-[#fff9f9] to-[#fff3f3] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(188,19,19,0.45)] z-50 overflow-hidden">
+    <div ref={ref} className="absolute right-0 top-full mt-2 w-80 bg-linear-to-br from-white via-[#fff9f9] to-[#fcf4f2] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(188,19,19,0.45)] z-50 overflow-hidden">
       <div className="p-4 border-b border-[#f2dfdf] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h4 className="text-[12px] font-bold text-gray-900">Score Updates</h4>
           {unreadCount > 0 && (
-            <span className="text-[9px] font-bold bg-[#bc1313] text-white px-1.5 py-0.5 rounded-full">{unreadCount} new</span>
+            <span className="text-[9px] font-bold bg-[#70170f] text-white px-1.5 py-0.5 rounded-full">{unreadCount} new</span>
           )}
         </div>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={14} /></button>
@@ -109,7 +109,7 @@ function NotificationDropdown({ open, onClose, notifications }) {
           notifications.map(n => (
             <div key={n.id} className={`p-4 border-b border-[#f8ebeb] hover:bg-[#fff5f5]/70 transition-colors cursor-pointer ${n.unread ? 'bg-red-50/30' : ''}`}>
               <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${n.unread ? 'bg-[#bc1313]/10 text-[#bc1313]' : 'bg-gray-100 text-gray-400'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${n.unread ? 'bg-[#70170f]/10 text-[#70170f]' : 'bg-gray-100 text-gray-400'}`}>
                   <BookOpen size={14} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -117,7 +117,7 @@ function NotificationDropdown({ open, onClose, notifications }) {
                   <p className="text-[11px] text-gray-600 mt-0.5">{n.message}</p>
                   <p className="text-[10px] text-gray-400 mt-1">{n.subject} &middot; {n.time}</p>
                 </div>
-                {n.unread && <span className="w-2 h-2 bg-[#bc1313] rounded-full shrink-0 mt-2" />}
+                {n.unread && <span className="w-2 h-2 bg-[#70170f] rounded-full shrink-0 mt-2" />}
               </div>
             </div>
           ))
@@ -252,16 +252,16 @@ function SmartInsight({ topSkills, weakSkills }) {
 
   return (
     <div className="bg-[#1a0505] rounded-2xl p-8 shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex flex-col justify-between h-full relative overflow-hidden group">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-[#bc1313] opacity-5 blur-[100px] rounded-full group-hover:opacity-10 transition-opacity duration-700" />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-[#70170f] opacity-5 blur-[100px] rounded-full group-hover:opacity-10 transition-opacity duration-700" />
 
       <div>
         <div className="flex items-center gap-2 mb-6">
-          <Lightbulb size={14} className="text-[#bc1313]" />
-          <span className="text-[10px] font-bold text-[#bc1313] uppercase tracking-widest">SMART INSIGHT</span>
+          <Lightbulb size={14} className="text-[#70170f]" />
+          <span className="text-[10px] font-bold text-[#70170f] uppercase tracking-widest">SMART INSIGHT</span>
         </div>
 
         <p className="text-[20px] font-medium text-white leading-snug mb-3 pr-4">
-          "Surpassing target outcomes in <span className="font-bold underline decoration-[#bc1313] decoration-2 underline-offset-4">{top}</span>."
+          "Surpassing target outcomes in <span className="font-bold underline decoration-[#70170f] decoration-2 underline-offset-4">{top}</span>."
         </p>
 
         <p className="text-[15px] text-gray-400 font-light leading-relaxed pr-8">
@@ -393,7 +393,7 @@ function CourseBreakdownCard({ course, onViewDetails }) {
                 e.stopPropagation();
                 onViewDetails(course.course);
               }}
-              className="flex items-center gap-1.5 text-[12px] font-bold text-[#bc1313] hover:text-[#7a0d0d] transition-colors"
+              className="flex items-center gap-1.5 text-[12px] font-bold text-[#70170f] hover:text-[#7a0d0d] transition-colors"
             >
               View Details <ChevronRight size={14} />
             </button>
@@ -526,7 +526,7 @@ function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, bar
             type="button"
             onClick={onToggle}
             aria-label={`How to ${mode === 'achieved' ? 'maintain' : 'grow'} ${skill}`}
-            className={`shrink-0 transition-colors ${isOpen ? 'text-[#bc1313]' : 'text-gray-400 hover:text-[#bc1313]'}`}
+            className={`shrink-0 transition-colors ${isOpen ? 'text-[#70170f]' : 'text-gray-400 hover:text-[#70170f]'}`}
           >
             <AlertCircle size={13} />
           </button>
@@ -570,8 +570,8 @@ function MlInsightCard({ topSkill, topVal, weakSkill, weakVal, target }) {
   return (
     <div className="rounded-2xl p-5 text-white" style={{ backgroundColor: '#0d0101' }}>
       <div className="flex items-center gap-2 mb-4">
-        <span className="w-2 h-2 rounded-full bg-[#bc1313]" />
-        <span className="text-[10px] font-bold text-[#bc1313] uppercase tracking-widest">ML Insight</span>
+        <span className="w-2 h-2 rounded-full bg-[#70170f]" />
+        <span className="text-[10px] font-bold text-[#70170f] uppercase tracking-widest">ML Insight</span>
       </div>
       <p className="text-[13px] text-gray-100 leading-relaxed mb-3">
         <span className="font-bold">{topSkill || 'No data'}</span> is your highest-scoring skill at{' '}
@@ -830,7 +830,7 @@ export default function StudentPerformanceView({ user }) {
                     }
                     barNode={
                       <div className="w-full h-1 bg-gray-100 rounded-full mt-2 overflow-hidden">
-                        <div className="h-full bg-[#bc1313] rounded-full" style={{ width: `${fillPct}%` }} />
+                        <div className="h-full bg-[#70170f] rounded-full" style={{ width: `${fillPct}%` }} />
                       </div>
                     }
                   />
@@ -850,7 +850,7 @@ export default function StudentPerformanceView({ user }) {
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-6">PRIORITY RECOMMENDATIONS</p>
           <div className="space-y-4">
             <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-colors cursor-pointer group">
-              <div className="w-10 h-10 rounded-full bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#bc1313] group-hover:text-white transition-colors duration-300">
+              <div className="w-10 h-10 rounded-full bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-colors duration-300">
                 <GraduationCap size={18} />
               </div>
               <div className="flex-1">
@@ -861,7 +861,7 @@ export default function StudentPerformanceView({ user }) {
             </div>
 
             <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-colors cursor-pointer group">
-              <div className="w-10 h-10 rounded-full bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#bc1313] group-hover:text-white transition-colors duration-300">
+              <div className="w-10 h-10 rounded-full bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-colors duration-300">
                 <Microscope size={18} />
               </div>
               <div className="flex-1">

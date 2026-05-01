@@ -2,26 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bot, Check, Loader2, AlertCircle, Star, ChevronRight, X, Sparkles } from 'lucide-react';
 import { CAREER_OPTIONS, inferCategory } from '../../../../data/careerConstants';
 
-/* Map raw backend/litellm errors to messages a student can act on. */
-function friendlyPipelineError(raw) {
-  const s = String(raw);
-  // Both flavors are the same root cause: Vertex AI quota / rate limit.
-  if (
-    s.includes('RESOURCE_EXHAUSTED') ||
-    s.includes('RateLimitError') ||
-    s.includes('429') ||
-    /Timeout: Connection timed out after None/i.test(s)
-  ) {
-    return (
-      'The AI service hit its rate limit on this request. ' +
-      'Wait ~60 seconds and try again — if it keeps failing, the project quota may need to be raised in Google Cloud Console.'
-    );
-  }
-  if (/network|ECONNRESET|ENETUNREACH|fetch failed/i.test(s)) {
-    return 'Network error talking to the AI service. Check your connection and try again.';
-  }
-  return s;
-}
+
 
 /**
  * CareerPicker — first-touch screen for the AI Career Coach.
@@ -81,12 +62,12 @@ export default function CareerPicker({
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex flex-col items-center text-center mb-10">
-        <div className="w-16 h-16 rounded-2xl bg-[#bc1313]/10 flex items-center justify-center mb-5">
-          <Bot size={28} className="text-[#bc1313]" />
+        <div className="w-16 h-16 rounded-2xl bg-[#70170f]/10 flex items-center justify-center mb-5">
+          <Bot size={28} className="text-[#70170f]" />
         </div>
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-2 h-2 rounded-full bg-[#bc1313] animate-pulse" />
-          <span className="text-[10px] font-bold text-[#bc1313] uppercase tracking-[0.2em]">
+          <div className="w-2 h-2 rounded-full bg-[#70170f] animate-pulse" />
+          <span className="text-[10px] font-bold text-[#70170f] uppercase tracking-[0.2em]">
             CHOOSE YOUR PATH
           </span>
         </div>
@@ -100,12 +81,7 @@ export default function CareerPicker({
         </p>
       </div>
 
-      {pipelineError && (
-        <div className="mb-6 mx-auto max-w-2xl bg-red-50 text-red-700 text-[11px] p-3 rounded-lg border border-red-200 flex items-start gap-2 shadow-sm">
-          <AlertCircle size={14} className="mt-0.5 shrink-0" />
-          <p className="font-medium leading-relaxed">{friendlyPipelineError(pipelineError)}</p>
-        </div>
-      )}
+
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {CAREER_OPTIONS.map((career) => {
@@ -120,11 +96,11 @@ export default function CareerPicker({
               disabled={careerLoading || isRunning}
               className={`text-left rounded-2xl p-5 border transition-all flex flex-col h-full relative overflow-hidden disabled:cursor-not-allowed disabled:opacity-60
                 ${isChosen
-                  ? 'bg-[#fff8f8] border-2 border-[#bc1313] shadow-md'
-                  : 'bg-white border-gray-100 hover:border-[#bc1313]/40 hover:shadow-md'}`}
+                  ? 'bg-[#fff8f8] border-2 border-[#70170f] shadow-md'
+                  : 'bg-white border-gray-100 hover:border-[#70170f]/40 hover:shadow-md'}`}
             >
               {isChosen && (
-                <div className="absolute top-0 right-0 bg-[#bc1313] text-white text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-bl-lg z-10 shadow-sm flex items-center gap-1">
+                <div className="absolute top-0 right-0 bg-[#70170f] text-white text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-bl-lg z-10 shadow-sm flex items-center gap-1">
                   <Check size={10} /> YOUR GOAL
                 </div>
               )}
@@ -146,7 +122,7 @@ export default function CareerPicker({
                   <span
                     key={s}
                     className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded
-                      ${isChosen ? 'bg-red-50 text-[#bc1313]' : 'bg-gray-100 text-gray-500'}`}
+                      ${isChosen ? 'bg-red-50 text-[#70170f]' : 'bg-gray-100 text-gray-500'}`}
                   >
                     {s}
                   </span>
@@ -156,7 +132,7 @@ export default function CareerPicker({
               <div
                 className={`w-full py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5
                   ${isChosen
-                    ? 'bg-[#bc1313] text-white'
+                    ? 'bg-[#70170f] text-white'
                     : 'bg-gray-50 text-gray-700 border border-gray-200'}`}
               >
                 {isChosen ? (
@@ -217,8 +193,8 @@ function ConfirmAnalysisModal({ career, onCancel, onConfirm, submitting }) {
 
         <div className="p-6 pt-7">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-12 h-12 rounded-xl bg-[#bc1313]/10 flex items-center justify-center shrink-0">
-              <Sparkles size={20} className="text-[#bc1313]" />
+            <div className="w-12 h-12 rounded-xl bg-[#70170f]/10 flex items-center justify-center shrink-0">
+              <Sparkles size={20} className="text-[#70170f]" />
             </div>
             <div>
               <span className="text-[8px] font-bold tracking-widest uppercase text-gray-400 block">
@@ -274,8 +250,8 @@ function ConfirmAnalysisModal({ career, onCancel, onConfirm, submitting }) {
               disabled={submitting}
               className={`flex-[1.4] py-3 rounded-xl text-[12px] font-bold uppercase tracking-wider transition-colors inline-flex items-center justify-center gap-2
                 ${submitting
-                  ? 'bg-[#bc1313]/70 text-white cursor-not-allowed'
-                  : 'bg-[#bc1313] hover:bg-[#890E0E] text-white'}`}
+                  ? 'bg-[#70170f]/70 text-white cursor-not-allowed'
+                  : 'bg-[#70170f] hover:bg-[#4a0e09] text-white'}`}
             >
               {submitting ? (
                 <><Loader2 size={14} className="animate-spin" /> Starting…</>

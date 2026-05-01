@@ -54,13 +54,13 @@ export default function LandingPage() {
       <FeaturesSection />
       
       <div className="max-w-7xl mx-auto px-6">
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#bc1313] to-transparent my-12 opacity-50"></div>
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#70170f] to-transparent my-12 opacity-50"></div>
       </div>
       
       <HowItWorksSection />
       
       <div className="max-w-7xl mx-auto px-6">
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#bc1313] to-transparent my-12 opacity-50"></div>
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#70170f] to-transparent my-12 opacity-50"></div>
       </div>
       
       <FaqSection />

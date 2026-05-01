@@ -13,7 +13,7 @@ export default function MyClassesView({ classes = [], onSelectClass, onCreateCla
         <p className="text-gray-500 mb-8 max-w-md text-center">
           You haven't created any classes for this semester. Create your first class to start tracking student performance.
         </p>
-        <Button onClick={onCreateClass} className="bg-[#bc1313] hover:bg-[#890E0E] text-white px-6 py-3 rounded-lg flex items-center gap-2">
+        <Button onClick={onCreateClass} className="bg-[#70170f] hover:bg-[#4a0e09] text-white px-6 py-3 rounded-lg flex items-center gap-2">
           <Plus size={20} />
           Create Your First Class
         </Button>
@@ -25,7 +25,7 @@ export default function MyClassesView({ classes = [], onSelectClass, onCreateCla
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">My Classes</h1>
-        <Button onClick={onCreateClass} className="bg-[#bc1313] hover:bg-[#890E0E] text-white flex items-center gap-2 px-4 py-2">
+        <Button onClick={onCreateClass} className="bg-[#70170f] hover:bg-[#4a0e09] text-white flex items-center gap-2 px-4 py-2">
           <Plus size={18} /> Create Class
         </Button>
       </div>
@@ -36,7 +36,7 @@ export default function MyClassesView({ classes = [], onSelectClass, onCreateCla
             key={cls.id}
             whileHover={{ scale: 1.02, y: -4 }}
             onClick={() => onSelectClass(`class-${cls.id}`)}
-            className="bg-white border border-gray-200 rounded-xl p-6 hover:border-[#bc1313] hover:shadow-lg cursor-pointer transition-colors"
+            className="bg-white border border-gray-200 rounded-xl p-6 hover:border-[#70170f] hover:shadow-lg cursor-pointer transition-colors"
           >
             <div className="mb-8">
               <h3 className="text-xl font-bold text-gray-900 mb-1">{cls.subject_name}</h3>
@@ -47,7 +47,7 @@ export default function MyClassesView({ classes = [], onSelectClass, onCreateCla
                 <Users size={16} />
                 <span>{cls.student_count ?? 0} Students</span>
               </div>
-              <ArrowRightCircle size={20} className="text-[#bc1313]" />
+              <ArrowRightCircle size={20} className="text-[#70170f]" />
             </div>
           </motion.div>
         ))}

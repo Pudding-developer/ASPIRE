@@ -16,7 +16,7 @@ export default function Footer({ onGetStarted }) {
           viewport={{ once: true }}
           className="text-5xl md:text-7xl font-bold text-white mb-6"
         >
-          Ready to <span className="text-[#bc1313] italic">transform</span><br />
+          Ready to <span className="text-[#70170f] italic">transform</span><br />
           the way you use analytics?
         </motion.h2>
         <motion.p
@@ -34,7 +34,7 @@ export default function Footer({ onGetStarted }) {
           transition={{ duration: 0.8, delay: 0.4 }}
           viewport={{ once: true }}
         >
-          <Button onClick={onGetStarted} className="bg-[#bc1313] hover:bg-[#890E0E] text-white px-10 py-6 text-lg rounded-md">
+          <Button onClick={onGetStarted} className="bg-[#70170f] hover:bg-[#4a0e09] text-white px-10 py-6 text-lg rounded-md">
             Get Started
           </Button>
         </motion.div>

@@ -241,7 +241,7 @@ export default function StudentGitHubView({ user }) {
 
       {/* Error banner */}
       {urlError && (
-        <div className="p-4 bg-[#bc1313]/10 border border-[#bc1313]/50 rounded-xl flex items-start justify-between">
+        <div className="p-4 bg-[#70170f]/10 border border-[#70170f]/50 rounded-xl flex items-start justify-between">
           <div className="flex items-center gap-3">
             <AlertCircle size={18} className="text-[#ff7b72]" />
             <p className="text-sm font-semibold text-[#ff7b72]">{decodeURIComponent(urlError)}</p>
@@ -268,7 +268,7 @@ export default function StudentGitHubView({ user }) {
 
         <div className="flex items-center gap-3">
           <button onClick={disconnectGithub} disabled={isAnalyzing || isDisconnecting}
-            className="flex items-center gap-2 px-4 py-2 bg-[#bc1313]/10 text-[#ff7b72] border border-[#bc1313]/50 rounded-xl text-[13px] font-bold hover:bg-[#bc1313]/20 transition-all disabled:opacity-50">
+            className="flex items-center gap-2 px-4 py-2 bg-[#70170f]/10 text-[#ff7b72] border border-[#70170f]/50 rounded-xl text-[13px] font-bold hover:bg-[#70170f]/20 transition-all disabled:opacity-50">
             {isDisconnecting ? <RefreshCw size={14} className="animate-spin" /> : <LogOut size={14} />}
             {isDisconnecting ? 'Disconnecting…' : 'Disconnect'}
           </button>

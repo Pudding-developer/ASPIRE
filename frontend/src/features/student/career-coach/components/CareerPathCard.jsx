@@ -16,9 +16,9 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
       onClick={() => onSelect(index)}
       className={`w-52 min-w-[208px] min-h-[220px] rounded-2xl p-5 cursor-pointer transition-all border shrink-0 flex flex-col h-full relative overflow-hidden
         ${isChosenGoal
-          ? 'bg-[#fff8f8] border-2 border-[#bc1313] shadow-md'
+          ? 'bg-[#fff8f8] border-2 border-[#70170f] shadow-md'
           : selected
-            ? 'bg-[#7a0e0e] border-[#bc1313] text-white shadow-xl'
+            ? 'bg-[#7a0e0e] border-[#70170f] text-white shadow-xl'
             : optimal
               ? 'bg-white border-emerald-300/60 hover:shadow-md'
               : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md'}`}
@@ -37,7 +37,7 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
         </button>
       )}
       {isChosenGoal && (
-        <div className="absolute top-0 right-0 bg-[#bc1313] text-white text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-bl-lg z-10 shadow-sm">
+        <div className="absolute top-0 right-0 bg-[#70170f] text-white text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-bl-lg z-10 shadow-sm">
           Your Goal
         </div>
       )}
@@ -54,7 +54,7 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded
             ${selected ? 'bg-white/20 text-white'
               : optimal ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-red-50/80 text-[#bc1313]'}`}>
+              : 'bg-red-50/80 text-[#70170f]'}`}>
             {match.match_score}% MATCH
           </span>
         )}
@@ -75,26 +75,42 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
           <span
             key={t}
             className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded
-              ${(selected && !isChosenGoal) ? 'bg-white/15 text-white/70' : isChosenGoal ? 'bg-red-50 text-[#bc1313]' : 'bg-gray-100 text-gray-400'}`}
+              ${(selected && !isChosenGoal) ? 'bg-white/15 text-white/70' : isChosenGoal ? 'bg-red-50 text-[#70170f]' : 'bg-gray-100 text-gray-400'}`}
           >
             {t}
           </span>
         ))}
       </div>
 
-      {!isChosenGoal && (
+      {isChosenGoal ? (
+        <div className="flex items-center gap-2.5 w-full mt-auto p-2 bg-[#70170f]/5 rounded-xl border border-[#70170f]/10">
+          <div className="relative w-8 h-8 shrink-0">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="16" fill="none" className="stroke-[#70170f]/10" strokeWidth="3" />
+              <circle cx="18" cy="18" r="16" fill="none" className="stroke-[#70170f]" strokeWidth="3" strokeDasharray="100" strokeDashoffset={100 - (match.match_score || 0)} strokeLinecap="round" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-[#70170f]">
+              {match.match_score || 0}%
+            </div>
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] font-bold text-[#70170f] leading-tight">Match Score</p>
+            <p className="text-[8px] text-[#70170f]/70 leading-tight mt-0.5">Keep learning to improve</p>
+          </div>
+        </div>
+      ) : (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onSetAsGoal();
           }}
           disabled={careerLoading}
-          className={`w-full py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors
+          className={`w-full py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors mt-auto
             ${(selected && !isChosenGoal)
               ? 'bg-white/10 text-white hover:bg-white/20'
               : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'}`}
         >
-          {careerLoading ? 'Saving...' : unanalyzed ? 'Set as Goal' : 'Choose This Path'}
+          {careerLoading ? 'Saving...' : 'Choose This Path'}
         </button>
       )}
     </div>

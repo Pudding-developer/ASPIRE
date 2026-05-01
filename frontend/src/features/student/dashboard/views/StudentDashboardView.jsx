@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   TrendingUp, Github, Bell, Filter, TrendingDown, Minus, ArrowUpRight,
-  ChevronRight, BookOpen, Star, Plus, AlertCircle
+  ChevronRight, BookOpen, Star, Plus, AlertCircle, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import projectBg from '../../../../assets/project_card_bg.png';
@@ -11,8 +11,11 @@ import useStudentData from '../hooks/useStudentData';
 import useGithubData from '../../github/hooks/useGithubData';
 import usePipeline from '../hooks/usePipeline';
 import { StudentDashboardSkeleton } from '../../shared/StudentPageSkeletons';
+import { useState, useEffect } from 'react';
+import { studentService } from '../../../../services/studentService';
+import RoadmapViewer from '../../career-coach/components/RoadmapViewer';
 
-const panelBase = 'bg-gradient-to-br from-white via-[#fffbfb] to-[#fff3f3] border border-[#f1d7d7] rounded-2xl shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)]';
+const panelBase = 'bg-gradient-to-br from-white via-[#fffbfb] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)]';
 const subtleBtn = 'border border-[#eed8d8] rounded-xl py-2 text-[13px] font-semibold text-[#6f4a4a] hover:bg-[#fff5f5] transition-colors';
 
 /* ─── Stat Card ─── */
@@ -45,7 +48,7 @@ export function StatCard({ label, value, sub, trend, badge }) {
 /* ─── ILO Donut ─── */
 export function ILOCoverage({ coverage }) {
   const segments = [
-    { label: 'Technical Depth',     pct: coverage.techPct || 0, color: '#bc1313' },
+    { label: 'Technical Depth',     pct: coverage.techPct || 0, color: '#70170f' },
     { label: 'Analytical Rigor',    pct: coverage.analyticalPct || 0, color: '#e97b7b' },
     { label: 'Professional Ethics', pct: coverage.ethicsPct || 0, color: '#fcd5d5' },
   ];
@@ -248,7 +251,7 @@ export function TopProjects({ repos }) {
           const forkCount = repo.fork_count || repo.forks_count || 0;
 
           return (
-          <div key={repo.repo_full_name || repoName} className="bg-linear-to-br from-white via-[#fffafa] to-[#fff3f3] border border-[#f1d7d7] rounded-2xl overflow-hidden shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)] hover:shadow-[0_16px_36px_-18px_rgba(188,19,19,0.55)] transition-shadow group flex flex-col">
+          <div key={repo.repo_full_name || repoName} className="bg-linear-to-br from-white via-[#fffafa] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl overflow-hidden shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)] hover:shadow-[0_16px_36px_-18px_rgba(188,19,19,0.55)] transition-shadow group flex flex-col">
             <div className="relative h-32 overflow-hidden">
               <img src={projectBg} alt={repoName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
@@ -314,7 +317,7 @@ export function JoinClassCard({ onNavigate }) {
 
   return (
     <div className={`${panelBase} p-6 flex flex-col items-center justify-center text-center`}>
-      <div className="w-12 h-12 bg-[#bc1313]/10 text-[#bc1313] rounded-full flex items-center justify-center mb-3">
+      <div className="w-12 h-12 bg-[#70170f]/10 text-[#70170f] rounded-full flex items-center justify-center mb-3">
         <Plus size={24} />
       </div>
       <h3 className="text-[16px] font-bold text-gray-900 mb-2">Join a new Class</h3>
@@ -323,7 +326,7 @@ export function JoinClassCard({ onNavigate }) {
       </p>
       <button 
         onClick={() => onNavigate('enrolled-classes')}
-        className="w-full bg-[#bc1313] hover:bg-[#890E0E] text-white py-2.5 rounded-xl text-[13px] font-bold transition-colors"
+        className="w-full bg-[#70170f] hover:bg-[#4a0e09] text-white py-2.5 rounded-xl text-[13px] font-bold transition-colors"
       >
         Join Class
       </button>
@@ -375,8 +378,21 @@ export function EnrolledClassesOverview({ classes, onNavigate }) {
 }
 
 /* ─── Career Choice Card ─── */
-export function CareerChoiceCard({ report }) {
-  if (!report || !report.careerOptions || !report.careerOptions.length) {
+export function CareerChoiceCard({ report, chosenCareer }) {
+  const [showRoadmap, setShowRoadmap] = useState(false);
+  let careerMatches = [];
+  try {
+    const pipelineData = report?.report || (typeof report?.report_data === 'string' ? JSON.parse(report.report_data) : report?.report_data);
+    careerMatches = pipelineData?.career_matches || [];
+  } catch (e) {
+    // ignore
+  }
+
+  const targetCareer = chosenCareer 
+    ? careerMatches.find(o => o.title === chosenCareer) || { title: chosenCareer, match_score: 0 }
+    : careerMatches[0];
+
+  if (!targetCareer) {
     return (
       <div className={`${panelBase} p-6 flex flex-col justify-center h-full`}>
         <h3 className="text-[16px] font-bold text-gray-900 mb-2">Career Map</h3>
@@ -388,8 +404,10 @@ export function CareerChoiceCard({ report }) {
     );
   }
 
-  const topCareer = report.careerOptions[0];
-  const pct = Math.round((topCareer.matchScore || 0) * 100);
+  const pct = Math.round(targetCareer.match_score || 0);
+  const description = targetCareer.reasoning 
+    ? targetCareer.reasoning.split('.')[0] + '.' 
+    : 'Run the AI analyzer to get detailed insights.';
   const size = 64, stroke = 6, r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
@@ -397,7 +415,7 @@ export function CareerChoiceCard({ report }) {
 
   return (
     <div className={`${panelBase} p-6`}>
-      <h3 className="text-[16px] font-bold text-gray-900 mb-5">Top Career Match</h3>
+      <h3 className="text-[16px] font-bold text-gray-900 mb-5">{chosenCareer ? 'Your Career Goal' : 'Top Career Match'}</h3>
       
       <div className="flex items-center gap-4 mb-5">
         <div className="relative shrink-0">
@@ -411,7 +429,7 @@ export function CareerChoiceCard({ report }) {
             <circle
               cx={size / 2} cy={size / 2} r={r}
               fill="none"
-              stroke="#bc1313"
+              stroke="#70170f"
               strokeWidth={stroke}
               strokeDasharray={`${dash} ${gap}`}
               strokeLinecap="round"
@@ -422,15 +440,34 @@ export function CareerChoiceCard({ report }) {
           </div>
         </div>
         
-        <div>
-          <h4 className="text-[14px] font-bold text-gray-900 leading-tight">{topCareer.title}</h4>
-          <p className="text-[11px] text-gray-500 mt-1">High probability of success</p>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-[14px] font-bold text-gray-900 leading-tight">{targetCareer.title}</h4>
+          <p className="text-[11px] text-gray-500 mt-1 leading-relaxed line-clamp-2">{pct > 0 ? description : 'Not analyzed yet'}</p>
         </div>
       </div>
       
-      <button className={`w-full ${subtleBtn}`}>
+      <button onClick={() => setShowRoadmap(true)} className={`w-full ${subtleBtn}`}>
         View detailed roadmap
       </button>
+
+      {showRoadmap && targetCareer && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowRoadmap(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white/95 backdrop-blur-md z-10">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Detailed Analysis</p>
+                <h2 className="text-[20px] font-extrabold text-gray-900">{targetCareer.title} Roadmap</h2>
+              </div>
+              <button onClick={() => setShowRoadmap(false)} className="w-10 h-10 flex items-center justify-center bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-8">
+              <RoadmapViewer careerTitle={targetCareer.title} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -444,7 +481,7 @@ export function CTABanner() {
         <p className="text-[13px] text-gray-400">Our AI engine has prepared updated career paths based on your latest grades and GitHub activity.</p>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <button className="px-5 py-2.5 bg-[#bc1313] hover:bg-[#890E0E] text-white text-[13px] font-bold rounded-xl transition-colors flex items-center gap-2">
+        <button className="px-5 py-2.5 bg-[#70170f] hover:bg-[#4a0e09] text-white text-[13px] font-bold rounded-xl transition-colors flex items-center gap-2">
           VIEW ROADMAP <ChevronRight size={14} />
         </button>
       </div>
@@ -457,6 +494,17 @@ export default function StudentDashboardView({ user, onNavigate }) {
   const { classes, predictions, iloCoverage, loading: studentLoading } = useStudentData();
   const { status: githubStatus, repos, loading: githubLoading, connectGithub } = useGithubData();
   const { report, loading: pipelineLoading } = usePipeline(user?.id);
+  const [chosenCareer, setChosenCareer] = useState(null);
+
+  useEffect(() => {
+    studentService.getChosenCareer()
+      .then(data => { if (data?.chosen_career) setChosenCareer(data.chosen_career); })
+      .catch(() => {});
+
+    const handleCareerChosen = (e) => setChosenCareer(e.detail);
+    window.addEventListener('aspire_career_chosen', handleCareerChosen);
+    return () => window.removeEventListener('aspire_career_chosen', handleCareerChosen);
+  }, []);
 
   if (studentLoading) {
     return <StudentDashboardSkeleton />;
@@ -477,7 +525,7 @@ export default function StudentDashboardView({ user, onNavigate }) {
             <img 
               src={user.avatar_url} 
               alt={fullName} 
-              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#bc1313]/10" 
+              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#70170f]/10" 
               referrerPolicy="no-referrer" 
             />
           )}
@@ -529,7 +577,7 @@ export default function StudentDashboardView({ user, onNavigate }) {
         <div className="space-y-6">
           <GitHubCard githubStatus={githubStatus} onConnect={connectGithub} />
           <EnrolledClassesOverview classes={classes} onNavigate={onNavigate} />
-          <CareerChoiceCard report={report} />
+          <CareerChoiceCard report={report} chosenCareer={chosenCareer} />
         </div>
         
       </div>

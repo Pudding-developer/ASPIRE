@@ -129,13 +129,13 @@ export function inferCategory(title) {
 }
 
 export function matchColor(score) {
-  return score >= 85 ? '#2d7a3a' : score >= 70 ? '#9a6c00' : '#bc1313';
+  return score >= 85 ? '#2d7a3a' : score >= 70 ? '#9a6c00' : '#70170f';
 }
 
 export function matchBadgeCls(score) {
   if (score >= 85) return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
   if (score >= 70) return 'bg-amber-50 text-amber-700 border border-amber-200';
-  return 'bg-red-50 text-[#bc1313] border border-red-200';
+  return 'bg-red-50 text-[#70170f] border border-red-200';
 }
 
 export function parseRec(str) {

@@ -4,7 +4,7 @@ import { Search, Plus, BookOpen, ArrowRight, Loader2, Calendar, Hash, X, CheckCi
 import { studentService } from '../../../../services/studentService';
 import ClassDirectoryModal from '../components/ClassDirectoryModal';
 
-const ACCENT_COLORS = ['#bc1313', '#5b5be8', '#0f9f76', '#d97706', '#7c3aed', '#0ea5a4'];
+const ACCENT_COLORS = ['#70170f', '#5b5be8', '#0f9f76', '#d97706', '#7c3aed', '#0ea5a4'];
 const gridVariants = {
   hidden: {},
   visible: {
@@ -62,7 +62,7 @@ function JoinClassForm({ onSuccess, compact }) {
           onClick={handleJoin}
           disabled={!code.trim() || loading}
           className="px-5 py-2.5 rounded-xl text-[13px] font-bold text-white transition-colors disabled:opacity-40 flex items-center gap-2 shrink-0"
-          style={{ backgroundColor: '#bc1313' }}
+          style={{ backgroundColor: '#70170f' }}
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : null}
           {loading ? 'Joining...' : 'Join'}
@@ -223,7 +223,7 @@ function EmptyState({ onSuccess }) {
     <div className="flex flex-col items-center justify-center py-16">
       {/* Illustration area */}
       <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,rgba(188,19,19,0.12),rgba(188,19,19,0.04))]">
-        <BookOpen size={36} className="text-[#bc1313]" />
+        <BookOpen size={36} className="text-[#70170f]" />
       </div>
 
       <h3 className="text-[20px] font-extrabold text-gray-900 mb-2">Join your first class</h3>
@@ -299,7 +299,7 @@ export default function EnrolledClassesView({ classes, onRefresh }) {
       {/* Header */}
       <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <div className="space-y-2">
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#bc1313]/75">Dashboard</p>
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#70170f]/75">Dashboard</p>
           <h1 className="text-[2.2rem] font-extrabold text-gray-900 leading-none">Class Directory</h1>
           <p className="text-[13px] text-gray-600">Track your enrolled subjects and quickly jump into each class directory.</p>
           {!loading && classList.length > 0 && (
@@ -336,7 +336,7 @@ export default function EnrolledClassesView({ classes, onRefresh }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by code or title..."
-              className="w-full rounded-xl py-2.5 pl-10 pr-4 text-[14px] font-medium text-gray-800 placeholder-gray-400 shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-[#bc1313]/20"
+              className="w-full rounded-xl py-2.5 pl-10 pr-4 text-[14px] font-medium text-gray-800 placeholder-gray-400 shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-[#70170f]/20"
               style={{ border: '1px solid #e8e6e0', backgroundColor: '#fff' }}
             />
             </div>
@@ -345,7 +345,7 @@ export default function EnrolledClassesView({ classes, onRefresh }) {
               <select
                 value={yearFilter}
                 onChange={(e) => setYearFilter(e.target.value)}
-                className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#bc1313]/20"
+                className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#70170f]/20"
               >
                 <option value="all">All Years</option>
                 {yearOptions.map((year) => (
@@ -356,7 +356,7 @@ export default function EnrolledClassesView({ classes, onRefresh }) {
               <select
                 value={semesterFilter}
                 onChange={(e) => setSemesterFilter(e.target.value)}
-                className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#bc1313]/20"
+                className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#70170f]/20"
               >
                 <option value="all">All Semesters</option>
                 {semesterOptions.map((semester) => (
@@ -367,7 +367,7 @@ export default function EnrolledClassesView({ classes, onRefresh }) {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#bc1313]/20"
+                className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#70170f]/20"
               >
                 <option value="recent">Recently Enrolled</option>
                 <option value="az">Title A–Z</option>

@@ -29,11 +29,11 @@ export default function AdminSidebar({ tab, setTab }) {
             onClick={() => setTab(id)}
             className={`group relative w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-all text-left rounded-xl border border-transparent ${
               tab === id
-                ? 'bg-[#bc1313]/20 text-white border-[#bc1313]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
+                ? 'bg-[#70170f]/20 text-white border-[#70170f]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
                 : 'text-gray-400 hover:text-white hover:bg-black/20 hover:border-white/10'
             }`}
           >
-            {tab === id && <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r bg-[#bc1313]" />}
+            {tab === id && <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r bg-[#70170f]" />}
             <Icon size={16} className={tab === id ? 'text-[#ffdada]' : 'text-gray-500 group-hover:text-gray-300'} />
             <span className="font-medium">{label}</span>
           </button>

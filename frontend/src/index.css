@@ -54,11 +54,11 @@ body {
 .text-shimmer {
   background: linear-gradient(
     90deg,
-    #bc1313 0%,
+    #70170f 0%,
     #ff6b6b 25%,
     #ffffff 50%,
     #ff6b6b 75%,
-    #bc1313 100%
+    #70170f 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;

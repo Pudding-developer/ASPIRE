@@ -6,6 +6,7 @@ import StudentDashboardView from '../../features/student/dashboard/views/Student
 import StudentPerformanceView from '../../features/student/performance/views/StudentPerformanceView';
 import StudentGitHubView from '../../features/student/github/views/StudentGitHubView';
 import StudentCareerView from '../../features/student/career-coach/views/StudentCareerView';
+import StudentAIChatView from '../../features/student/ai-chat/views/StudentAIChatView';
 import EnrolledClassesView from '../../features/student/classes/views/EnrolledClassesView';
 import useStudentData from '../../features/student/dashboard/hooks/useStudentData';
 
@@ -38,6 +39,9 @@ export default function StudentDashboardPage() {
         </div>
         <div className={activeView === 'career-coach' ? '' : 'hidden'}>
           <StudentCareerView user={user} />
+        </div>
+        <div className={activeView === 'ai-chat' ? 'h-full' : 'hidden'}>
+          <StudentAIChatView user={user} />
         </div>
       </main>
     </div>

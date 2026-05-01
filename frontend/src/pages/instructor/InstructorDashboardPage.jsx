@@ -56,7 +56,7 @@ const InstructorDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-[#bc1313] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#70170f] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -65,7 +65,7 @@ const InstructorDashboard = () => {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4">
         <p className="text-red-600 font-medium">{error}</p>
-        <button onClick={refetch} className="px-4 py-2 bg-[#bc1313] text-white rounded-lg hover:bg-[#890E0E] transition-colors">
+        <button onClick={refetch} className="px-4 py-2 bg-[#70170f] text-white rounded-lg hover:bg-[#4a0e09] transition-colors">
           Retry
         </button>
       </div>

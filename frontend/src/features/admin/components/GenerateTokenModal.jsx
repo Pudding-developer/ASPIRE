@@ -49,7 +49,7 @@ export default function GenerateTokenModal({ token: jwt, onClose, onGenerated })
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-[linear-gradient(180deg,#1a0a00_0%,#120600_100%)] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#bc1313]/35 bg-[#bc1313]/15 text-[#ffb2b2]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#70170f]/35 bg-[#70170f]/15 text-[#ffb2b2]">
             <KeyRound size={18} />
           </div>
           <div>

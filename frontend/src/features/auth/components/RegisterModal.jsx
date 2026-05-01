@@ -41,7 +41,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
             className="relative z-10 w-full max-w-125 overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_35%,rgba(10,1,1,0.72)_100%)] p-8 shadow-[0_0_42px_rgba(255,255,255,0.5),0_20px_60px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full bg-[#bc1313]/20 blur-3xl" />
+            <div className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full bg-[#70170f]/20 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-12 -right-12 h-40 w-40 rounded-full bg-white/8 blur-3xl" />
 
             <button

@@ -92,7 +92,7 @@ export default function HeroSection({ scrollToSection, onGetStarted }) {
       </div>
 
       {/* Pulsing red glow */}
-      <div className="hero-glow absolute w-[800px] h-[800px] bg-[#bc1313] blur-[150px] rounded-full opacity-15 pointer-events-none" />
+      <div className="hero-glow absolute w-[800px] h-[800px] bg-[#70170f] blur-[150px] rounded-full opacity-15 pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 text-center pointer-events-none">
         <div className="hero-badge inline-block px-6 py-3 rounded-full bg-white/5 backdrop-blur-md border border-white/10 mb-4 opacity-0 text-white text-sm">
@@ -114,7 +114,7 @@ export default function HeroSection({ scrollToSection, onGetStarted }) {
         <div className="hero-cta flex justify-center opacity-0 pointer-events-auto">
           <Button
             onClick={onGetStarted}
-            className="bg-[#bc1313] hover:bg-[#890E0E] text-white px-10 py-6 text-lg rounded-md"
+            className="bg-[#70170f] hover:bg-[#4a0e09] text-white px-10 py-6 text-lg rounded-md"
           >
             Get Started
           </Button>

@@ -115,7 +115,7 @@ export default function DashboardPreview() {
         
         {/* Instructor Dashboard (Back Left) */}
         <div 
-          className="dashboard-instructor absolute left-0 top-0 w-[70%] md:w-[60%] rounded-2xl overflow-hidden border border-[#430202] backdrop-blur-md opacity-0 cursor-pointer"
+          className="dashboard-instructor absolute left-0 top-0 w-[70%] md:w-[60%] rounded-2xl overflow-hidden border border-[#bc1313]/30 backdrop-blur-md opacity-0 cursor-pointer"
           onMouseEnter={() => handleMouseEnter(true)}
           onMouseLeave={() => handleMouseLeave(true)}
         >
@@ -128,7 +128,7 @@ export default function DashboardPreview() {
 
         {/* Student Dashboard (Front Right, overlapping) */}
         <div 
-          className="dashboard-student absolute right-0 top-32 md:top-48 w-[70%] md:w-[58%] rounded-2xl overflow-hidden border border-[#430202] backdrop-blur-md opacity-0 cursor-pointer"
+          className="dashboard-student absolute right-0 top-32 md:top-48 w-[70%] md:w-[58%] rounded-2xl overflow-hidden border border-[#bc1313]/30 backdrop-blur-md opacity-0 cursor-pointer"
           onMouseEnter={() => handleMouseEnter(false)}
           onMouseLeave={() => handleMouseLeave(false)}
         >
@@ -140,27 +140,27 @@ export default function DashboardPreview() {
         </div>
 
         {/* Floating Stat: Beltran, Don Maxwell F. 92% */}
-        <div className="stat-card opacity-0 absolute -top-2 md:top-0 right-4 md:right-16 backdrop-blur-md bg-white/10 border border-white/20 rounded-xl p-3 shadow-2xl z-50 flex items-center gap-4 pointer-events-none">
-          <div className="text-white text-sm font-semibold">Beltran, Don Maxwell F.</div>
-          <div className="bg-white/20 text-white font-bold px-3 py-1 rounded-full text-lg shadow-inner">92%</div>
+        <div className="stat-card opacity-0 absolute -top-2 md:top-0 right-4 md:right-16 backdrop-blur-md bg-[#bc1313]/10 border border-[#bc1313]/20 rounded-xl p-3 shadow-2xl z-50 flex items-center gap-4 pointer-events-none">
+          <div className="text-[#430202] text-sm font-semibold">Beltran, Don Maxwell F.</div>
+          <div className="bg-[#bc1313]/20 text-[#bc1313] font-bold px-3 py-1 rounded-full text-lg shadow-inner">92%</div>
         </div>
 
         {/* Floating Stat: 680+ Students Tracked */}
-        <div className="stat-card opacity-0 absolute top-1/3 left-4 md:left-10 backdrop-blur-md bg-[#70170f] border border-[#ff3333]/30 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.4)] z-50 pointer-events-none">
+        <div className="stat-card opacity-0 absolute top-1/3 left-4 md:left-10 backdrop-blur-md bg-[#bc1313] border border-[#ff3333]/30 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.4)] z-50 pointer-events-none">
           <div className="text-2xl md:text-3xl font-bold mb-1">680+</div>
           <div className="text-xs opacity-90">Students Tracked</div>
         </div>
 
         {/* Floating Stat: 95% Accuracy Rate */}
-        <div className="stat-card opacity-0 absolute bottom-24 md:bottom-32 left-[15%] backdrop-blur-md bg-linear-to-br from-[#4a0e09] to-[#70170f] border border-white/10 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.3)] z-50 text-center pointer-events-none">
+        <div className="stat-card opacity-0 absolute bottom-24 md:bottom-32 left-[15%] backdrop-blur-md bg-linear-to-br from-[#430202] to-[#bc1313] border border-[#bc1313]/20 text-white px-5 py-4 rounded-xl shadow-[0_10px_30px_rgba(188,19,19,0.3)] z-50 text-center pointer-events-none">
           <div className="text-2xl md:text-3xl font-bold mb-1">95%</div>
           <div className="text-xs opacity-90">Accuracy Rate</div>
         </div>
 
         {/* Floating Stat: 64 Active Courses */}
-        <div className="stat-card opacity-0 absolute bottom-8 md:bottom-16 right-10 md:right-24 backdrop-blur-md bg-[#430202] border border-[#70170f]/30 rounded-xl px-5 py-4 shadow-2xl text-center z-50 pointer-events-none">
+        <div className="stat-card opacity-0 absolute bottom-8 md:bottom-16 right-10 md:right-24 backdrop-blur-md bg-[#430202] border border-[#bc1313]/30 rounded-xl px-5 py-4 shadow-2xl text-center z-50 pointer-events-none">
           <div className="text-white text-2xl md:text-3xl font-bold mb-1">64</div>
-          <div className="text-gray-300 text-xs">Active Courses</div>
+          <div className="text-white/80 text-xs">Active Courses</div>
         </div>
 
       </div>

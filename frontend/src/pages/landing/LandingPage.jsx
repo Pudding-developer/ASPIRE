@@ -46,21 +46,27 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0101] text-white overflow-x-hidden font-sans scroll-smooth">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#430202] overflow-x-hidden font-sans scroll-smooth">
       <Navbar scrollToSection={scrollToSection} onLogin={handleLogin} />
       <HeroSection scrollToSection={scrollToSection} onGetStarted={handleGetStarted} />
+      
+      {/* Circular Gradient Orb Between Sections */}
+      <div className="relative w-full h-0 z-0 flex justify-center pointer-events-none">
+        <div className="absolute top-0 w-[800px] h-[800px] -translate-y-1/2 bg-gradient-to-tr from-[#430202] to-[#bc1313] rounded-full blur-[150px] opacity-20" />
+      </div>
+
       <DashboardPreview />
       <StatsStrip />
       <FeaturesSection />
       
       <div className="max-w-7xl mx-auto px-6">
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#70170f] to-transparent my-12 opacity-50"></div>
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#bc1313] to-transparent my-12 opacity-50"></div>
       </div>
       
       <HowItWorksSection />
       
       <div className="max-w-7xl mx-auto px-6">
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#70170f] to-transparent my-12 opacity-50"></div>
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#bc1313] to-transparent my-12 opacity-50"></div>
       </div>
       
       <FaqSection />

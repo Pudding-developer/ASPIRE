@@ -69,12 +69,12 @@ export default function HowItWorksSection() {
   }, [activeStep]);
 
   return (
-    <section id="how-it-works" ref={containerRef} className="py-24 px-6 bg-[#0a0101]">
+    <section id="how-it-works" ref={containerRef} className="py-24 px-6 bg-[#FFFFFF]">
       <div className="max-w-7xl mx-auto flex flex-col items-center">
         <div className="text-center mb-16 hiw-element opacity-0">
-          <p className="text-[#70170f] mb-2 font-bold tracking-widest text-xs uppercase">• HOW IT WORKS</p>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Up and running in <span className="text-[#70170f] italic">3 simple steps</span>
+          <p className="text-[#bc1313] mb-2 font-bold tracking-widest text-xs uppercase">• HOW IT WORKS</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-[#430202] mb-4">
+            Up and running in <span className="text-[#bc1313] italic">3 simple steps</span>
           </h2>
         </div>
 
@@ -86,22 +86,22 @@ export default function HowItWorksSection() {
                 onClick={() => setActiveStep(step.id)}
                 onMouseEnter={() => setActiveStep(step.id)}
                 className={`w-full text-left p-6 rounded-2xl border transition-all duration-300 ${
-                  activeStep === step.id ? 'border-[#70170f] bg-gradient-to-r from-[#70170f]/10 to-transparent shadow-[0_0_30px_rgba(188,19,19,0.15)]' : 'border-white/5 hover:border-white/10 bg-[#0a0101]'
+                  activeStep === step.id ? 'border-[#bc1313] bg-gradient-to-r from-[#bc1313]/10 to-transparent shadow-[0_0_30px_rgba(188,19,19,0.15)]' : 'border-[#bc1313]/20 hover:border-[#bc1313]/40 bg-[#FFFFFF]'
                 }`}
               >
                 <div className="flex items-center gap-6 mb-2">
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-colors shadow-lg ${
-                      activeStep === step.id ? 'bg-[#70170f] text-white shadow-[#70170f]/50' : 'bg-white/5 text-gray-500 shadow-transparent'
+                      activeStep === step.id ? 'bg-[#bc1313] text-white shadow-[#bc1313]/50' : 'bg-[#bc1313]/10 text-[#430202]/60 shadow-transparent'
                     }`}
                   >
                     0{step.id}
                   </div>
-                  <h3 className={`text-xl font-bold ${activeStep === step.id ? 'text-white' : 'text-gray-400'}`}>
+                  <h3 className={`text-xl font-bold ${activeStep === step.id ? 'text-[#430202]' : 'text-[#430202]/80'}`}>
                     {step.btnTitle}
                   </h3>
                 </div>
-                <p className={`text-sm leading-relaxed ml-[72px] ${activeStep === step.id ? 'text-gray-300' : 'text-gray-600'}`}>
+                <p className={`text-sm leading-relaxed ml-[72px] ${activeStep === step.id ? 'text-[#430202]/90' : 'text-[#430202]/60'}`}>
                   {step.btnDesc}
                 </p>
               </button>
@@ -115,16 +115,16 @@ export default function HowItWorksSection() {
                 ref={el => panelsRef.current[i] = el}
                 className="absolute w-full opacity-0 pointer-events-none"
               >
-                <div className="bg-[#0f0202] rounded-2xl p-10 shadow-2xl relative overflow-hidden h-[400px] flex items-center justify-center">
-                  <div className="absolute inset-0 bg-gradient-to-br from-black to-transparent opacity-80"></div>
+                <div className="bg-white rounded-2xl p-10 shadow-xl border border-[#bc1313]/10 relative overflow-hidden h-[400px] flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#bc1313]/5 to-transparent"></div>
                   <div className="text-center relative z-10">
-                    <div className="w-20 h-20 bg-gradient-to-br from-[#70170f] to-[#4a0e09] rounded-full flex items-center justify-center text-3xl mx-auto mb-8 shadow-xl shadow-[#70170f]/30">
+                    <div className="w-20 h-20 bg-gradient-to-br from-[#bc1313] to-[#430202] rounded-full flex items-center justify-center text-3xl mx-auto mb-8 shadow-xl shadow-[#bc1313]/30">
                       {step.emoji}
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-4">
+                    <h3 className="text-2xl font-bold text-[#430202] mb-4">
                       {step.title}
                     </h3>
-                    <p className="text-gray-400 text-sm max-w-[280px] mx-auto leading-relaxed">
+                    <p className="text-[#430202]/80 text-sm max-w-[280px] mx-auto leading-relaxed">
                       {step.desc}
                     </p>
                   </div>

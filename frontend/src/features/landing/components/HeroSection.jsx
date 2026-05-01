@@ -9,11 +9,11 @@ export default function HeroSection({ scrollToSection, onGetStarted }) {
   const containerRef = useRef(null);
 
   useGSAP(() => {
-    // Pulsing red glow continuous animation
+    // Subtle red glow continuous animation
     gsap.to('.hero-glow', {
-      scale: 1.2,
-      opacity: 0.25,
-      duration: 4,
+      scale: 1.4,
+      opacity: 0.1,
+      duration: 5,
       repeat: -1,
       yoyo: true,
       ease: "sine.inOut"
@@ -22,11 +22,10 @@ export default function HeroSection({ scrollToSection, onGetStarted }) {
     // Make glow follow cursor
     gsap.set('.hero-glow', { xPercent: -50, yPercent: -50, left: 0, top: 0 });
     
-    const xTo = gsap.quickTo('.hero-glow', "x", { duration: 1, ease: "power3.out" });
-    const yTo = gsap.quickTo('.hero-glow', "y", { duration: 1, ease: "power3.out" });
+    const xTo = gsap.quickTo('.hero-glow', "x", { duration: 1.5, ease: "power3.out" });
+    const yTo = gsap.quickTo('.hero-glow', "y", { duration: 1.5, ease: "power3.out" });
 
     if (containerRef.current) {
-      // Set to center initially
       xTo(containerRef.current.offsetWidth / 2);
       yTo(containerRef.current.offsetHeight / 2);
     }
@@ -37,86 +36,87 @@ export default function HeroSection({ scrollToSection, onGetStarted }) {
       yTo(e.clientY - rect.top);
     };
 
-    const handleMouseLeave = () => {
-      // Returns to center when mouse leaves
-      if (containerRef.current) {
-        xTo(containerRef.current.offsetWidth / 2);
-        yTo(containerRef.current.offsetHeight / 2);
-      }
-    };
-
     containerRef.current.addEventListener('mousemove', handleMouseMove);
-    containerRef.current.addEventListener('mouseleave', handleMouseLeave);
 
-    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
-    // Staggered blooming entrance
     tl.fromTo('.hero-badge', 
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8 }
+      { opacity: 0, scale: 0.9, y: 20 },
+      { opacity: 1, scale: 1, y: 0, duration: 1 }
+    )
+    .fromTo('.hero-brand-label',
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.8 },
+      "-=0.6"
     )
     .fromTo('.hero-title-word', 
-      { opacity: 0, y: 50 },
-      { opacity: 1, y: 0, duration: 0.8, stagger: 0.15 },
-      "-=0.4"
+      { opacity: 0, y: 80, skewY: 7 },
+      { opacity: 1, y: 0, skewY: 0, duration: 1, stagger: 0.1 },
+      "-=0.6"
     )
     .fromTo('.hero-description',
       { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8 },
-      "-=0.4"
+      { opacity: 1, y: 0, duration: 1 },
+      "-=0.7"
     )
     .fromTo('.hero-cta',
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8 },
-      "-=0.6"
+      { opacity: 0, scale: 0.9, y: 20 },
+      { opacity: 1, scale: 1, y: 0, duration: 1 },
+      "-=0.8"
     );
 
     return () => {
       if (containerRef.current) {
         containerRef.current.removeEventListener('mousemove', handleMouseMove);
-        containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
       }
     };
-
   }, { scope: containerRef });
 
   return (
-    <section ref={containerRef} className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-      {/* Animated drifting grid background */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'linear-gradient(rgba(188, 19, 19, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(188, 19, 19, 0.3) 1px, transparent 1px)',
-          backgroundSize: '50px 50px',
-          animation: 'grid-drift 20s linear infinite'
+    <section 
+      ref={containerRef} 
+      className="relative min-h-screen flex flex-col items-center justify-center pt-48 pb-48 overflow-hidden bg-white"
+    >
+      {/* Seamless aligned grid overlay */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'linear-gradient(#9f0707 1px, transparent 1px), linear-gradient(90deg, #9f0707 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
+          animation: 'grid-drift 60s linear infinite'
         }}></div>
       </div>
 
-      {/* Pulsing red glow */}
-      <div className="hero-glow absolute w-[800px] h-[800px] bg-[#bc1313] blur-[150px] rounded-full opacity-15 pointer-events-none" />
+      {/* Subtle interactive red atmospheric glow */}
+      <div className="hero-glow absolute w-[1000px] h-[1000px] bg-gradient-to-r from-[#9f0707] to-transparent blur-[180px] rounded-full opacity-[0.08] pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 text-center pointer-events-none">
-        <div className="hero-badge inline-block px-6 py-3 rounded-full bg-[#bc1313]/10 backdrop-blur-md border border-[#bc1313]/20 mb-4 opacity-0 text-[#430202] text-sm">
-          Introducing ASPIRE v1.0 — ML-Powered Academic Forecasting
+        {/* Red Glassmorphism Badge */}
+        <div className="hero-badge inline-block px-6 py-3 rounded-full bg-[#9f0707]/10 backdrop-blur-xl border border-[#9f0707]/20 mb-12 opacity-0 text-[#430202] font-bold text-sm shadow-[0_8px_32px_0_rgba(159,7,7,0.1)]">
+          <span className="text-[#9f0707] mr-2">●</span> Introducing ASPIRE v1.0 — ML-Powered Academic Forecasting
         </div>
 
-        <h1 className="mb-8 overflow-hidden">
-          <span className="block text-6xl md:text-8xl leading-tight font-bold">
-            <span className="hero-title-word inline-block text-[#430202] opacity-0">Analyze.&nbsp;</span>
-            <span className="hero-title-word inline-block text-[#bc1313] italic opacity-0">Predict.</span><br/>
-            <span className="hero-title-word inline-block text-[#430202] mt-1 opacity-0">Achieve.</span>
-          </span>
+        <div className="hero-brand-label text-[#9f0707] font-black text-xs tracking-[0.4em] uppercase mb-6 opacity-0">
+          ASPIRE System
+        </div>
+
+        <h1 className="mb-10">
+          <div className="text-6xl md:text-8xl leading-[1.05] font-black tracking-tighter text-[#430202]">
+            <span className="hero-title-word inline-block opacity-0">Analyze.&nbsp;</span>
+            <span className="hero-title-word inline-block text-[#9f0707] italic opacity-0 transform-gpu translate-x-1">Predict.</span><br/>
+            <span className="hero-title-word inline-block opacity-0">Achieve.</span>
+          </div>
         </h1>
 
-        <p className="hero-description text-[#430202]/80 text-lg md:text-xl mb-12 max-w-3xl mx-auto opacity-0">
+        <p className="hero-description text-[#430202]/60 text-lg md:text-xl mb-12 max-w-3xl mx-auto opacity-0 font-bold leading-relaxed">
           ASPIRE provides advanced enrollment prediction tools that analyze student data, generate insights, and help you engage better — built for institutions of all sizes.
         </p>
 
         <div className="hero-cta flex justify-center opacity-0 pointer-events-auto">
           <Button
             onClick={onGetStarted}
-            className="bg-[#bc1313] hover:bg-[#430202] text-white px-10 py-6 text-lg rounded-md"
+            className="bg-[#9f0707] hover:bg-[#430202] text-white px-12 py-8 text-xl rounded-2xl shadow-[0_20px_50px_rgba(159,7,7,0.2)] transition-all hover:scale-105 active:scale-95 font-bold uppercase tracking-wider"
           >
-            Get Started
+            Get Started Now
           </Button>
         </div>
       </div>

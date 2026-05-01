@@ -28,24 +28,42 @@ export default function Navbar({ scrollToSection, onLogin }) {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none ${scrolled ? 'bg-white/80 backdrop-blur-lg border-b border-[#bc1313]/10 shadow-sm' : 'bg-white/30 backdrop-blur-md border-b border-transparent'}`}>
-        <div className="w-full px-6 md:px-10 py-3 flex items-center justify-between pointer-events-auto">
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 pointer-events-none ${
+        scrolled 
+          ? 'bg-white border-b border-[#9f0707]/10 shadow-md' 
+          : 'bg-transparent'
+      }`}>
+        <div className="w-full px-6 md:px-10 py-4 flex items-center justify-between pointer-events-auto relative z-10">
           <div className="cursor-pointer flex-shrink-0 -ml-6" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <img src={aspireLogo} alt="ASPIRE" className="h-[60px] md:h-[80px] w-auto scale-[2] origin-left" />
+            <img src={aspireLogo} alt="ASPIRE" className="h-[60px] md:h-[80px] w-auto scale-[2] origin-left transition-all" />
           </div>
 
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#dashboard-preview" onClick={(e) => { e.preventDefault(); scrollToSection('dashboard-preview'); }} className="text-sm font-medium text-[#430202]/80 hover:text-[#bc1313] transition-colors">Preview</a>
-            <a href="#features" onClick={(e) => { e.preventDefault(); scrollToSection('features'); }} className="text-sm font-medium text-[#430202]/80 hover:text-[#bc1313] transition-colors">Features</a>
-            <a href="#how-it-works" onClick={(e) => { e.preventDefault(); scrollToSection('how-it-works'); }} className="text-sm font-medium text-[#430202]/80 hover:text-[#bc1313] transition-colors">How it works</a>
-            <a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }} className="text-sm font-medium text-[#430202]/80 hover:text-[#bc1313] transition-colors">FAQs</a>
+          <div className="hidden md:flex items-center gap-10">
+            {['Preview', 'Features', 'How it works', 'FAQs'].map((item) => (
+              <a 
+                key={item}
+                href={`#${item.toLowerCase().replace(/ /g, '-')}`} 
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  scrollToSection(item.toLowerCase().replace(/ /g, '-')); 
+                }} 
+                className="text-base font-bold text-[#430202] hover:text-[#9f0707] transition-all duration-300 tracking-tight"
+              >
+                {item}
+              </a>
+            ))}
           </div>
 
           <div className="hidden md:flex items-center gap-4 flex-shrink-0">
-            <Button onClick={onLogin} className="bg-[#bc1313] hover:bg-[#430202] text-white px-6 rounded-md">Log in</Button>
+            <Button 
+              onClick={onLogin} 
+              className="bg-[#9f0707] hover:bg-[#430202] text-white px-8 py-2.5 rounded-xl text-base font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10"
+            >
+              Log in
+            </Button>
           </div>
 
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden">
+          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-[#430202]">
             {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
@@ -54,22 +72,22 @@ export default function Navbar({ scrollToSection, onLogin }) {
       {menuOpen && (
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-[#FFFFFF] z-40 flex flex-col items-center justify-center gap-8 md:hidden"
+          className="fixed inset-0 bg-white/95 backdrop-blur-3xl z-40 flex flex-col items-center justify-center gap-8 md:hidden"
         >
-          <button onClick={() => { setMenuOpen(false); scrollToSection('features'); }} className="text-2xl text-[#430202] hover:text-[#bc1313] transition-colors">
-            Features
-          </button>
-          <button onClick={() => { setMenuOpen(false); scrollToSection('how-it-works'); }} className="text-2xl text-[#430202] hover:text-[#bc1313] transition-colors">
-            How it works
-          </button>
-          <button onClick={() => { setMenuOpen(false); scrollToSection('faq'); }} className="text-2xl text-[#430202] hover:text-[#bc1313] transition-colors">
-            FAQs
-          </button>
+          {['Features', 'How it works', 'FAQs'].map((item) => (
+            <button 
+              key={item}
+              onClick={() => { setMenuOpen(false); scrollToSection(item.toLowerCase().replace(/ /g, '-')); }} 
+              className="text-2xl font-bold text-[#430202] hover:text-[#9f0707] transition-colors"
+            >
+              {item}
+            </button>
+          ))}
           <Button
             onClick={() => { setMenuOpen(false); onLogin(); }}
-            className="w-full bg-[#bc1313] hover:bg-[#430202] text-white py-6 rounded-md text-lg"
+            className="w-48 bg-[#430202] hover:bg-[#9f0707] text-white py-6 rounded-xl text-lg font-bold"
           >
             Log in
           </Button>

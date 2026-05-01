@@ -60,7 +60,7 @@ export default function CareerAllPathsModal({ matches, optimalIndex, visibleTitl
                 onClick={() => handleClick(row)}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-lg border cursor-pointer transition-all hover:bg-gray-50
                   ${isPinned
-                    ? 'border-[#bc1313]/40 bg-[#fff8f8]'
+                    ? 'border-[#70170f]/40 bg-[#fff8f8]'
                     : row.analyzed
                       ? (isOpt ? 'border-emerald-300/60' : 'border-gray-100')
                       : 'border-gray-100 bg-gray-50/40'}`}
@@ -69,7 +69,7 @@ export default function CareerAllPathsModal({ matches, optimalIndex, visibleTitl
                   <p className={`text-[12px] font-bold flex items-center gap-1 ${row.analyzed ? 'text-gray-900' : 'text-gray-600'}`}>
                     <span className="truncate">{row.title}</span>
                     {isOpt && <Star size={10} className="text-emerald-600 shrink-0" />}
-                    {isPinned && <Pin size={10} className="text-[#bc1313] shrink-0" />}
+                    {isPinned && <Pin size={10} className="text-[#70170f] shrink-0" />}
                   </p>
                   <p className="text-[10px] text-gray-500">{inferCategory(row.title)}</p>
                 </div>

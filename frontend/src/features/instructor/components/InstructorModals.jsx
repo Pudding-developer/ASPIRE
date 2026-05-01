@@ -85,7 +85,7 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
               <select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="w-full bg-white text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313]"
+                className="w-full bg-white text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#70170f]"
               >
                 <option value="1">1st Year</option>
                 <option value="2">2nd Year</option>
@@ -98,7 +98,7 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
               <select
                 value={semester}
                 onChange={(e) => setSemester(e.target.value)}
-                className="w-full bg-white text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313]"
+                className="w-full bg-white text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#70170f]"
               >
                 <option value="1">1st Sem</option>
                 <option value="2">2nd Sem</option>
@@ -112,7 +112,7 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
             <select 
               value={selectedCourseCode} 
               onChange={(e) => setSelectedCourseCode(e.target.value)} 
-              className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313] focus:ring-1 focus:ring-[#bc1313]"
+              className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#70170f] focus:ring-1 focus:ring-[#70170f]"
             >
               {availableSubjects.length === 0 && (
                 <option value="" disabled>No subjects found for this term</option>
@@ -133,13 +133,13 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
               placeholder={`e.g. ${year}${semester}01, ${year}${semester}02...`}
               value={section}
               onChange={(e) => setSection(e.target.value)}
-              className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#bc1313]"
+              className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#70170f]"
             />
           </div>
           {formError && <p className="text-red-600 text-sm">{formError}</p>}
           <div className="pt-4 flex justify-end gap-3">
             <Button type="button" onClick={onClose} variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">Cancel</Button>
-            <Button type="submit" disabled={submitting || availableSubjects.length === 0} className="bg-[#bc1313] hover:bg-[#890E0E] text-white">
+            <Button type="submit" disabled={submitting || availableSubjects.length === 0} className="bg-[#70170f] hover:bg-[#4a0e09] text-white">
               {submitting ? 'Creating...' : 'Create Class'}
             </Button>
           </div>
@@ -235,7 +235,7 @@ export function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, 
           <Button onClick={onClose} variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50">Cancel</Button>
           <Button 
             onClick={() => { onConfirm(); onClose(); }} 
-            className={`flex-1 text-white ${variant === 'danger' ? 'bg-[#bc1313] hover:bg-[#890E0E]' : 'bg-green-600 hover:bg-green-700'}`}
+            className={`flex-1 text-white ${variant === 'danger' ? 'bg-[#70170f] hover:bg-[#4a0e09]' : 'bg-green-600 hover:bg-green-700'}`}
           >
             {confirmText}
           </Button>

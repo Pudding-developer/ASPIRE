@@ -49,7 +49,7 @@ export default function StudentCourseDetailView({ courseName, user, intervention
       <div className="mb-10 flex justify-between items-end">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <span className="px-2.5 py-0.5 bg-[#bc1313]/10 text-[#bc1313] text-[11px] font-bold tracking-wider rounded uppercase">Course Analytics</span>
+            <span className="px-2.5 py-0.5 bg-[#70170f]/10 text-[#70170f] text-[11px] font-bold tracking-wider rounded uppercase">Course Analytics</span>
             <span className="text-gray-500 text-[13px] font-medium">{data.course_code} — {data.course}</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{data.student_name || user?.full_name || 'Student Profile'}</h1>
@@ -61,7 +61,7 @@ export default function StudentCourseDetailView({ courseName, user, intervention
         <div className={`${panelBase} p-6 flex flex-col justify-between`}>
           <div className="flex justify-between items-start mb-4">
              <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-widest">Weighted Avg</p>
-             <Target size={18} className="text-[#bc1313]" />
+             <Target size={18} className="text-[#70170f]" />
           </div>
           <div>
              <div className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">{data.ilo?.weighted_avg?.toFixed(1) || 0}<span className="text-xl font-medium text-gray-400 ml-1">%</span></div>
@@ -192,7 +192,7 @@ export default function StudentCourseDetailView({ courseName, user, intervention
                 .map(([name, val], i) => (
                   <div key={i} className="flex justify-between items-center text-[13px]">
                      <span className="text-gray-600 font-medium">{name}</span>
-                     <span className="font-semibold text-[#bc1313]">{val.toFixed(1)}</span>
+                     <span className="font-semibold text-[#70170f]">{val.toFixed(1)}</span>
                   </div>
              ))}
            </div>
@@ -216,7 +216,7 @@ function OverallDonut({ value }) {
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
         <circle cx={size/2} cy={size/2} r={rad} fill="#f8fafc" stroke="#f1f5f9" strokeWidth={strokeW} />
-        <circle cx={size/2} cy={size/2} r={rad} fill="none" stroke="#bc1313" strokeWidth={strokeW}
+        <circle cx={size/2} cy={size/2} r={rad} fill="none" stroke="#70170f" strokeWidth={strokeW}
                 strokeDasharray={circum} strokeDashoffset={circum - fillPct} strokeLinecap="round" />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">

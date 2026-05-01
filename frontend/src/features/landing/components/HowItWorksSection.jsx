@@ -72,9 +72,9 @@ export default function HowItWorksSection() {
     <section id="how-it-works" ref={containerRef} className="py-24 px-6 bg-[#0a0101]">
       <div className="max-w-7xl mx-auto flex flex-col items-center">
         <div className="text-center mb-16 hiw-element opacity-0">
-          <p className="text-[#bc1313] mb-2 font-bold tracking-widest text-xs uppercase">• HOW IT WORKS</p>
+          <p className="text-[#70170f] mb-2 font-bold tracking-widest text-xs uppercase">• HOW IT WORKS</p>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Up and running in <span className="text-[#bc1313] italic">3 simple steps</span>
+            Up and running in <span className="text-[#70170f] italic">3 simple steps</span>
           </h2>
         </div>
 
@@ -86,13 +86,13 @@ export default function HowItWorksSection() {
                 onClick={() => setActiveStep(step.id)}
                 onMouseEnter={() => setActiveStep(step.id)}
                 className={`w-full text-left p-6 rounded-2xl border transition-all duration-300 ${
-                  activeStep === step.id ? 'border-[#bc1313] bg-gradient-to-r from-[#bc1313]/10 to-transparent shadow-[0_0_30px_rgba(188,19,19,0.15)]' : 'border-white/5 hover:border-white/10 bg-[#0a0101]'
+                  activeStep === step.id ? 'border-[#70170f] bg-gradient-to-r from-[#70170f]/10 to-transparent shadow-[0_0_30px_rgba(188,19,19,0.15)]' : 'border-white/5 hover:border-white/10 bg-[#0a0101]'
                 }`}
               >
                 <div className="flex items-center gap-6 mb-2">
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-colors shadow-lg ${
-                      activeStep === step.id ? 'bg-[#bc1313] text-white shadow-[#bc1313]/50' : 'bg-white/5 text-gray-500 shadow-transparent'
+                      activeStep === step.id ? 'bg-[#70170f] text-white shadow-[#70170f]/50' : 'bg-white/5 text-gray-500 shadow-transparent'
                     }`}
                   >
                     0{step.id}
@@ -118,7 +118,7 @@ export default function HowItWorksSection() {
                 <div className="bg-[#0f0202] rounded-2xl p-10 shadow-2xl relative overflow-hidden h-[400px] flex items-center justify-center">
                   <div className="absolute inset-0 bg-gradient-to-br from-black to-transparent opacity-80"></div>
                   <div className="text-center relative z-10">
-                    <div className="w-20 h-20 bg-gradient-to-br from-[#bc1313] to-[#890E0E] rounded-full flex items-center justify-center text-3xl mx-auto mb-8 shadow-xl shadow-[#bc1313]/30">
+                    <div className="w-20 h-20 bg-gradient-to-br from-[#70170f] to-[#4a0e09] rounded-full flex items-center justify-center text-3xl mx-auto mb-8 shadow-xl shadow-[#70170f]/30">
                       {step.emoji}
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-4">

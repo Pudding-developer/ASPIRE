@@ -101,7 +101,7 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
               <Button onClick={onArchive} variant="outline" className="border-yellow-200 text-yellow-600 hover:bg-yellow-50 bg-white px-5 py-[10px] font-bold text-[15px] shadow-sm rounded-lg flex items-center justify-center h-auto transition-colors">
                 <Archive size={18} className="mr-2" /> Archive
               </Button>
-              <Button onClick={onDelete} className="bg-[#bc1313] hover:bg-[#890E0E] text-white px-5 py-[10px] font-bold text-[15px] shadow-sm rounded-lg flex items-center justify-center h-auto transition-colors">
+              <Button onClick={onDelete} className="bg-[#70170f] hover:bg-[#4a0e09] text-white px-5 py-[10px] font-bold text-[15px] shadow-sm rounded-lg flex items-center justify-center h-auto transition-colors">
                 <Trash2 size={18} className="mr-2" /> Delete Class
               </Button>
             </div>
@@ -112,7 +112,7 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
             <button 
               onClick={() => setActiveTab('profiles')}
               className={`pb-3 flex items-center gap-3 text-[16px] font-semibold transition-colors border-b-2
-                ${activeTab === 'profiles' ? 'border-[#bc1313] text-[#bc1313]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'}`}
+                ${activeTab === 'profiles' ? 'border-[#70170f] text-[#70170f]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'}`}
             >
               <Users size={18} /> Profiles
             </button>
@@ -125,14 +125,14 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
             <button 
               onClick={() => openScoresTab(null)}
               className={`pb-3 flex items-center gap-3 text-[16px] font-semibold transition-colors border-b-2
-                ${activeTab === 'scores' ? 'border-[#bc1313] text-[#bc1313]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'}`}
+                ${activeTab === 'scores' ? 'border-[#70170f] text-[#70170f]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'}`}
             >
               <BarChart2 size={18} /> Assessment Scoring
             </button>
             <button 
               onClick={() => setActiveTab('submitted')}
               className={`pb-3 flex items-center gap-3 text-[16px] font-semibold transition-colors border-b-2
-                ${activeTab === 'submitted' ? 'border-[#bc1313] text-[#bc1313]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'}`}
+                ${activeTab === 'submitted' ? 'border-[#70170f] text-[#70170f]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'}`}
             >
               <ClipboardCheck size={18} /> Submitted Assessments
             </button>
@@ -272,7 +272,7 @@ function ScoresInputPanel({ classId, editingAssessmentId, students = [], student
             value={assessmentName}
             onChange={(e) => setAssessmentName(e.target.value)}
             placeholder="e.g. Midterm Exam"
-            className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-[16px] outline-none text-[#1e293b] shadow-sm focus:border-[#bc1313] transition-colors"
+            className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-[16px] outline-none text-[#1e293b] shadow-sm focus:border-[#70170f] transition-colors"
           />
         </div>
         <div className="w-1/3 space-y-2">
@@ -301,7 +301,7 @@ function ScoresInputPanel({ classId, editingAssessmentId, students = [], student
             <span className="text-[#64748b] font-medium mr-1 tracking-wide">Number of ILOs:</span>
             <span className={`font-semibold transition-colors ${numILOs === 3 ? 'text-[#64748b]' : 'text-gray-400'}`}>3 ILOs</span>
             <button 
-              className="w-[42px] h-6 rounded-full bg-[#bc1313] flex items-center relative transition-colors px-1 cursor-pointer hover:bg-[#890E0E]"
+              className="w-[42px] h-6 rounded-full bg-[#70170f] flex items-center relative transition-colors px-1 cursor-pointer hover:bg-[#4a0e09]"
               onClick={() => setNumILOs(numILOs === 3 ? 4 : 3)}
             >
               <div className={`w-[18px] h-[18px] bg-white rounded-full shadow-sm transform transition-transform ${numILOs === 4 ? 'translate-x-[16px]' : 'translate-x-0'}`} />
@@ -317,7 +317,7 @@ function ScoresInputPanel({ classId, editingAssessmentId, students = [], student
                 type="number" 
                 value={iloTotals[i]}
                 onChange={(e) => handleIloTotalChange(i, e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-4 py-[10px] text-[16px] outline-none focus:border-[#bc1313] text-[#1e293b] font-medium transition-colors hover:border-gray-300 mt-1 shadow-sm" 
+                className="w-full border border-gray-200 rounded-lg px-4 py-[10px] text-[16px] outline-none focus:border-[#70170f] text-[#1e293b] font-medium transition-colors hover:border-gray-300 mt-1 shadow-sm" 
               />
             </div>
           ))}
@@ -369,7 +369,7 @@ function ScoresInputPanel({ classId, editingAssessmentId, students = [], student
                             type="number" 
                             value={score}
                             onChange={(e) => handleScoreChange(student.id, i, e.target.value)}
-                            className="w-16 h-9 px-2 py-1 text-[15px] border border-gray-200 rounded-lg text-center mx-auto block outline-none focus:border-[#bc1313] font-medium text-[#111827] hover:border-gray-300 transition-colors shadow-sm" 
+                            className="w-16 h-9 px-2 py-1 text-[15px] border border-gray-200 rounded-lg text-center mx-auto block outline-none focus:border-[#70170f] font-medium text-[#111827] hover:border-gray-300 transition-colors shadow-sm" 
                           />
                         </td>
                         <td className="p-2 text-center text-[15px] font-semibold text-[#9ca3af] border-r border-[#e2e8f0] last:border-r-0 bg-[#f9fafb] align-middle">
@@ -392,7 +392,7 @@ function ScoresInputPanel({ classId, editingAssessmentId, students = [], student
         <button 
           disabled={submitting}
           onClick={handleSubmit}
-          className="bg-[#bc1313] hover:bg-[#890E0E] disabled:bg-gray-400 text-white font-medium py-[10px] px-8 rounded-lg shadow-sm transition-colors text-sm"
+          className="bg-[#70170f] hover:bg-[#4a0e09] disabled:bg-gray-400 text-white font-medium py-[10px] px-8 rounded-lg shadow-sm transition-colors text-sm"
         >
           {submitting ? 'Submitting...' : 'Submit Scores'}
         </button>
@@ -415,7 +415,7 @@ function ProfilesPanel({ students = [], studentsLoading = false }) {
           {students.map((student, i) => (
             <div key={student.id || i} className="flex items-center justify-between p-5 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all bg-white">
               <div className="flex items-center gap-6">
-                <div className="w-[50px] h-[50px] rounded-full bg-[#fef2f2] text-[#bc1313] font-bold text-xl flex items-center justify-center overflow-hidden">
+                <div className="w-[50px] h-[50px] rounded-full bg-[#fef2f2] text-[#70170f] font-bold text-xl flex items-center justify-center overflow-hidden">
                   {student.avatar_url ? (
                     <img
                       src={student.avatar_url}
@@ -511,7 +511,7 @@ function SubmittedAssessmentsPanel({ classId, onEdit }) {
                   <button onClick={() => onEdit(assessment.id)} className="flex items-center gap-2 px-[18px] py-[8px] bg-white border border-gray-200 text-[#475569] text-[15px] font-bold rounded-[8px] hover:bg-gray-50 hover:text-[#1e293b] transition-all shadow-sm">
                     <Edit2 size={16} className="opacity-80" /> Edit
                   </button>
-                  <button onClick={() => handleDelete(assessment.id)} className="flex items-center gap-2 px-[14px] py-[8px] bg-white border border-red-200 text-[#bc1313] text-[15px] font-bold rounded-[8px] hover:bg-red-50 transition-all shadow-sm">
+                  <button onClick={() => handleDelete(assessment.id)} className="flex items-center gap-2 px-[14px] py-[8px] bg-white border border-red-200 text-[#70170f] text-[15px] font-bold rounded-[8px] hover:bg-red-50 transition-all shadow-sm">
                     <Trash2 size={16} /> Delete
                   </button>
                 </div>

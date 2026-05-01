@@ -40,7 +40,7 @@ export default function TokensTab({ tokens, setShowGenerateModal, deleteToken })
         </div>
         <button
           onClick={() => setShowGenerateModal(true)}
-          className="px-4 py-2.5 bg-[#bc1313] hover:bg-[#a80f0f] rounded-lg text-sm font-medium transition-colors shadow-[0_8px_22px_rgba(188,19,19,0.25)] border border-[#bc1313]/40"
+          className="px-4 py-2.5 bg-[#70170f] hover:bg-[#a80f0f] rounded-lg text-sm font-medium transition-colors shadow-[0_8px_22px_rgba(188,19,19,0.25)] border border-[#70170f]/40"
         >
           + Generate New Token
         </button>

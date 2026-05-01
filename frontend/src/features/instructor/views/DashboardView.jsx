@@ -56,7 +56,7 @@ export default function DashboardView({ onCreateClass, stats, loading, classes =
             <img 
               src={user.avatar_url} 
               alt={user?.full_name} 
-              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#bc1313]/10" 
+              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#70170f]/10" 
               referrerPolicy="no-referrer" 
             />
           )}
@@ -67,7 +67,7 @@ export default function DashboardView({ onCreateClass, stats, loading, classes =
         </div>
         <Button 
           onClick={onCreateClass}
-          className="bg-[#bc1313] hover:bg-[#890E0E] text-white flex items-center gap-2 px-4 py-2"
+          className="bg-[#70170f] hover:bg-[#4a0e09] text-white flex items-center gap-2 px-4 py-2"
         >
           <Plus size={18} />
           Create Class
@@ -79,7 +79,7 @@ export default function DashboardView({ onCreateClass, stats, loading, classes =
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
-          className="bg-white border border-gray-300 text-gray-900 rounded-lg p-3 outline-none focus:border-[#bc1313] focus:ring-1 focus:ring-[#bc1313]"
+          className="bg-white border border-gray-300 text-gray-900 rounded-lg p-3 outline-none focus:border-[#70170f] focus:ring-1 focus:ring-[#70170f]"
         >
           <option value="all">All Class Years</option>
           {availableYears.map((year) => (
@@ -90,7 +90,7 @@ export default function DashboardView({ onCreateClass, stats, loading, classes =
         <select
           value={selectedSemester}
           onChange={(e) => setSelectedSemester(e.target.value)}
-          className="bg-white border border-gray-300 text-gray-900 rounded-lg p-3 outline-none focus:border-[#bc1313] focus:ring-1 focus:ring-[#bc1313]"
+          className="bg-white border border-gray-300 text-gray-900 rounded-lg p-3 outline-none focus:border-[#70170f] focus:ring-1 focus:ring-[#70170f]"
         >
           <option value="all">All Semesters</option>
           {availableSemesters.map((semester) => (
@@ -110,7 +110,7 @@ export default function DashboardView({ onCreateClass, stats, loading, classes =
           <motion.div 
             key={idx}
             whileHover={{ scale: 1.02 }}
-            className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-[#bc1313]/30 transition-all cursor-default"
+            className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-[#70170f]/30 transition-all cursor-default"
           >
             <p className="text-gray-500 text-sm mb-2">{stat.label}</p>
             <h3 className="text-3xl font-bold text-gray-900">{stat.value}</h3>

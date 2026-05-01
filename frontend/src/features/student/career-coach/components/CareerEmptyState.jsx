@@ -89,7 +89,7 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
     return (
       <div className="p-8 flex items-center justify-center h-full">
         <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm max-w-md w-full text-center">
-          <Loader2 size={32} className="text-[#bc1313] animate-spin mx-auto mb-4" />
+          <Loader2 size={32} className="text-[#70170f] animate-spin mx-auto mb-4" />
           <h2 className="text-[18px] font-bold text-gray-900 mb-2">Analyzing Your Profile</h2>
           <p className="text-[12px] text-gray-500 mb-1">{currentStep}</p>
           {timeHint && (
@@ -100,7 +100,7 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
           {!timeHint && <div style={{ marginBottom: '12px' }} />}
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-2 relative">
             <div
-              className="h-2 bg-[#bc1313] rounded-full"
+              className="h-2 bg-[#70170f] rounded-full"
               style={{ width: `${displayPct}%`, transition: 'width 350ms ease-out' }}
             />
             <div
@@ -161,8 +161,8 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
   return (
     <div className="p-8 flex items-center justify-center h-full">
       <div className="bg-white border border-gray-100 rounded-2xl p-10 shadow-sm max-w-lg w-full text-center">
-        <div className="w-16 h-16 rounded-2xl bg-[#bc1313]/10 flex items-center justify-center mx-auto mb-5">
-          <Bot size={28} className="text-[#bc1313]" />
+        <div className="w-16 h-16 rounded-2xl bg-[#70170f]/10 flex items-center justify-center mx-auto mb-5">
+          <Bot size={28} className="text-[#70170f]" />
         </div>
         <h2 className="text-[22px] font-bold text-gray-900 mb-2">AI Career Intelligence</h2>
         <p className="text-[12px] text-gray-500 leading-relaxed mb-6 max-w-sm mx-auto">
@@ -170,12 +170,7 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
           activity to map personalized career trajectories.
         </p>
 
-        {error && (
-          <div className="mb-6 bg-red-50 text-red-700 text-[11px] p-3 rounded-lg border border-red-200 flex items-start text-left gap-2 shadow-sm">
-            <AlertCircle size={14} className="mt-0.5 shrink-0" />
-            <p className="font-medium leading-relaxed">{error.includes('RESOURCE_EXHAUSTED') ? 'The AI Pipeline is currently experiencing heavy traffic (Google API Quota reached). Please try again in exactly one minute.' : error}</p>
-          </div>
-        )}
+
 
         <div className="text-left bg-gray-50 rounded-xl p-4 mb-6 space-y-2">
           {[
@@ -184,7 +179,7 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
             'AI-powered career guidance chat',
           ].map(f => (
             <div key={f} className="flex items-center gap-2 text-[11px] text-gray-600">
-              <Sparkles size={12} className="text-[#bc1313] shrink-0" />
+              <Sparkles size={12} className="text-[#70170f] shrink-0" />
               {f}
             </div>
           ))}
@@ -195,8 +190,8 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
           disabled={buttonClicked}
           className={`px-8 py-3 rounded-xl text-[13px] font-bold transition-colors inline-flex items-center gap-2 ${
             buttonClicked
-              ? 'bg-[#bc1313]/70 text-white cursor-not-allowed'
-              : 'bg-[#bc1313] hover:bg-[#890E0E] text-white'
+              ? 'bg-[#70170f]/70 text-white cursor-not-allowed'
+              : 'bg-[#70170f] hover:bg-[#4a0e09] text-white'
           }`}
         >
           {buttonClicked ? (

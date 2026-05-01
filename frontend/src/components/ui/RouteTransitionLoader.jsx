@@ -16,7 +16,7 @@ export default function RouteTransitionLoader() {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
       <div className="h-1 bg-white/10 overflow-hidden">
-        <div className="route-loading-bar h-full w-1/2 bg-[#bc1313] rounded-full" />
+        <div className="route-loading-bar h-full w-1/2 bg-[#70170f] rounded-full" />
       </div>
     </div>
   );

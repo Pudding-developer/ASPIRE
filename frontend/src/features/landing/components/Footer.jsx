@@ -6,7 +6,7 @@ import aspireLogo from '../../../assets/aspire-logo.png';
 export default function Footer({ onGetStarted }) {
   const navigate = useNavigate();
   return (
-    <footer className="bg-[#0a0101] pt-24">
+    <footer className="bg-[#FFFFFF] pt-24">
       {/* Big CTA Section with entrance animation */}
       <div className="max-w-4xl mx-auto px-6 text-center mb-32">
         <motion.h2
@@ -14,9 +14,9 @@ export default function Footer({ onGetStarted }) {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="text-5xl md:text-7xl font-bold text-white mb-6"
+          className="text-5xl md:text-7xl font-bold text-[#430202] mb-6"
         >
-          Ready to <span className="text-[#70170f] italic">transform</span><br />
+          Ready to <span className="text-[#bc1313] italic">transform</span><br />
           the way you use analytics?
         </motion.h2>
         <motion.p
@@ -24,7 +24,7 @@ export default function Footer({ onGetStarted }) {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           viewport={{ once: true }}
-          className="text-gray-400 mb-8 text-lg"
+          className="text-[#430202]/80 mb-8 text-lg"
         >
           Join ASPIRE today
         </motion.p>
@@ -34,23 +34,23 @@ export default function Footer({ onGetStarted }) {
           transition={{ duration: 0.8, delay: 0.4 }}
           viewport={{ once: true }}
         >
-          <Button onClick={onGetStarted} className="bg-[#70170f] hover:bg-[#4a0e09] text-white px-10 py-6 text-lg rounded-md">
+          <Button onClick={onGetStarted} className="bg-[#bc1313] hover:bg-[#430202] text-white px-10 py-6 text-lg rounded-md">
             Get Started
           </Button>
         </motion.div>
       </div>
 
       {/* Slim Footer */}
-      <div className="border-t border-white/5 pt-8 pb-10 px-6 md:px-10">
-        <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-gray-500">
+      <div className="border-t border-[#bc1313]/10 pt-8 pb-10 px-6 md:px-10">
+        <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-[#430202]/70">
           <div className="flex items-center gap-2 flex-shrink-0">
             <img src={aspireLogo} alt="ASPIRE" className="h-[80px] w-auto" />
           </div>
 
           <div className="flex gap-8">
-            <a href="#" className="hover:text-white transition-colors">Features</a>
-            <a href="#" className="hover:text-white transition-colors">Blog</a>
-            <a href="#" className="hover:text-white transition-colors">Docs</a>
+            <a href="#" className="hover:text-[#bc1313] transition-colors">Features</a>
+            <a href="#" className="hover:text-[#bc1313] transition-colors">Blog</a>
+            <a href="#" className="hover:text-[#bc1313] transition-colors">Docs</a>
           </div>
 
           <div className="flex-shrink-0">

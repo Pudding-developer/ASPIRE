@@ -4,6 +4,7 @@ import { studentService } from '../../../../services/studentService';
 export default function useStudentData() {
   const [profile, setProfile] = useState(null);
   const [classes, setClasses] = useState([]);
+  const [archivedClasses, setArchivedClasses] = useState([]);
   const [scores, setScores] = useState([]);
   const [predictions, setPredictions] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,9 +14,10 @@ export default function useStudentData() {
     setLoading(true);
     setError(null);
     try {
-      const [profileRes, classesRes, scoresRes, predictionsRes] = await Promise.allSettled([
+      const [profileRes, classesRes, archivedClassesRes, scoresRes, predictionsRes] = await Promise.allSettled([
         studentService.getProfile(),
         studentService.getClasses(),
+        studentService.getArchivedClasses(),
         studentService.getScores(),
         studentService.getPredictions(),
       ]);
@@ -24,6 +26,7 @@ export default function useStudentData() {
       else throw new Error('Failed to load profile');
 
       if (classesRes.status === 'fulfilled') setClasses(classesRes.value.data || []);
+      if (archivedClassesRes.status === 'fulfilled') setArchivedClasses(archivedClassesRes.value.data || []);
       if (scoresRes.status === 'fulfilled') setScores(scoresRes.value.data || []);
       
       // Predictions might fail if no scores exist yet
@@ -73,6 +76,7 @@ export default function useStudentData() {
   return {
     profile,
     classes,
+    archivedClasses,
     scores,
     predictions,
     loading,

@@ -33,10 +33,10 @@ export default function StudentSidebar({ activeView, setActiveView, onLogout, us
   ];
 
   return (
-    <div className="w-[240px] h-full bg-[#0d0101] border-r border-[#261010] flex flex-col shrink-0">
+    <div className="w-[240px] h-full bg-[#430202] border-r border-white/10 flex flex-col shrink-0">
       {/* Logo */}
-      <div className="px-4 pt-4 pb-2">
-        <img src={aspireLogo} alt="ASPIRE" className="h-[100px] w-auto drop-shadow-lg -ml-2" />
+      <div className="px-4 pt-2 pb-0 flex justify-center">
+        <img src={aspireLogo} alt="ASPIRE" className="h-[140px] w-auto drop-shadow-lg" />
       </div>
 
       {/* Nav */}
@@ -47,38 +47,44 @@ export default function StudentSidebar({ activeView, setActiveView, onLogout, us
             onClick={() => setActiveView(id)}
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-transparent transition-all text-[14px] font-medium
               ${activeView === id
-                ? 'bg-[#70170f]/20 text-white border-[#70170f]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
-                : 'text-[#8592a3] hover:text-white hover:bg-white/5'}`}
+                ? 'bg-white/20 text-white border-white/20 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_8px_20px_rgba(0,0,0,0.15)]'
+                : 'text-white/70 hover:text-white hover:bg-white/5'}`}
           >
-            <Icon size={18} className={activeView === id ? 'text-[#ffe3e3]' : 'text-[#6a7a90]'} />
+            <Icon size={18} className={activeView === id ? 'text-white' : 'text-white/60'} />
             {label}
           </button>
         ))}
       </div>
 
       {/* Profile */}
-      <div className="mx-3 mb-3 p-3 rounded-2xl border border-[#3b1919] bg-[#1a0707] shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex items-center gap-3">
+      <div className="mx-3 mb-3 p-3 rounded-2xl border border-white/10 bg-white/5 shadow-[0_4px_12px_rgba(0,0,0,0.1)] flex items-center gap-3">
         {user?.avatar_url
-          ? <img src={user.avatar_url} alt={fullName} className="w-10 h-10 rounded-full object-cover shrink-0 border border-[#3b1919] shadow-sm" referrerPolicy="no-referrer" />
-          : <div className="w-10 h-10 rounded-full bg-[#70170f] flex items-center justify-center text-white font-bold shrink-0 border border-[#3b1919] shadow-sm">{initial}</div>
+          ? <img src={user.avatar_url} alt={fullName} className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/10 shadow-sm" referrerPolicy="no-referrer" />
+          : <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold shrink-0 border border-white/10 shadow-sm">{initial}</div>
         }
         <div className="overflow-hidden">
-          <p className="text-white text-[14px] font-semibold truncate leading-tight mb-0.5" style={{ color: '#ffffff' }}>{fullName}</p>
-          <p className="text-[#a0aabf] text-[12px] truncate leading-tight" style={{ color: '#a0aabf' }}>{email}</p>
+          <p className="text-white text-[14px] font-semibold truncate leading-tight mb-0.5">{fullName}</p>
+          <p className="text-white/60 text-[12px] truncate leading-tight">{email}</p>
         </div>
       </div>
 
       {/* Bottom Actions */}
-      <div className="border-t border-[#261010] p-4 flex flex-col gap-1">
-        <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[#8592a3] hover:bg-white/5 hover:text-white transition-all text-[14px] font-medium">
-          <HelpCircle size={18} className="text-[#6a7a90]" />
+      <div className="border-t border-white/10 p-4 flex flex-col gap-1">
+        <button
+          onClick={() => setActiveView('faq')}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-[14px] font-medium
+            ${activeView === 'faq'
+              ? 'bg-white/20 text-white border-white/20 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_8px_20px_rgba(0,0,0,0.15)]'
+              : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+        >
+          <HelpCircle size={18} className={activeView === 'faq' ? 'text-white' : 'text-white/60'} />
           FAQ
         </button>
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[#8592a3] hover:bg-[#70170f]/10 hover:text-[#70170f] transition-all text-[14px] font-medium"
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition-all text-[14px] font-medium"
         >
-          <LogOut size={18} className="text-[#6a7a90]" />
+          <LogOut size={18} className="text-white/60" />
           Log Out
         </button>
       </div>

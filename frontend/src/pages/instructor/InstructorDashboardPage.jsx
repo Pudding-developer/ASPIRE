@@ -14,7 +14,7 @@ const InstructorDashboard = () => {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('instructor-portal');
 
-  const { classes, archivedClasses, stats, loading, error, createClass, archiveClass, deleteClass, refetch } = useInstructorClasses();
+  const { classes, archivedClasses, stats, loading, error, createClass, archiveClass, restoreClass, deleteClass, refetch } = useInstructorClasses();
 
   // Validate session against DB (catches deactivated accounts)
   useEffect(() => {
@@ -95,7 +95,7 @@ const InstructorDashboard = () => {
         {activeView === 'archived' && (
           <ArchivedClassesView
             classes={archivedClasses}
-            onRestore={() => {}}
+            onRestore={(id) => triggerConfirm('Restore Class', 'This class will be moved back to active classes and become visible to enrolled students.', 'Restore', 'default', async () => { await restoreClass(id); })}
             onDelete={(id) => triggerConfirm('Permanently Delete', 'This action cannot be undone. All student records will be destroyed.', 'Delete Forever', 'danger', () => deleteClass(id))}
           />
         )}

@@ -13,6 +13,7 @@ import httpx
 from app.core.config import GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_REDIRECT_URI
 from app.models.github import RepositoryCache
 from app.repositories import github_repository
+from app.services import activity_service
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -663,6 +664,11 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
                 db, job_id, status="completed", percentage=100,
                 completed_at=datetime.now(),
             )
+
+            await activity_service.emit_github_synced(
+                db, student_id=user_id, repo_count=len(repos),
+            )
+            await db.commit()
 
         except Exception as exc:
             await github_repository.update_job(

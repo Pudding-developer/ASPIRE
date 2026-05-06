@@ -9,6 +9,7 @@ export const instructorApi = {
   getClassStudents:  (id)            => request('GET',    `${BASE}/classes/${id}/students`),
   createClass:       (data)          => request('POST',   `${BASE}/classes`, data),
   archiveClass:      (id)            => request('PATCH',  `${BASE}/classes/${id}/archive`),
+  restoreClass:      (id)            => request('PATCH',  `${BASE}/classes/${id}/restore`),
   deleteClass:       (id)            => request('DELETE', `${BASE}/classes/${id}`),
   submitAssessmentScores: (classId, data) => request('POST', `${BASE}/classes/${classId}/assessments/submit`, data),
   getClassAssessments: (classId) => request('GET', `${BASE}/classes/${classId}/assessments`),

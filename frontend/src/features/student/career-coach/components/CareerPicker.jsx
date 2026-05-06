@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Bot, Check, Loader2, AlertCircle, Star, ChevronRight, X, Sparkles } from 'lucide-react';
 import { CAREER_OPTIONS, inferCategory } from '../../../../data/careerConstants';
+import SearchInput from '../../../../components/ui/SearchInput';
 
 
 
@@ -22,6 +23,13 @@ export default function CareerPicker({
 }) {
   const [confirmCareer, setConfirmCareer] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredCareers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return CAREER_OPTIONS;
+    return CAREER_OPTIONS.filter(c => (c.title || '').toLowerCase().includes(q));
+  }, [search]);
 
   // If the pipeline starts (parent flips isRunning), tear down the modal.
   useEffect(() => {
@@ -60,7 +68,7 @@ export default function CareerPicker({
   const confirmCareerData = CAREER_OPTIONS.find((c) => c.title === confirmCareer);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8">
       <div className="flex flex-col items-center text-center mb-10">
         <div className="w-16 h-16 rounded-2xl bg-[#70170f]/10 flex items-center justify-center mb-5">
           <Bot size={28} className="text-[#70170f]" />
@@ -83,8 +91,26 @@ export default function CareerPicker({
 
 
 
+      <div className="max-w-xl mx-auto mb-6">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search careers (e.g. Software Engineer, Data Analyst)..."
+        />
+        {search && (
+          <p className="text-[12px] text-gray-500 mt-2 text-center">
+            {filteredCareers.length} of {CAREER_OPTIONS.length} careers match
+          </p>
+        )}
+      </div>
+
+      {filteredCareers.length === 0 ? (
+        <div className="text-center py-16 text-gray-400 text-sm">
+          No careers match "{search}".
+        </div>
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {CAREER_OPTIONS.map((career) => {
+        {filteredCareers.map((career) => {
           const isChosen = chosenCareer === career.title;
           const category = inferCategory(career.title);
 
@@ -145,6 +171,7 @@ export default function CareerPicker({
           );
         })}
       </div>
+      )}
 
       {confirmCareer && confirmCareerData && (
         <ConfirmAnalysisModal

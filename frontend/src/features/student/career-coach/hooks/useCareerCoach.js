@@ -320,6 +320,7 @@ export default function useCareerCoach(userId) {
     loading: apiLoading,
     error,
     pipelineData,
+    reportCreatedAt: report?.created_at || null,
     careerMatches,
     skillProfile,
     recommendations,

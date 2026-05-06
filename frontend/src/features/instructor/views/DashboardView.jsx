@@ -37,15 +37,23 @@ export default function DashboardView({ onCreateClass, stats, loading, classes =
     });
   }, [classes, selectedYear, selectedSemester]);
 
+  const isFiltered = selectedYear !== 'all' || selectedSemester !== 'all';
+
   const filteredStats = useMemo(() => {
-    const totalStudents = filteredClasses.reduce((sum, cls) => sum + (cls.student_count || 0), 0);
+    // When no filter: use the backend's pre-computed DISTINCT student count
+    // to avoid double-counting students enrolled in multiple classes.
+    // When filtered: sum per-class counts (may overlap) and flag it.
+    const totalStudents = isFiltered
+      ? filteredClasses.reduce((sum, cls) => sum + (cls.student_count || 0), 0)
+      : (stats?.total_students ?? 0);
     return {
       total_students: totalStudents,
+      total_students_is_approx: isFiltered,
       active_courses: filteredClasses.length,
       school_year: stats?.school_year ?? '—',
       avg_performance: stats?.avg_performance ?? null,
     };
-  }, [filteredClasses, stats]);
+  }, [filteredClasses, stats, isFiltered]);
 
   return (
     <div className="p-8">
@@ -102,7 +110,7 @@ export default function DashboardView({ onCreateClass, stats, loading, classes =
       {/* Stats Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { label: 'Total Students', value: loading ? '—' : filteredStats.total_students ?? '0' },
+          { label: 'Total Students', value: loading ? '—' : `${filteredStats.total_students_is_approx ? '~' : ''}${filteredStats.total_students ?? 0}` },
           { label: 'Active Courses', value: loading ? '—' : filteredStats.active_courses ?? '0' },
           { label: 'School Year', value: loading ? '—' : filteredStats.school_year ?? '—' },
           { label: 'Avg Performance', value: loading ? '—' : filteredStats.avg_performance ? `${filteredStats.avg_performance.toFixed(1)}%` : 'N/A' },

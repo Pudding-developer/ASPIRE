@@ -22,7 +22,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`${isMinimized ? 'w-[88px]' : 'w-[280px]'} h-screen bg-[#0d0101] border-r border-[#261010] flex flex-col flex-shrink-0 transition-all duration-300 relative z-20`}
+      className={`${isMinimized ? 'w-[88px]' : 'w-[280px]'} h-screen bg-[#430202] border-r border-white/10 flex flex-col flex-shrink-0 transition-all duration-300 relative z-20`}
     >
       {/* Top section: Logo & Toggle */}
       <div className={`px-4 pt-4 pb-1 flex ${isMinimized ? 'justify-center' : 'items-center justify-between'} overflow-visible min-h-[104px]`}>
@@ -40,24 +40,6 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
         </button>
       </div>
 
-      {/* Profile Box */}
-      <div className={`mb-4 shrink-0 ${isMinimized ? 'px-4' : 'px-5'}`}>
-        <div className={`p-3 rounded-2xl border border-[#2a1212] bg-[#140202] flex items-center ${isMinimized ? 'justify-center' : 'gap-3'} transition-all`}>
-          {user?.avatar_url ? (
-            <img src={user.avatar_url} alt={fullName} className="w-10 h-10 rounded-full flex-shrink-0 object-cover" referrerPolicy="no-referrer" />
-          ) : (
-            <div className="w-10 h-10 rounded-full flex-shrink-0 bg-[#70170f] flex items-center justify-center text-white font-medium text-sm">
-              {initial}
-            </div>
-          )}
-          {!isMinimized && (
-            <div className="overflow-hidden min-w-[160px]">
-              <p className="text-[#e2e2e2] text-[15px] leading-tight font-medium truncate">{fullName}</p>
-              <p className="text-[#737373] text-[13px] truncate">{email}</p>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Menu Label */}
       {!isMinimized && (
@@ -67,16 +49,16 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
       )}
 
       {/* Middle section: Navigation */}
-      <div className="px-3 space-y-1.5 flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#2a1212] [&::-webkit-scrollbar-track]:bg-transparent">
+      <div className="px-3 space-y-1.5 flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-track]:bg-transparent">
         {/* Instructor Portal */}
         <button
           onClick={() => setActiveView('instructor-portal')}
           className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'gap-4 px-4'} py-3 rounded-xl transition-all ${activeView === 'instructor-portal'
-            ? 'bg-[#70170f]/20 text-white border-[#70170f]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
-            : 'text-[#8592a3] hover:text-white hover:bg-white/5'
+            ? 'bg-white/20 text-white border-white/20 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_8px_20px_rgba(0,0,0,0.15)]'
+            : 'text-white/70 hover:text-white hover:bg-white/5'
             }`}
         >
-          <LayoutDashboard size={20} className={`shrink-0 ${activeView === 'instructor-portal' ? 'text-[#ffe3e3]' : 'text-[#6a7a90]'}`} />
+          <LayoutDashboard size={20} className={`shrink-0 ${activeView === 'instructor-portal' ? 'text-white' : 'text-white/60'}`} />
           {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap min-w-[150px] text-left">Instructor Portal</span>}
         </button>
 
@@ -94,12 +76,12 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
               }
             }}
             className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'justify-between px-4'} py-3 rounded-xl transition-all ${activeView === 'my-classes' || activeView.startsWith('class-')
-              ? 'bg-[#70170f]/20 text-white border-[#70170f]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
-              : 'text-[#8592a3] hover:text-white hover:bg-white/5'
+              ? 'bg-white/20 text-white border-white/20 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_8px_20px_rgba(0,0,0,0.15)]'
+              : 'text-white/70 hover:text-white hover:bg-white/5'
               }`}
           >
             <div className={`flex items-center ${isMinimized ? 'justify-center' : 'gap-4'} shrink-0`}>
-              <BookOpen size={20} className={activeView === 'my-classes' || activeView.startsWith('class-') ? 'text-[#ffe3e3]' : 'text-[#6a7a90]'} />
+              <BookOpen size={20} className={activeView === 'my-classes' || activeView.startsWith('class-') ? 'text-white' : 'text-white/60'} />
               {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap text-left">Classes</span>}
             </div>
             {!isMinimized && (
@@ -115,7 +97,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
           {/* Sub-items block (collapsible class list) */}
           <div className={`overflow-y-auto overflow-x-hidden transition-all duration-300 ${classesOpen && !isMinimized ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
             <div className="relative py-1">
-              <div className="absolute left-[16px] top-0 bottom-3 w-px bg-[#261010]" />
+              <div className="absolute left-[16px] top-0 bottom-3 w-px bg-white/10" />
 
               <div className="flex flex-col gap-1.5 relative z-10 w-full">
                 {classes.map((cls) => {
@@ -126,8 +108,8 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
                       key={cls.id}
                       onClick={() => setActiveView(viewId)}
                       className={`w-[calc(100%-24px)] ml-[24px] flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px] transition-all text-left ${isActive
-                        ? 'text-white bg-[#70170f]/15 border border-[#70170f]/30 backdrop-blur-sm'
-                        : 'text-[#6a7a90] hover:text-[#a0acc0] hover:bg-white/5'
+                        ? 'text-white bg-white/20 border border-white/20 backdrop-blur-sm'
+                        : 'text-white/60 hover:text-white hover:bg-white/5'
                         }`}
                     >
                       <div className={`w-[5px] h-[5px] rounded-full flex-shrink-0 ${isActive ? 'bg-white' : 'bg-[#4a5568]'}`} />
@@ -145,17 +127,34 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
           onClick={() => setActiveView('archived')}
           title={isMinimized ? "Archived Classes" : undefined}
           className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'gap-4 px-4'} py-3 rounded-xl transition-all ${activeView === 'archived'
-            ? 'bg-[#70170f]/20 text-white border-[#70170f]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
-            : 'text-[#8592a3] hover:text-white hover:bg-white/5'
+            ? 'bg-white/20 text-white border-white/20 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_8px_20px_rgba(0,0,0,0.15)]'
+            : 'text-white/70 hover:text-white hover:bg-white/5'
             }`}
         >
-          <Archive size={20} className={`shrink-0 ${activeView === 'archived' ? 'text-[#ffe3e3]' : 'text-[#6a7a90]'}`} />
+          <Archive size={20} className={`shrink-0 ${activeView === 'archived' ? 'text-white' : 'text-white/60'}`} />
           {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap min-w-[150px] text-left">Archived Classes</span>}
         </button>
       </div>
 
+      {/* Profile Box — above the divider line */}
+      <div className={`mx-3 mb-3 shrink-0 p-3 rounded-2xl border border-white/10 bg-white/5 flex items-center ${isMinimized ? 'justify-center' : 'gap-3'} transition-all`}>
+        {user?.avatar_url ? (
+          <img src={user.avatar_url} alt={fullName} className="w-10 h-10 rounded-full flex-shrink-0 object-cover" referrerPolicy="no-referrer" />
+        ) : (
+          <div className="w-10 h-10 rounded-full flex-shrink-0 bg-white/20 flex items-center justify-center text-white font-medium text-sm border border-white/10">
+            {initial}
+          </div>
+        )}
+        {!isMinimized && (
+          <div className="overflow-hidden min-w-[160px]">
+            <p className="text-[#e2e2e2] text-[15px] leading-tight font-medium truncate">{fullName}</p>
+            <p className="text-[#737373] text-[13px] truncate">{email}</p>
+          </div>
+        )}
+      </div>
+
       {/* Bottom section: Logout */}
-      <div className="border-t border-[#261010] p-4 mt-auto shrink-0 overflow-x-hidden">
+      <div className="border-t border-white/10 p-4 shrink-0 overflow-x-hidden">
         <button
           onClick={() => {
             if (onLogout) onLogout();

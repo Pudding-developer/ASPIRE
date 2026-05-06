@@ -42,11 +42,18 @@ export function useInstructorClasses() {
     if (cls) setArchived(prev => [...prev, { ...cls, is_archived: true }]);
   };
 
+  const restoreClass = async (id) => {
+    await instructorApi.restoreClass(id);
+    const cls = archivedClasses.find(c => c.id === id);
+    setArchived(prev => prev.filter(c => c.id !== id));
+    if (cls) setClasses(prev => [...prev, { ...cls, is_archived: false }]);
+  };
+
   const deleteClass = async (id) => {
     await instructorApi.deleteClass(id);
     setClasses(prev => prev.filter(c => c.id !== id));
     setArchived(prev => prev.filter(c => c.id !== id));
   };
 
-  return { classes, archivedClasses, stats, loading, error, createClass, archiveClass, deleteClass, refetch: fetchAll };
+  return { classes, archivedClasses, stats, loading, error, createClass, archiveClass, restoreClass, deleteClass, refetch: fetchAll };
 }

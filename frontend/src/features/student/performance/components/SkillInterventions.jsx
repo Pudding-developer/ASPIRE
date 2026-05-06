@@ -34,7 +34,7 @@ function InterventionCard({ intervention, defaultOpen = false }) {
     .join(' · ');
 
   return (
-    <div className="border border-[#f0dddd] rounded-2xl bg-white/75 overflow-hidden transition-shadow hover:shadow-[0_10px_24px_-18px_rgba(188,19,19,0.45)]">
+    <div className="border border-[#f0dddd] rounded-2xl bg-white/75 overflow-hidden transition-shadow hover:shadow-[0_10px_24px_-18px_rgba(0,0,0,0.25)]">
       <button
         type="button"
         onClick={() => setOpen(!open)}

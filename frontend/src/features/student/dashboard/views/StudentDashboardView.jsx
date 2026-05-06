@@ -10,20 +10,46 @@ import projectBg from '../../../../assets/project_card_bg.png';
 import useStudentData from '../hooks/useStudentData';
 import useGithubData from '../../github/hooks/useGithubData';
 import usePipeline from '../hooks/usePipeline';
+import useActivityFeed from '../hooks/useActivityFeed';
 import { StudentDashboardSkeleton } from '../../shared/StudentPageSkeletons';
 import { useState, useEffect } from 'react';
 import { studentService } from '../../../../services/studentService';
 import RoadmapViewer from '../../career-coach/components/RoadmapViewer';
+import AllActivitiesModal from '../components/AllActivitiesModal';
 
-const panelBase = 'bg-gradient-to-br from-white via-[#fffbfb] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)]';
+const ACTIVITY_VISUALS = {
+  grade_released: { icon: BookOpen, color: 'bg-emerald-100 text-emerald-600' },
+  career_updated: { icon: TrendingUp, color: 'bg-purple-100 text-purple-600' },
+  github_synced:  { icon: Github,    color: 'bg-blue-100 text-blue-600' },
+  skill_milestone:{ icon: Star,      color: 'bg-yellow-100 text-yellow-600' },
+};
+
+function formatActivityTime(iso) {
+  if (!iso) return '';
+  const then = new Date(iso);
+  if (isNaN(then.getTime())) return '';
+  const diffMs = Date.now() - then.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hours ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  return then.toLocaleDateString();
+}
+
+const panelBase = 'bg-gradient-to-br from-white via-[#fffbfb] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)]';
+const primaryBtn = 'bg-[#9f0707] hover:bg-[#430202] text-white py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10';
 const subtleBtn = 'border border-[#eed8d8] rounded-xl py-2 text-[13px] font-semibold text-[#6f4a4a] hover:bg-[#fff5f5] transition-colors';
 
 /* ─── Stat Card ─── */
 export function StatCard({ label, value, sub, trend, badge }) {
   const trendColor = trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-red-400' : 'text-gray-400';
-  const TrendIcon  = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
   return (
-    <div className={`${panelBase} p-5 hover:shadow-[0_16px_36px_-20px_rgba(188,19,19,0.5)] transition-shadow`}>
+    <div className={`${panelBase} p-5 hover:shadow-[0_16px_36px_-20px_rgba(0,0,0,0.25)] transition-shadow`}>
       <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">{label}</p>
       <div className="flex items-end justify-between">
         <div>
@@ -48,11 +74,11 @@ export function StatCard({ label, value, sub, trend, badge }) {
 /* ─── ILO Donut ─── */
 export function ILOCoverage({ coverage }) {
   const segments = [
-    { label: 'Technical Depth',     pct: coverage.techPct || 0, color: '#70170f' },
-    { label: 'Analytical Rigor',    pct: coverage.analyticalPct || 0, color: '#e97b7b' },
+    { label: 'Technical Depth', pct: coverage.techPct || 0, color: '#70170f' },
+    { label: 'Analytical Rigor', pct: coverage.analyticalPct || 0, color: '#e97b7b' },
     { label: 'Professional Ethics', pct: coverage.ethicsPct || 0, color: '#fcd5d5' },
   ];
-  
+
   const size = 120, stroke = 16, r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   let offset = 0;
@@ -67,7 +93,7 @@ export function ILOCoverage({ coverage }) {
             {segments.map((s, i) => {
               if (!s.pct) return null;
               const dash = (s.pct / 100) * circ;
-              const gap  = circ - dash;
+              const gap = circ - dash;
               const el = (
                 <circle
                   key={i}
@@ -107,32 +133,44 @@ export function ILOCoverage({ coverage }) {
 
 /* ─── Recent Activity ─── */
 export function RecentActivity() {
-  const items = [
-    { icon: BookOpen, color: 'bg-emerald-100 text-emerald-600', title: 'Calculus 2 Grade Released', sub: 'A Achieved · 2 hours ago' },
-    { icon: Star,     color: 'bg-yellow-100 text-yellow-600',   title: 'Skill Milestone Reached', sub: 'Advanced in Python · Yesterday' },
-  ];
+  const { items, loading } = useActivityFeed(3);
+  const [showAll, setShowAll] = useState(false);
+
   return (
-    <div className={`${panelBase} p-6 flex flex-col justify-between`}>
+    <div className={`${panelBase} p-6 flex flex-col justify-between min-h-[300px]`}>
       <div>
         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Recent Activity</p>
         <h3 className="text-[16px] font-bold text-gray-900 mb-5">System Feed</h3>
         <div className="space-y-4">
-          {items.map((it, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${it.color}`}>
-                <it.icon size={14} />
-              </div>
-              <div>
-                <p className="text-[13px] font-semibold text-gray-800 leading-snug">{it.title}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">{it.sub}</p>
-              </div>
-            </div>
-          ))}
+          {loading && items.length === 0 ? (
+            <p className="text-[12px] text-gray-400">Loading…</p>
+          ) : items.length === 0 ? (
+            <p className="text-[12px] text-gray-400">No recent activity yet.</p>
+          ) : (
+            items.map((it) => {
+              const visual = ACTIVITY_VISUALS[it.type] ?? { icon: Star, color: 'bg-gray-100 text-gray-500' };
+              const Icon = visual.icon;
+              const timeAgo = formatActivityTime(it.created_at);
+              const sub = it.subtitle ? `${it.subtitle} · ${timeAgo}` : timeAgo;
+              return (
+                <div key={it.id} className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${visual.color}`}>
+                    <Icon size={14} />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-gray-800 leading-snug">{it.title}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
-      <button className={`mt-5 w-full ${subtleBtn}`}>
+      <button onClick={() => setShowAll(true)} className={`mt-5 w-full ${primaryBtn}`}>
         View all activities
       </button>
+      {showAll && <AllActivitiesModal onClose={() => setShowAll(false)} />}
     </div>
   );
 }
@@ -203,7 +241,7 @@ export function ExcelledSkills({ topSkills }) {
           <span key={s} className="px-3 py-1.5 bg-gray-900 text-white text-[12px] font-medium rounded-full">{s}</span>
         ))}
       </div>
-      <button className={`w-full ${subtleBtn} mt-auto`}>
+      <button className={`w-full ${primaryBtn} mt-auto`}>
         View all achieved skills
       </button>
     </div>
@@ -251,26 +289,27 @@ export function TopProjects({ repos }) {
           const forkCount = repo.fork_count || repo.forks_count || 0;
 
           return (
-          <div key={repo.repo_full_name || repoName} className="bg-linear-to-br from-white via-[#fffafa] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl overflow-hidden shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)] hover:shadow-[0_16px_36px_-18px_rgba(188,19,19,0.55)] transition-shadow group flex flex-col">
-            <div className="relative h-32 overflow-hidden">
-              <img src={projectBg} alt={repoName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
-              <span className="absolute bottom-2 left-3 text-[10px] font-bold text-white/80 uppercase tracking-widest">
-                {repo.primary_language || 'CODE'}
-              </span>
-            </div>
-            <div className="p-4 flex-1 flex flex-col justify-between">
-              <div>
-                <h4 className="text-[14px] font-bold text-gray-900 mb-1 leading-snug truncate">{repoName}</h4>
-                <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-2">{repo.description || "No description provided."}</p>
+            <div key={repo.repo_full_name || repoName} className="bg-linear-to-br from-white via-[#fffafa] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl overflow-hidden shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)] hover:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.25)] transition-shadow group flex flex-col">
+              <div className="relative h-32 overflow-hidden">
+                <img src={projectBg} alt={repoName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
+                <span className="absolute bottom-2 left-3 text-[10px] font-bold text-white/80 uppercase tracking-widest">
+                  {repo.primary_language || 'CODE'}
+                </span>
               </div>
-              <div className="mt-3 flex gap-4 text-[11px] text-gray-400 font-semibold">
-                <span>⭐ {starCount}</span>
-                <span>📋 {forkCount} forks</span>
+              <div className="p-4 flex-1 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-[14px] font-bold text-gray-900 mb-1 leading-snug truncate">{repoName}</h4>
+                  <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-2">{repo.description || "No description provided."}</p>
+                </div>
+                <div className="mt-3 flex gap-4 text-[11px] text-gray-400 font-semibold">
+                  <span>⭐ {starCount}</span>
+                  <span>📋 {forkCount} forks</span>
+                </div>
               </div>
             </div>
-          </div>
-        );})}
+          );
+        })}
       </div>
     </div>
   );
@@ -285,7 +324,7 @@ export function GitHubCard({ githubStatus, onConnect }) {
         <p className="text-[12px] text-gray-500 mb-4">Connect GitHub to track projects.</p>
         <button 
           onClick={onConnect}
-          className={`w-full ${subtleBtn} flex items-center justify-center gap-2`}
+          className={`w-full ${primaryBtn} flex items-center justify-center gap-2`}
         >
            Connect <Github size={14} />
         </button>
@@ -326,7 +365,7 @@ export function JoinClassCard({ onNavigate }) {
       </p>
       <button 
         onClick={() => onNavigate('enrolled-classes')}
-        className="w-full bg-[#70170f] hover:bg-[#4a0e09] text-white py-2.5 rounded-xl text-[13px] font-bold transition-colors"
+        className="w-full bg-[#9f0707] hover:bg-[#4a0e09] text-white py-2.5 rounded-xl text-[13px] font-bold transition-colors mt-auto"
       >
         Join Class
       </button>
@@ -344,7 +383,7 @@ export function EnrolledClassesOverview({ classes, onNavigate }) {
   const hiddenCount = Math.max(0, classes.length - previewClasses.length);
 
   return (
-    <div className={`${panelBase} p-6`}>
+    <div className={`${panelBase} p-6 flex-1 flex flex-col`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[16px] font-bold text-gray-900">Enrolled Classes</h3>
         <span className="text-[11px] font-semibold text-gray-500">{classes.length} total</span>
@@ -369,7 +408,7 @@ export function EnrolledClassesOverview({ classes, onNavigate }) {
 
       <button
         onClick={() => onNavigate('enrolled-classes')}
-        className={`w-full ${subtleBtn} mt-4`}
+        className={`w-full ${primaryBtn} mt-auto`}
       >
         View all classes
       </button>
@@ -388,7 +427,7 @@ export function CareerChoiceCard({ report, chosenCareer }) {
     // ignore
   }
 
-  const targetCareer = chosenCareer 
+  const targetCareer = chosenCareer
     ? careerMatches.find(o => o.title === chosenCareer) || { title: chosenCareer, match_score: 0 }
     : careerMatches[0];
 
@@ -405,19 +444,19 @@ export function CareerChoiceCard({ report, chosenCareer }) {
   }
 
   const pct = Math.round(targetCareer.match_score || 0);
-  const description = targetCareer.reasoning 
-    ? targetCareer.reasoning.split('.')[0] + '.' 
+  const description = targetCareer.reasoning
+    ? targetCareer.reasoning.split('.')[0] + '.'
     : 'Run the AI analyzer to get detailed insights.';
-  const size = 64, stroke = 6, r = (size - stroke) / 2;
+  const size = 90, stroke = 8, r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
   const gap = circ - dash;
 
   return (
-    <div className={`${panelBase} p-6`}>
+    <div className={`${panelBase} p-6 flex flex-col h-full`}>
       <h3 className="text-[16px] font-bold text-gray-900 mb-5">{chosenCareer ? 'Your Career Goal' : 'Top Career Match'}</h3>
-      
-      <div className="flex items-center gap-4 mb-5">
+
+      <div className="flex items-center gap-6 mb-5 flex-1">
         <div className="relative shrink-0">
           <svg width={size} height={size} className="-rotate-90">
             <circle
@@ -436,17 +475,20 @@ export function CareerChoiceCard({ report, chosenCareer }) {
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[14px] font-extrabold text-gray-900">{pct}%</span>
+            <span className="text-[16px] font-extrabold text-gray-900">{pct}%</span>
           </div>
         </div>
-        
+
         <div className="flex-1 min-w-0">
-          <h4 className="text-[14px] font-bold text-gray-900 leading-tight">{targetCareer.title}</h4>
-          <p className="text-[11px] text-gray-500 mt-1 leading-relaxed line-clamp-2">{pct > 0 ? description : 'Not analyzed yet'}</p>
+          <h4 className="text-[15px] font-bold text-gray-900 leading-tight">{targetCareer.title}</h4>
+          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed line-clamp-3">{pct > 0 ? description : 'Not analyzed yet'}</p>
         </div>
       </div>
-      
-      <button onClick={() => setShowRoadmap(true)} className={`w-full ${subtleBtn}`}>
+
+      <button 
+        onClick={() => setShowRoadmap(true)} 
+        className="w-full bg-[#9f0707] hover:bg-[#430202] text-white py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10 mt-auto"
+      >
         View detailed roadmap
       </button>
 
@@ -473,15 +515,18 @@ export function CareerChoiceCard({ report, chosenCareer }) {
 }
 
 /* ─── CTA Banner ─── */
-export function CTABanner() {
+export function CTABanner({ onNavigate }) {
   return (
-    <div className="bg-linear-to-r from-[#2e0b0b] via-[#3d0f0f] to-[#541515] border border-[#6b2222]/40 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_20px_40px_-24px_rgba(188,19,19,0.75)]">
+    <div className="bg-linear-to-r from-[#2e0b0b] via-[#3d0f0f] to-[#541515] border border-[#6b2222]/40 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.4)]">
       <div>
         <h3 className="text-[18px] font-bold text-white mb-1">Ready for your next career milestone?</h3>
         <p className="text-[13px] text-gray-400">Our AI engine has prepared updated career paths based on your latest grades and GitHub activity.</p>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <button className="px-5 py-2.5 bg-[#70170f] hover:bg-[#4a0e09] text-white text-[13px] font-bold rounded-xl transition-colors flex items-center gap-2">
+        <button 
+          onClick={() => onNavigate('career-coach')}
+          className="px-5 py-2.5 bg-[#9f0707] hover:bg-[#430202] text-white text-[13px] font-bold rounded-xl transition-all duration-300 shadow-lg shadow-[#9f0707]/20 flex items-center gap-2"
+        >
           VIEW ROADMAP <ChevronRight size={14} />
         </button>
       </div>
@@ -499,7 +544,7 @@ export default function StudentDashboardView({ user, onNavigate }) {
   useEffect(() => {
     studentService.getChosenCareer()
       .then(data => { if (data?.chosen_career) setChosenCareer(data.chosen_career); })
-      .catch(() => {});
+      .catch(() => { });
 
     const handleCareerChosen = (e) => setChosenCareer(e.detail);
     window.addEventListener('aspire_career_chosen', handleCareerChosen);
@@ -511,22 +556,22 @@ export default function StudentDashboardView({ user, onNavigate }) {
   }
 
   const fullName = user?.full_name || 'Student';
-  
+
   // Aggregate stats from backend
   const masteryScore = iloCoverage.totalMastery || 0;
   const overallOutcome = predictions?.overall_outcome || 'N/A';
 
   return (
-    <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(188,19,19,0.35)]">
+    <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)]">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-5">
           {user?.avatar_url && (
-            <img 
-              src={user.avatar_url} 
-              alt={fullName} 
-              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#70170f]/10" 
-              referrerPolicy="no-referrer" 
+            <img
+              src={user.avatar_url}
+              alt={fullName}
+              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#70170f]/10"
+              referrerPolicy="no-referrer"
             />
           )}
           <div>
@@ -546,21 +591,21 @@ export default function StudentDashboardView({ user, onNavigate }) {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Overall Mastery"     value={`${masteryScore}%`}    trend="up"   />
-        <StatCard label="Computed Outcome"    value={overallOutcome}        sub="Model Aggregate" />
-        <StatCard label="Top Skill"           value={predictions?.top_skills?.[0] || 'N/A'} sub="Strongest predicted skillset" />
-        <StatCard label="Career Target"       value="ON TRACK"              badge="On Track" />
+        <StatCard label="Overall Mastery" value={`${masteryScore}%`} trend="up" />
+        <StatCard label="Computed Outcome" value={overallOutcome} sub="Model Aggregate" />
+        <StatCard label="Top Skill" value={predictions?.top_skills?.[0] || 'N/A'} sub="Strongest predicted skillset" />
+        <StatCard label="Career Target" value="ON TRACK" badge="On Track" />
       </div>
 
       {/* Body: Main Left Column & Sidebar Right Column */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Column (Main Content) */}
         <div className="lg:col-span-2 space-y-8">
-          {/* ILO + Activity row */}
+          {/* ILO + Career Goal row */}
           <div className="grid md:grid-cols-2 gap-6">
             <ILOCoverage coverage={iloCoverage} />
-            <RecentActivity />
+            <CareerChoiceCard report={report} chosenCareer={chosenCareer} />
           </div>
 
           {/* Skills row */}
@@ -574,16 +619,16 @@ export default function StudentDashboardView({ user, onNavigate }) {
         </div>
 
         {/* Right Column (Sidebar) */}
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6 h-full">
           <GitHubCard githubStatus={githubStatus} onConnect={connectGithub} />
+          <RecentActivity />
           <EnrolledClassesOverview classes={classes} onNavigate={onNavigate} />
-          <CareerChoiceCard report={report} chosenCareer={chosenCareer} />
         </div>
-        
+
       </div>
 
       {/* Full-width CTA */}
-      <CTABanner />
+      <CTABanner onNavigate={onNavigate} />
 
     </div>
   );

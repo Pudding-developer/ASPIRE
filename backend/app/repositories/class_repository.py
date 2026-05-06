@@ -1,5 +1,6 @@
 import random
 import string
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func
@@ -59,6 +60,19 @@ async def archive_class(session: AsyncSession, class_id: int) -> Class:
         raise ValueError(f"Class {class_id} not found")
     cls.is_archived = True
     cls.archived_at = datetime.utcnow()
+    session.add(cls)
+    await session.commit()
+    await session.refresh(cls)
+    return cls
+
+
+async def restore_class(session: AsyncSession, class_id: int) -> Class:
+    result = await session.execute(select(Class).where(Class.id == class_id))
+    cls = result.scalar_one_or_none()
+    if not cls:
+        raise ValueError(f"Class {class_id} not found")
+    cls.is_archived = False
+    cls.archived_at = None
     session.add(cls)
     await session.commit()
     await session.refresh(cls)

@@ -117,6 +117,44 @@ async def get_enrolled_classes(
     return {"data": data}
 
 
+# ── Archived Classes ─────────────────────────────────────────────────────────
+
+@router.get("/classes/archived")
+async def get_archived_classes(
+    current_user: User = Depends(get_current_student),
+    db: AsyncSession = Depends(get_session),
+):
+    """Return classes the student is enrolled in that have been archived by the instructor."""
+    from app.models.instructor import Instructor
+
+    result = await db.execute(
+        select(Class, ClassEnrollment, Instructor)
+        .join(ClassEnrollment, Class.id == ClassEnrollment.class_id)
+        .join(Instructor, Class.instructor_id == Instructor.id)
+        .where(ClassEnrollment.student_id == current_user.id)
+        .where(Class.is_archived == True)
+    )
+    rows = result.all()
+
+    data = []
+    for cls, enrollment, instructor in rows:
+        data.append({
+            "id": cls.id,
+            "subject_name": cls.subject_name,
+            "course_code": cls.course_code,
+            "year_level": cls.year_level,
+            "semester": cls.semester,
+            "section": cls.section,
+            "class_code": cls.class_code,
+            "enrolled_at": enrollment.enrolled_at.isoformat(),
+            "instructor_name": instructor.full_name,
+            "instructor_avatar": instructor.avatar_url,
+            "archived_at": cls.archived_at.isoformat() if cls.archived_at else None,
+        })
+
+    return {"data": data}
+
+
 # ── Join Class ───────────────────────────────────────────────────────────────
 
 class JoinClassBody(BaseModel):
@@ -441,3 +479,32 @@ async def get_chosen_career(
         ),
         "roadmap_url": ROADMAP_LINKS.get(user.chosen_career) if user and user.chosen_career else None,
     }
+
+
+# ── Activity Feed ────────────────────────────────────────────────────────────
+
+@router.get("/activity")
+async def get_activity_feed(
+    limit: int = 10,
+    unread_only: bool = False,
+    current_user: User = Depends(get_current_student),
+    db: AsyncSession = Depends(get_session),
+):
+    """Recent activity events for the authenticated student."""
+    from app.services import activity_service
+    limit = max(1, min(limit, 50))
+    items = await activity_service.list_for_user(
+        db, current_user.id, limit=limit, unread_only=unread_only
+    )
+    return {"data": items}
+
+
+@router.post("/activity/read-all")
+async def mark_activity_read(
+    current_user: User = Depends(get_current_student),
+    db: AsyncSession = Depends(get_session),
+):
+    """Mark all of the student's unread activity events as read."""
+    from app.services import activity_service
+    await activity_service.mark_all_read(db, current_user.id)
+    return {"ok": True}

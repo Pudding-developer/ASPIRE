@@ -12,6 +12,7 @@ from app.repositories import class_repository
 from app.schemas.class_schema import ClassCreate, ClassOut, DashboardStats, AssessmentBatchSubmit, AssessmentSummary, AssessmentBatchDetail
 from app.models.class_model import Assessment, AssessmentILO, ClassEnrollment, StudentScore
 from app.models.user import User
+from app.services import activity_service
 
 
 def _get_school_year() -> str:
@@ -66,6 +67,11 @@ async def archive_class(session: AsyncSession, instructor_id: int, class_id: int
     await class_repository.archive_class(session, class_id)
 
 
+async def restore_class(session: AsyncSession, instructor_id: int, class_id: int) -> None:
+    await _verify_ownership(session, instructor_id, class_id)
+    await class_repository.restore_class(session, class_id)
+
+
 async def delete_class(session: AsyncSession, instructor_id: int, class_id: int) -> None:
     await _verify_ownership(session, instructor_id, class_id)
     await class_repository.delete_class(session, class_id)
@@ -96,8 +102,8 @@ async def submit_assessment_scores(
     class_id: int,
     data: AssessmentBatchSubmit,
 ) -> None:
-    await _verify_ownership(session, instructor_id, class_id)
-    
+    cls = await _verify_ownership(session, instructor_id, class_id)
+
     # 1. Create Assessment
     assessment = Assessment(
         class_id=class_id,
@@ -120,6 +126,7 @@ async def submit_assessment_scores(
         ilo_records[ilo_number] = ilo.id
 
     # 3. Create StudentScores
+    scored_student_ids: set[int] = set()
     for student_id, scores in data.scores.items():
         for ilo_number, score_val in scores.items():
             if ilo_number in ilo_records:
@@ -130,7 +137,17 @@ async def submit_assessment_scores(
                     score=score_val,
                 )
                 session.add(student_score)
-                
+                scored_student_ids.add(student_id)
+
+    await activity_service.emit_grade_released(
+        session,
+        student_ids=list(scored_student_ids),
+        subject_name=cls.subject_name,
+        assessment_name=data.name,
+        class_id=class_id,
+        assessment_id=assessment.id,
+    )
+
     await session.commit()
 
 

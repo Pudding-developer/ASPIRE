@@ -7,15 +7,17 @@ import StudentPerformanceView from '../../features/student/performance/views/Stu
 import StudentGitHubView from '../../features/student/github/views/StudentGitHubView';
 import StudentCareerView from '../../features/student/career-coach/views/StudentCareerView';
 import StudentAIChatView from '../../features/student/ai-chat/views/StudentAIChatView';
+import StudentFAQView from '../../features/student/faq/views/StudentFAQView';
 import EnrolledClassesView from '../../features/student/classes/views/EnrolledClassesView';
 import useStudentData from '../../features/student/dashboard/hooks/useStudentData';
+import AIChatBubble from '../../features/student/ai-chat/components/AIChatBubble';
 
 /* ─── Page Root ─── */
 export default function StudentDashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('dashboard');
-  const { classes, loading: classesLoading, refetch } = useStudentData();
+  const { classes, archivedClasses, loading: classesLoading, refetch } = useStudentData();
 
   const handleLogout = () => { logout(); navigate('/'); };
 
@@ -35,7 +37,7 @@ export default function StudentDashboardPage() {
           <StudentGitHubView user={user} />
         </div>
         <div className={activeView === 'enrolled-classes' ? '' : 'hidden'}>
-          <EnrolledClassesView classes={classesLoading ? null : classes} onRefresh={refetch} />
+          <EnrolledClassesView classes={classesLoading ? null : classes} archivedClasses={classesLoading ? null : archivedClasses} onRefresh={refetch} />
         </div>
         <div className={activeView === 'career-coach' ? '' : 'hidden'}>
           <StudentCareerView user={user} />
@@ -43,7 +45,15 @@ export default function StudentDashboardPage() {
         <div className={activeView === 'ai-chat' ? 'h-full' : 'hidden'}>
           <StudentAIChatView user={user} />
         </div>
+        <div className={activeView === 'faq' ? '' : 'hidden'}>
+          <StudentFAQView />
+        </div>
       </main>
+
+      {/* Floating AI Chat Bubble — shown on all main views except the full AI Chat page */}
+      {['dashboard', 'enrolled-classes', 'my-performance', 'github-analytics', 'career-coach'].includes(activeView) && (
+        <AIChatBubble user={user} activeView={activeView} />
+      )}
     </div>
   );
 }

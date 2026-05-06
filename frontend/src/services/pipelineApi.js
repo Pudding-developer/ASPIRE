@@ -6,8 +6,10 @@ import { request } from './api';
 const BASE = '/api/pipeline';
 
 export const pipelineApi = {
-  /** Launch AI pipeline for a student — returns { job_id } */
-  run:           (studentId) => request('POST', `${BASE}/run/${studentId}`),
+  /** Launch AI pipeline for a student — returns { job_id }.
+   *  Pass { force: true } to bypass the input-hash cache. */
+  run: (studentId, { force = false } = {}) =>
+    request('POST', `${BASE}/run/${studentId}${force ? '?force=true' : ''}`),
 
   /** Poll pipeline job status (percentage, current_step, etc.) */
   getStatus:     (jobId)     => request('GET',  `${BASE}/status/${jobId}`),

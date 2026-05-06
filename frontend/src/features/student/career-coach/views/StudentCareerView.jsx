@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Zap, AlertCircle, Bot } from 'lucide-react';
+import { Layers, Zap, AlertCircle, Bot, CheckCircle2, Lightbulb, AlertTriangle, RefreshCw, Clock } from 'lucide-react';
 import useCareerCoach from '../hooks/useCareerCoach';
 
 import CareerEmptyState from '../components/CareerEmptyState';
@@ -42,6 +42,7 @@ export default function StudentCareerView({ user }) {
 
   const {
     pipelineData,
+    reportCreatedAt,
     loading,
     error,
     careerMatches,
@@ -118,7 +119,7 @@ export default function StudentCareerView({ user }) {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8">
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div>
@@ -139,7 +140,7 @@ export default function StudentCareerView({ user }) {
               <Layers size={14} className="text-[#70170f]" /> VIEW ALL PATHS
             </button>
             <button
-              onClick={runPipeline}
+              onClick={() => runPipeline({ force: true })}
               disabled={isRunning}
               className="px-5 py-2.5 bg-[#70170f] text-white rounded-xl text-[12px] font-bold hover:bg-[#4a0e09] transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
             >
@@ -316,41 +317,14 @@ export default function StudentCareerView({ user }) {
         )}
 
         {activeTab === 'Insights' && (
-          <div className="space-y-8">
-             <CareerSectionHeading title="AI CAREER INSIGHTS" />
-             <div className="bg-white border border-gray-100 rounded-xl divide-y divide-gray-50">
-               {insights.length > 0 ? (
-                 insights.map((ins, i) => (
-                   <div key={i} className="p-5 flex gap-4 items-start">
-                     {ins.type === 'pos' ? <CheckCircle2 className="text-emerald-500 mt-1" size={18} /> : <AlertCircle className="text-red-500 mt-1" size={18} />}
-                     <p className="text-[13px] text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: ins.text }} />
-                   </div>
-                 ))
-               ) : (
-                 <div className="p-10 flex flex-col items-center text-center gap-3">
-                   <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
-                     <Zap size={20} className="text-[#70170f]" />
-                   </div>
-                   <p className="text-[14px] font-bold text-gray-900">
-                     No insights yet for {activeTitle}
-                   </p>
-                   <p className="text-[12px] text-gray-500 max-w-md leading-relaxed">
-                     {selectedPath
-                       ? "Insights will appear here once the AI completes its analysis of this career path."
-                       : `${activeTitle} hasn't been analyzed yet. Run the AI analyzer to get a match score, skill breakdown, and personalized insights for this career.`}
-                   </p>
-                   <button
-                     onClick={runPipeline}
-                     disabled={isRunning}
-                     className="mt-2 px-5 py-2 bg-[#70170f] text-white rounded-lg text-[11px] font-bold hover:bg-[#4a0e09] transition-all flex items-center gap-2 disabled:opacity-50"
-                   >
-                     <Zap size={12} className={isRunning ? 'animate-pulse' : ''} />
-                     {isRunning ? 'ANALYZING...' : 'RUN AI ANALYZER'}
-                   </button>
-                 </div>
-               )}
-             </div>
-          </div>
+          <InsightsTab
+            insights={insights}
+            activeTitle={activeTitle}
+            selectedPath={selectedPath}
+            reportCreatedAt={reportCreatedAt}
+            runPipeline={runPipeline}
+            isRunning={isRunning}
+          />
         )}
 
 
@@ -382,6 +356,149 @@ export default function StudentCareerView({ user }) {
           <div className="flex items-center gap-2">
             {toast.type === 'error' && <AlertCircle size={16} />}
             <span className="leading-relaxed break-words max-w-sm">{toast.message}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Insights tab ───────────────────────────────────────────────── */
+
+const INSIGHT_TYPE_META = {
+  pos: {
+    label: 'Strengths',
+    icon: CheckCircle2,
+    iconColor: 'text-emerald-500',
+    accent: 'border-emerald-100 bg-emerald-50/50',
+    chipColor: 'bg-emerald-100 text-emerald-700',
+  },
+  tip: {
+    label: 'Focus areas',
+    icon: Lightbulb,
+    iconColor: 'text-amber-500',
+    accent: 'border-amber-100 bg-amber-50/50',
+    chipColor: 'bg-amber-100 text-amber-700',
+  },
+  warn: {
+    label: 'Watchouts',
+    icon: AlertTriangle,
+    iconColor: 'text-red-500',
+    accent: 'border-red-100 bg-red-50/50',
+    chipColor: 'bg-red-100 text-red-700',
+  },
+};
+
+function formatTimeAgo(iso) {
+  if (!iso) return null;
+  const then = new Date(iso);
+  if (isNaN(then.getTime())) return null;
+  const diffMs = Date.now() - then.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return then.toLocaleDateString();
+}
+
+function InsightItem({ insight, meta }) {
+  const Icon = meta.icon;
+  return (
+    <div className={`p-5 flex gap-4 items-start border rounded-xl ${meta.accent}`}>
+      <Icon className={`${meta.iconColor} mt-0.5 shrink-0`} size={18} />
+      <div className="flex-1 min-w-0">
+        {insight.badge && (
+          <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded mb-1.5 ${meta.chipColor}`}>
+            {insight.badge}
+          </span>
+        )}
+        <p
+          className="text-[13px] text-gray-700 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: insight.text }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function InsightsTab({ insights, activeTitle, selectedPath, reportCreatedAt, runPipeline, isRunning }) {
+  const grouped = ['pos', 'tip', 'warn'].map(type => ({
+    type,
+    meta: INSIGHT_TYPE_META[type],
+    items: insights.filter(i => i.type === type),
+  })).filter(g => g.items.length > 0);
+
+  const hasAny = insights.length > 0;
+  const timeAgo = formatTimeAgo(reportCreatedAt);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <CareerSectionHeading title="AI CAREER INSIGHTS" />
+        {hasAny && (
+          <div className="flex items-center gap-3">
+            {timeAgo && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+                <Clock size={12} /> Last analyzed {timeAgo}
+              </span>
+            )}
+            <button
+              onClick={runPipeline}
+              disabled={isRunning}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 text-gray-700 rounded-lg text-[11px] font-bold transition-colors"
+            >
+              <RefreshCw size={12} className={isRunning ? 'animate-spin' : ''} />
+              {isRunning ? 'ANALYZING...' : 'RE-ANALYZE'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {hasAny ? (
+        <div className="space-y-6">
+          {grouped.map(({ type, meta, items }) => (
+            <section key={type} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-[12px] font-bold uppercase tracking-wider text-gray-700">
+                  {meta.label}
+                </h3>
+                <span className="text-[11px] font-semibold text-gray-400">
+                  ({items.length})
+                </span>
+              </div>
+              <div className="space-y-2">
+                {items.map((ins, i) => (
+                  <InsightItem key={i} insight={ins} meta={meta} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-100 rounded-xl">
+          <div className="p-10 flex flex-col items-center text-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+              <Zap size={20} className="text-[#70170f]" />
+            </div>
+            <p className="text-[14px] font-bold text-gray-900">
+              No insights yet for {activeTitle}
+            </p>
+            <p className="text-[12px] text-gray-500 max-w-md leading-relaxed">
+              {selectedPath
+                ? "Insights will appear here once the AI completes its analysis of this career path."
+                : `${activeTitle} hasn't been analyzed yet. Run the AI analyzer to get a match score, skill breakdown, and personalized insights for this career.`}
+            </p>
+            <button
+              onClick={runPipeline}
+              disabled={isRunning}
+              className="mt-2 px-5 py-2 bg-[#70170f] text-white rounded-lg text-[11px] font-bold hover:bg-[#4a0e09] transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              <Zap size={12} className={isRunning ? 'animate-pulse' : ''} />
+              {isRunning ? 'ANALYZING...' : 'RUN AI ANALYZER'}
+            </button>
           </div>
         </div>
       )}

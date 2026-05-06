@@ -20,6 +20,7 @@ from app.models.github import GithubProfile, RepositoryCache, ContributionCache
 from app.models.pipeline_models import PipelineJob, CareerReport
 from app.ai.data.subject_skill_map import build_subject_skill_context
 from app.repositories.class_repository import get_enrolled_subjects
+from app.services import activity_service
 
 
 # ---------------------------------------------------------------------------
@@ -163,11 +164,78 @@ async def _update_job(
 
 
 # ---------------------------------------------------------------------------
+# Skill-milestone diff
+# ---------------------------------------------------------------------------
+
+MILESTONE_THRESHOLD = 80.0
+MILESTONE_MAX_PER_RUN = 3
+
+
+def _extract_skill_scores(report_payload: dict | None) -> dict[str, float]:
+    """Pull a {name -> final_score} map out of a report's unified_skills list.
+
+    Tolerant of both 'name' and 'skill' keys, and of skills represented as
+    bare strings (no score) which we ignore.
+    """
+    if not report_payload:
+        return {}
+    profile = report_payload.get("skill_profile") or {}
+    unified = profile.get("unified_skills") or []
+    out: dict[str, float] = {}
+    for s in unified:
+        if not isinstance(s, dict):
+            continue
+        name = s.get("name") or s.get("skill")
+        score = s.get("final_score")
+        if score is None:
+            score = s.get("score")
+        if not name or score is None:
+            continue
+        try:
+            val = float(score)
+        except (TypeError, ValueError):
+            continue
+        if val != val:  # NaN
+            continue
+        out[str(name).strip()] = val
+    return out
+
+
+def _level_for(score: float) -> str:
+    if score >= 90:
+        return "Expert"
+    return "Advanced"
+
+
+def _newly_crossed_milestones(
+    current: dict[str, float],
+    previous: dict[str, float],
+) -> list[tuple[str, float]]:
+    """Skills that crossed >=MILESTONE_THRESHOLD this run.
+
+    First-time runs (no previous data at all) emit nothing — skills were
+    already there, just newly-analysed. Skills present in both reports emit
+    only when the previous score was below the threshold.
+    """
+    if not previous:
+        return []
+    crossed: list[tuple[str, float]] = []
+    for name, score in current.items():
+        if score < MILESTONE_THRESHOLD:
+            continue
+        prev_score = previous.get(name)
+        if prev_score is not None and prev_score < MILESTONE_THRESHOLD:
+            crossed.append((name, score))
+    crossed.sort(key=lambda t: t[1], reverse=True)
+    return crossed[:MILESTONE_MAX_PER_RUN]
+
+
+# ---------------------------------------------------------------------------
 # Background pipeline task
 # ---------------------------------------------------------------------------
 
 async def run_pipeline_job(
-    job_id: str, student_id: int, session_factory
+    job_id: str, student_id: int, session_factory, force: bool = False
 ) -> None:
     """
     Background task — fetches data + previous report, runs the 7-agent CrewAI pipeline
@@ -219,8 +287,9 @@ async def run_pipeline_job(
             subject_context = build_subject_skill_context(enrolled_subjects)
 
             # ── Short-circuit: if inputs haven't changed since last report, reuse it ─
+            # Skipped when force=True so the user can manually re-run the AI crew.
             input_hash = _compute_input_hash(student_data, subject_context)
-            if previous_report and previous_report.report_json:
+            if not force and previous_report and previous_report.report_json:
                 try:
                     prev_payload = json.loads(previous_report.report_json)
                     if prev_payload.get("_input_hash") == input_hash:
@@ -302,6 +371,29 @@ async def run_pipeline_job(
                 progression_json=json.dumps(progress_data, default=str),
             )
             db.add(report)
+            await db.commit()
+
+            await activity_service.emit_career_updated(
+                db, student_id=student_id, career_name=chosen,
+            )
+
+            current_scores = _extract_skill_scores(pipeline_result)
+            previous_scores: dict[str, float] = {}
+            if previous_report and previous_report.report_json:
+                try:
+                    previous_scores = _extract_skill_scores(
+                        json.loads(previous_report.report_json)
+                    )
+                except (json.JSONDecodeError, TypeError):
+                    previous_scores = {}
+            for skill_name, score in _newly_crossed_milestones(current_scores, previous_scores):
+                await activity_service.emit_skill_milestone(
+                    db,
+                    student_id=student_id,
+                    skill_name=skill_name,
+                    level=_level_for(score),
+                )
+
             await db.commit()
 
             # ── Done ──────────────────────────────────────────────────────────

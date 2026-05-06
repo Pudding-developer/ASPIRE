@@ -41,13 +41,14 @@ export default function usePipeline(studentId) {
 
   useEffect(() => { fetchReports(); }, [fetchReports]);
 
-  // Start pipeline and poll for completion
-  const runPipeline = useCallback(async () => {
+  // Start pipeline and poll for completion. Pass { force: true } to bypass
+  // the cache when nothing has changed since the last run.
+  const runPipeline = useCallback(async ({ force = false } = {}) => {
     if (!studentId) return;
     try {
       setPipelineStatus({ status: 'starting', percentage: 0, current_step: 'Starting pipeline...' });
       setError(null);
-      const res = await pipelineApi.run(studentId);
+      const res = await pipelineApi.run(studentId, { force });
       const newJobId = res.data.job_id;
       setJobId(newJobId);
 

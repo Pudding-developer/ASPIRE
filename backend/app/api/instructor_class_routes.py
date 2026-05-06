@@ -50,6 +50,16 @@ async def archive_class(
     return {"data": {}, "message": "Class archived."}
 
 
+@router.patch("/api/instructor/classes/{class_id}/restore")
+async def restore_class(
+    class_id: int,
+    instructor: Instructor = Depends(get_current_instructor),
+    session: AsyncSession = Depends(get_session),
+):
+    await class_service.restore_class(session, instructor.id, class_id)
+    return {"data": {}, "message": "Class restored."}
+
+
 @router.delete("/api/instructor/classes/{class_id}", status_code=204)
 async def delete_class(
     class_id: int,

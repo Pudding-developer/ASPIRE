@@ -102,6 +102,7 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
         <button
           onClick={(e) => {
             e.stopPropagation();
+            onSelect(index);
             onSetAsGoal();
           }}
           disabled={careerLoading}

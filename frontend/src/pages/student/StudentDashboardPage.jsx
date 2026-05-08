@@ -27,27 +27,33 @@ export default function StudentDashboardPage() {
     <div className="h-screen flex bg-[#f8f9fb] font-sans overflow-hidden">
       <StudentSidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} user={user} />
       <main className="flex-1 overflow-y-auto bg-[#f8f9fb] h-full">
-        <div className={activeView === 'dashboard' ? '' : 'hidden'}>
+        {activeView === 'dashboard' && (
           <StudentDashboardView user={user} onNavigate={setActiveView} />
-        </div>
-        <div className={activeView === 'my-performance' ? '' : 'hidden'}>
+        )}
+        {activeView === 'my-performance' && (
           <StudentPerformanceView user={user} />
-        </div>
-        <div className={activeView === 'github-analytics' ? '' : 'hidden'}>
+        )}
+        {activeView === 'github-analytics' && (
           <StudentGitHubView user={user} />
-        </div>
-        <div className={activeView === 'enrolled-classes' ? '' : 'hidden'}>
-          <EnrolledClassesView classes={classesLoading ? null : classes} archivedClasses={classesLoading ? null : archivedClasses} onRefresh={refetch} />
-        </div>
-        <div className={activeView === 'career-coach' ? '' : 'hidden'}>
+        )}
+        {activeView === 'enrolled-classes' && (
+          <EnrolledClassesView
+            classes={classesLoading ? null : classes}
+            archivedClasses={classesLoading ? null : archivedClasses}
+            onRefresh={refetch}
+          />
+        )}
+        {activeView === 'career-coach' && (
           <StudentCareerView user={user} />
-        </div>
-        <div className={activeView === 'ai-chat' ? 'h-full' : 'hidden'}>
-          <StudentAIChatView user={user} />
-        </div>
-        <div className={activeView === 'faq' ? '' : 'hidden'}>
+        )}
+        {activeView === 'ai-chat' && (
+          <div className="h-full">
+            <StudentAIChatView user={user} />
+          </div>
+        )}
+        {activeView === 'faq' && (
           <StudentFAQView />
-        </div>
+        )}
       </main>
 
       {/* Floating AI Chat Bubble — shown on all main views except the full AI Chat page */}

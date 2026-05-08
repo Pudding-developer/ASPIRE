@@ -258,7 +258,7 @@ data visualization, statistical analysis, machine learning, Jupyter.
 BSCpE skillsets aligned: Data Science & AI/ML,
 Mathematics & Science Foundations, Programming & Software Development.
 ABET SOs: SO1, SO2, SO5.
-Roadmap: https://roadmap.sh/data-scientist
+Roadmap: https://roadmap.sh/ai-data-scientist
 Demonstrative GitHub projects: Jupyter notebook with EDA + ML model + visualization (Kaggle-style competition); time-series forecasting on real PH datasets (PSE stocks, weather); A/B test analysis report; recommendation system; SQL analytics dashboard.
 Learning order: Python → Statistics → SQL → Data Analysis →
 Machine Learning → Deep Learning → Model Deployment.

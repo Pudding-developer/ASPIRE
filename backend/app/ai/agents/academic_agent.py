@@ -52,20 +52,27 @@ def create_academic_analysis_task(agent: Agent) -> Task:
             "{subject_skill_context}\n\n"
 
             "═══════════════════════════════════════════════════════\n"
-            "STEP 1 — COMPUTE PER-SUBJECT AVERAGE\n"
+            "STEP 1 — AGGREGATE BY SUBJECT (via the assessments under it)\n"
             "═══════════════════════════════════════════════════════\n"
-            "Group the student's scores by source_subject (Assessment.name).\n"
-            "Within each subject:\n"
-            "  • Each row already provides percentage = (score / max_score) × 100.\n"
-            "  • Group by ilo_number. If a single ILO has multiple assessments,\n"
-            "    average those percentages first to get one ILO score per ILO number.\n"
-            "  • avg_score = mean of all ILO percentages for that subject, rounded\n"
-            "    to one decimal place.\n"
-            "  • ilo_scores = the per-ILO map (e.g., {\"ILO1\": 82, \"ILO2\": 75}),\n"
-            "    rounded to integer.\n\n"
-            "Skip subjects that have no scores at all.\n"
-            "Skip subjects whose name does NOT appear in the mapping above —\n"
-            "do not invent a mapping for unknown subjects.\n\n"
+            "Each academic_scores row carries: subject_name, course_code,\n"
+            "assessment_name, assessment_type, ilo_number, percentage.\n"
+            "Do NOT try to match `assessment_name` against the skill mapping —\n"
+            "assessment_name is the per-test label (e.g. \"Midterm\", \"Lab 3\").\n"
+            "The skill/SO mapping is keyed on `subject_name` (the curriculum\n"
+            "subject — e.g. \"Software Design\"). Each assessment lives under a\n"
+            "subject, and its ILO scores are the evidence for that subject.\n\n"
+            "For each subject_name found in the scores:\n"
+            "  • Collect every row whose subject_name matches.\n"
+            "  • Group those rows by ilo_number. If an ILO has multiple\n"
+            "    assessments contributing to it (e.g. Midterm-ILO1 and Final-ILO1),\n"
+            "    average their percentages → one score per ILO number.\n"
+            "  • ilo_scores = the per-ILO map (e.g. {\"ILO1\": 82, \"ILO2\": 75}),\n"
+            "    rounded to integer.\n"
+            "  • avg_score = mean of all per-ILO percentages, rounded to 1 decimal.\n\n"
+            "Substring matching against the mapping is fine — the lookup is\n"
+            "fuzzy (e.g. \"CpE 418 — Software Design\" matches \"Software Design\").\n"
+            "If a subject_name has no matching mapping entry, skip it. Skip\n"
+            "subjects with zero recorded scores.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
             "STEP 2 — CLASSIFY STATUS (strict thresholds)\n"
@@ -81,17 +88,17 @@ def create_academic_analysis_task(agent: Agent) -> Task:
             "STEP 3 — POPULATE FIELDS PER SUBJECT (verbatim from mapping)\n"
             "═══════════════════════════════════════════════════════\n"
             "  • skill: use the FIRST primary_skill from the mapping (most representative).\n"
-            "  • source_subject: the subject's name as it appears in scores.\n"
+            "  • source_subject: the matched subject_name (Class.subject_name).\n"
             "  • primary_skills: copy verbatim from the mapping.\n"
             "  • skillset_categories: copy verbatim from the mapping.\n"
+            "  • abet_sos: copy verbatim from the mapping's ABET Student Outcomes line.\n"
             "  • ilo_scores: from Step 1.\n"
             "  • avg_score: from Step 1.\n"
             "  • status: from Step 2.\n"
             "  • ml_predicted_score: copy from ML model output if present in context;\n"
             "    otherwise set to null.\n"
-            "  • career_relevance: derive ONLY by mapping the skillset_categories to\n"
-            "    careers the knowledge base associates with them. Do NOT invent careers.\n"
-            "    If you are unsure for a category, use an empty list.\n\n"
+            "  • career_relevance: copy verbatim from the mapping's Career relevance\n"
+            "    line. Do NOT invent careers.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
             "STEP 4 — OVERALL METRICS\n"
@@ -108,7 +115,11 @@ def create_academic_analysis_task(agent: Agent) -> Task:
             "    sorted by that subject's avg_score DESCENDING. Keep the top 5.\n"
             "    Dedupe — if two subjects share a skill, keep only the highest score.\n"
             "  • weak_academic_skills: same source list, sorted ASCENDING by avg_score.\n"
-            "    Keep the bottom 5. Dedupe the same way.\n\n"
+            "    Keep the bottom 5. Dedupe the same way.\n"
+            "  • so_performance: aggregate by ABET Student Outcome. For each SO that\n"
+            "    appears in any subject's abet_sos list, compute the mean of those\n"
+            "    subjects' avg_score values (weighted by ILO count). Output as\n"
+            "    {\"SO1\": 78.0, \"SO5\": 65.5, ...}, rounded to 1 decimal.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
             "STEP 5 — EMPTY DATA HANDLING\n"
@@ -120,6 +131,7 @@ def create_academic_analysis_task(agent: Agent) -> Task:
             '  "performance_tier": "No Data",\n'
             '  "top_academic_skills": [],\n'
             '  "weak_academic_skills": [],\n'
+            '  "so_performance": {},\n'
             '  "note": "No academic scores recorded yet."\n'
             "}\n\n"
 
@@ -131,6 +143,7 @@ def create_academic_analysis_task(agent: Agent) -> Task:
             '      "source_subject": "Data Structures and Algorithms",\n'
             '      "primary_skills": ["Algorithm Design", "Data Structures"],\n'
             '      "skillset_categories": ["Programming & Software Development"],\n'
+            '      "abet_sos": ["SO1", "SO5"],\n'
             '      "ilo_scores": {"ILO1": 82, "ILO2": 75},\n'
             '      "avg_score": 78.5,\n'
             '      "status": "ON TRACK",\n'
@@ -141,15 +154,18 @@ def create_academic_analysis_task(agent: Agent) -> Task:
             '  "overall_performance": 78.5,\n'
             '  "performance_tier": "Strong",\n'
             '  "top_academic_skills": ["Algorithm Design", "OOP"],\n'
-            '  "weak_academic_skills": ["Networking", "Embedded Systems"]\n'
+            '  "weak_academic_skills": ["Networking", "Embedded Systems"],\n'
+            '  "so_performance": {"SO1": 80.2, "SO5": 74.0}\n'
             "}"
         ),
         expected_output=(
             "A JSON object with keys: academic_skills (one entry per subject WITH "
-            "scores AND a known mapping), overall_performance (float, weighted by "
-            "ILO count), performance_tier (one of: Outstanding/Strong/Satisfactory/"
-            "Developing/At Risk/No Data), top_academic_skills (top 5 by avg_score "
-            "desc, deduped), weak_academic_skills (bottom 5 by avg_score asc, deduped). "
+            "scores AND a known mapping; each entry includes ilo_scores and abet_sos), "
+            "overall_performance (float, weighted by ILO count), performance_tier "
+            "(one of: Outstanding/Strong/Satisfactory/Developing/At Risk/No Data), "
+            "top_academic_skills (top 5 by avg_score desc, deduped), weak_academic_skills "
+            "(bottom 5 by avg_score asc, deduped), so_performance (per-SO weighted "
+            "average across subjects). "
             "Return ONLY the JSON."
         ),
         agent=agent,

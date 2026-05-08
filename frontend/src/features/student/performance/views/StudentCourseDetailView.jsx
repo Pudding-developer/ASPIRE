@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Target, Award, BarChart2, CheckCircle2, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Target, Award, BarChart2, CheckCircle2, ChevronRight, Info } from 'lucide-react';
 import { studentService } from '../../../../services/studentService';
-import SkillInterventions from '../components/SkillInterventions';
-
 /* ─── Shared UI Components ─── */
 const Skeleton = () => (
   <div className="p-10 space-y-8 bg-[#f8fafc] min-h-screen animate-pulse">
@@ -14,14 +12,99 @@ const Skeleton = () => (
 
 const panelBase = 'bg-white rounded-xl border border-gray-200 shadow-sm';
 
-export default function StudentCourseDetailView({ courseName, user, interventions, interventionsUpdatedAt, onBack }) {
-  const courseInterventions = (interventions || []).filter(i => i.subject_name === courseName);
+function classifyError(message) {
+  const m = String(message || '');
+  if (m.startsWith('Unknown course')) return 'unknown_course';
+  if (m.startsWith('Not enrolled in')) return 'not_enrolled';
+  if (m.startsWith('No scores recorded')) return 'no_scores';
+  return 'generic';
+}
+
+function CourseFallback({ courseName, kind, message, onBack }) {
+  const COPY = {
+    unknown_course: {
+      title: 'No skill analysis for this course',
+      body:
+        "This course isn't part of the Computer Engineering skill model — it's typically a general-education or non-technical subject. Your grades are still recorded by your instructor, but skill predictions and competency charts are only generated for CpE technical courses.",
+      hint: 'Open a technical course (e.g. Computer Programming, Logic Circuits, Data Structures) to see the full analytics view.',
+    },
+    not_enrolled: {
+      title: 'Not enrolled in this course',
+      body:
+        "You're not enrolled in any class teaching this course. The course exists in the system, but you haven't joined a section for it.",
+      hint: 'Ask your instructor for a class code, or browse Enrolled Classes to confirm your sections.',
+    },
+    no_scores: {
+      title: 'No scores recorded yet',
+      body:
+        "Your instructor hasn't posted any graded assessments for this course yet. Skill analytics will appear here once at least one ILO has been graded.",
+      hint: 'Check back after your next assessment is graded.',
+    },
+    generic: {
+      title: "Couldn't load this course",
+      body: message || 'An unexpected error occurred while loading the course details.',
+      hint: 'Try again in a moment, or pick a different course.',
+    },
+  }[kind];
+
+  return (
+    <div className="p-8 md:p-12 bg-[#f8fafc] min-h-screen font-sans text-gray-800">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors mb-10 text-[13px] font-semibold tracking-wide"
+      >
+        <ArrowLeft size={16} /> Return to Overview
+      </button>
+
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="px-2.5 py-0.5 bg-gray-100 text-gray-600 text-[11px] font-bold tracking-wider rounded uppercase">
+            Course Detail
+          </span>
+          <span className="text-gray-500 text-[13px] font-medium truncate">{courseName}</span>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto">
+        <div className={`${panelBase} p-10`}>
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-10 h-10 rounded-full bg-[#70170f]/10 flex items-center justify-center shrink-0">
+              <Info size={18} className="text-[#70170f]" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-[18px] font-bold text-gray-900 tracking-tight mb-2">{COPY.title}</h2>
+              <p className="text-[13px] text-gray-600 leading-relaxed">{COPY.body}</p>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-5 mt-5">
+            <p className="text-[12px] text-gray-500 leading-relaxed">{COPY.hint}</p>
+          </div>
+
+          <button
+            onClick={onBack}
+            className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-[#70170f] text-white rounded-lg text-[12px] font-bold hover:bg-[#4a0e09] transition-colors"
+          >
+            <ArrowLeft size={14} /> Back to Performance
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function StudentCourseDetailView({ courseName, user, onBack }) {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [errorKind, setErrorKind] = useState(null);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
+    setErrorKind(null);
+    setData(null);
     studentService.getCourseDashboard(courseName)
       .then(res => {
         setData(res.data);
@@ -29,13 +112,24 @@ export default function StudentCourseDetailView({ courseName, user, intervention
       })
       .catch(err => {
         console.error(err);
-        setError(err?.message || "Failed to load course details.");
+        const msg = err?.message || 'Failed to load course details.';
+        setError(msg);
+        setErrorKind(classifyError(msg));
         setLoading(false);
       });
   }, [courseName]);
 
   if (loading) return <Skeleton />;
-  if (error) return <div className="p-8 text-red-500">{error} <button onClick={onBack} className="ml-4 underline">Go Back</button></div>;
+  if (error) {
+    return (
+      <CourseFallback
+        courseName={courseName}
+        kind={errorKind}
+        message={error}
+        onBack={onBack}
+      />
+    );
+  }
   if (!data) return null;
 
   return (
@@ -103,13 +197,7 @@ export default function StudentCourseDetailView({ courseName, user, intervention
         </div>
       </div>
 
-      {/* Skill Interventions for this course */}
-      <div className={`${panelBase} p-8 mb-10 w-full`}>
-        <SkillInterventions
-          interventions={courseInterventions}
-          updatedAt={interventionsUpdatedAt}
-        />
-      </div>
+
 
       {/* Main Layout Grid */}
       <div className="flex flex-col xl:flex-row gap-8 w-full mb-10">

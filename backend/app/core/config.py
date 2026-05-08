@@ -11,11 +11,16 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 # JWT / Security
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 120
+
+# CORS Origins
+_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:5175")
+ALLOWED_ORIGINS = [o.strip() for o in _origins.split(",") if o.strip()]
 
 # Allowed institution email domain
 ALLOWED_EMAIL_DOMAIN = os.getenv("ALLOWED_EMAIL_DOMAIN", "")
@@ -42,7 +47,7 @@ _default_model = "gemini/gemini-2.5-flash" if USE_GEMINI_API_KEY else "vertex_ai
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", _default_model)
 
 VERTEX_AI_PROJECT = os.getenv("VERTEX_AI_PROJECT", "aspire-494019")
-VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1")
+VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "asia-southeast1")
 
 if USE_GEMINI_API_KEY:
     # LiteLLM and google-genai both read these.

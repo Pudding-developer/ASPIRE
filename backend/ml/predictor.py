@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, List
 
 import joblib
+from joblib import parallel_backend
 import numpy as np
 import pandas as pd
 
@@ -55,8 +56,13 @@ class SkillsPredictor:
 
     def _predict_skills(self, course: str, ilo1: float, ilo2: float,
                         ilo3: float, ilo4: float, semester: int = 4) -> Dict[str, float]:
-        X    = self._make_X(course, ilo1, ilo2, ilo3, ilo4, semester)
-        arr  = np.clip(self._pipeline.predict(X)[0], 0.0, 100.0)
+        X = self._make_X(course, ilo1, ilo2, ilo3, ilo4, semester)
+        # The trained pipeline was fit with n_jobs=-1, which causes joblib
+        # to spawn one subprocess per output skill at inference time. For
+        # single-row inference that overhead dwarfs the actual compute.
+        # Force threading so prediction stays in-process.
+        with parallel_backend("threading", n_jobs=1):
+            arr = np.clip(self._pipeline.predict(X)[0], 0.0, 100.0)
         return {s: float(v) for s, v in zip(self._skill_categories, arr)}
 
     def predict(self, course: str, ilo1: float, ilo2: float,

@@ -17,7 +17,7 @@ export const CAREER_TO_SLUG = {
   "Full Stack Developer": "full-stack",
   "DevOps Engineer": "devops",
   "Cybersecurity Analyst": "cyber-security",
-  "Data Scientist": "data-scientist",
+  "Data Scientist": "ai-data-scientist",
   "AI Engineer": "ai-engineer",
   "Machine Learning Engineer": "machine-learning",
   "Software Architect": "software-architect"

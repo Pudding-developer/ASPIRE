@@ -85,7 +85,7 @@ async def get_report(
         "job_id": report.job_id,
         "report": json.loads(report.report_json),
         "summary": report.summary,
-        "created_at": report.created_at.isoformat(),
+        "created_at": report.created_at.isoformat() + "Z",
     }}
 
 
@@ -107,7 +107,7 @@ async def get_all_reports(
             "job_id": r.job_id,
             "report": json.loads(r.report_json),
             "summary": r.summary,
-            "created_at": r.created_at.isoformat(),
+            "created_at": r.created_at.isoformat() + "Z",
         }
         for r in reports
     ]}

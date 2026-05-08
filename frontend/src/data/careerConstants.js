@@ -38,7 +38,7 @@ export const CAREER_OPTIONS = [
     title: 'Data Scientist',
     blurb: 'Turn raw data into models, insights, and decisions that move the business.',
     skills: ['Python', 'pandas', 'SQL', 'Statistics'],
-    roadmap: 'https://roadmap.sh/data-scientist',
+    roadmap: 'https://roadmap.sh/ai-data-scientist',
   },
   {
     title: 'AI Engineer',

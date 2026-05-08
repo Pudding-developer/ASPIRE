@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session, async_session_factory
+from app.core.config import FRONTEND_URL
 from app.api.deps import get_current_student
 from app.models.user import User
 from app.repositories import github_repository
@@ -39,21 +40,21 @@ async def github_callback(code: str, state: str, db: AsyncSession = Depends(get_
     from fastapi.responses import RedirectResponse
     import urllib.parse
     
-    FRONTEND_URL = "http://localhost:5173/student/github"
+    FE_GITHUB_URL = f"{FRONTEND_URL}/student/github"
     
     try:
         user_id = validate_and_pop_state(state)
         if user_id is None:
-            return RedirectResponse(url=f"{FRONTEND_URL}?error=invalid_state")
+            return RedirectResponse(url=f"{FE_GITHUB_URL}?error=invalid_state")
 
         access_token = await exchange_code_for_token(code)
         gh_user = await fetch_github_user(access_token)
         data, is_new = await connect_github_account(db, user_id, gh_user, access_token)
 
-        return RedirectResponse(url=f"{FRONTEND_URL}?connected=true")
+        return RedirectResponse(url=f"{FE_GITHUB_URL}?connected=true")
     except Exception as e:
         error_msg = urllib.parse.quote(str(e))
-        return RedirectResponse(url=f"{FRONTEND_URL}?error={error_msg}")
+        return RedirectResponse(url=f"{FE_GITHUB_URL}?error={error_msg}")
 
 
 @router.get("/status")

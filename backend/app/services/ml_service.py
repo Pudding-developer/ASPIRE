@@ -8,7 +8,7 @@ Provides two entry points:
 import json
 from pathlib import Path
 
-from ml.config import map_avg_to_outcome, get_course_ilo_count
+from ml.config import map_avg_to_outcome, get_course_ilo_count, COURSE_PROFILES
 from ml.predictor import SkillsPredictor
 
 # ── Paths ────────────────────────────────────────────────────────────────────
@@ -98,8 +98,32 @@ def predict_student_aggregate(scores_by_course: list[dict]) -> dict:
     all_ilo_avgs = []
 
     for entry in scores_by_course:
+        course = entry["course"]
+
+        # Non-CpE courses (PE, NSTP, etc.) aren't in the ML model's training
+        # set, so running predict() on them produces meaningless outputs.
+        # Emit a stub record showing the actual grade but no skill prediction.
+        if course not in COURSE_PROFILES:
+            raw_ilos = [entry.get(f"ilo{i + 1}", 0.0) for i in range(4)]
+            active = [v for v in raw_ilos if v > 0]
+            ilo_avg = round(sum(active) / len(active), 2) if active else 0.0
+            ilo_scores = {f"ilo{i + 1}": round(raw_ilos[i], 2)
+                          for i in range(4) if raw_ilos[i] > 0}
+            per_course.append({
+                "course": course,
+                "ilo_scores": ilo_scores,
+                "ilo_avg": ilo_avg,
+                "outcome_label": "Non-CpE Subject",
+                "predicted_skills": {},
+                "strongest_skill": None,
+                "weakest_skill": None,
+                "scenario_low": {},
+                "scenario_high": {},
+            })
+            continue  # skip skill aggregation for non-CpE courses
+
         result = predict_skills(
-            course=entry["course"],
+            course=course,
             ilo1=entry["ilo1"],
             ilo2=entry["ilo2"],
             ilo3=entry["ilo3"],

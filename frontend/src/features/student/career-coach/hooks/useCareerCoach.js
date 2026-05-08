@@ -236,8 +236,16 @@ export default function useCareerCoach(userId) {
 
   const optimalIndex = useMemo(() => {
     if (!careerMatches.length) return 0;
-    return careerMatches.reduce((best, m, i) => m.match_score > careerMatches[best].match_score ? i : best, 0);
-  }, [careerMatches]);
+    let best = -1;
+    for (let i = 0; i < careerMatches.length; i++) {
+      if (!visibleCareerTitles.has(careerMatches[i].title)) continue;
+      if (best === -1 || careerMatches[i].match_score > careerMatches[best].match_score) {
+        best = i;
+      }
+    }
+    if (best !== -1) return best;
+    return careerMatches.reduce((b, m, i) => m.match_score > careerMatches[b].match_score ? i : b, 0);
+  }, [careerMatches, visibleCareerTitles]);
 
   /* Resolve the active title — falls back according to user's "unpinning" logic:
      1. If a manual selection exists AND it is still pinned, use it.

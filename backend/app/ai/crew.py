@@ -9,11 +9,12 @@ Pipeline order:
   5. Gap Analyst          — finds learning resources for each skill gap
   6. Report Generator     — produces the final CareerReport JSON
 """
+import time
 import json
 
 from crewai import Crew, Process
+from litellm.exceptions import RateLimitError as LiteLLMRateLimitError
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-from google.genai import errors as genai_errors
 
 from app.ai.tools.student_data_tool import StudentDataTool
 from app.ai.tools.rag_career_tool import RAGCareerTool
@@ -28,13 +29,31 @@ from app.ai.agents.report_agent import create_report_generator, create_report_ge
 from app.ai.agents.progress_tracker_agent import create_progress_tracker, create_progress_tracking_task
 
 
-def _run_with_retry(crew: Crew, inputs: dict):
+def _run_with_retry(crew: Crew, inputs: dict, max_attempts: int = 5):
     """
-    Executes crew kickoff.
-    Note: Rate limit retries are handled natively by liteLLM (max_retries=5) per individual API call.
-    Restarting the entire CrewAI pipeline on a rate limit exception exhausts quota faster.
+    Executes crew kickoff with exponential-backoff retry on 429 rate-limit errors.
+
+    Vertex AI free-tier quotas are per-minute. If the pipeline is long enough
+    to exhaust the RPM budget, we wait for the window to reset (60–120 s) and
+    retry the entire crew from the beginning rather than crashing the job.
     """
-    return crew.kickoff(inputs=inputs)
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return crew.kickoff(inputs=inputs)
+        except Exception as e:
+            err_str = str(e)
+            is_rate_limit = (
+                "RESOURCE_EXHAUSTED" in err_str
+                or "RateLimitError" in err_str
+                or "429" in err_str
+            )
+            if is_rate_limit and attempt < max_attempts:
+                wait_secs = 65 * attempt  # 65 s → 130 s → give up
+                print(f"\n[crew] Rate-limit hit on attempt {attempt}/{max_attempts}. "
+                      f"Waiting {wait_secs}s before retry...\n")
+                time.sleep(wait_secs)
+                continue
+            raise  # re-raise on non-rate-limit errors or final attempt
 
 
 def build_and_run_crew(
@@ -108,7 +127,7 @@ def build_and_run_crew(
         ],
         process=Process.sequential,
         verbose=True,
-        max_rpm=5,
+        max_rpm=3,  # conservative — 7 agents × multiple tool calls can blow the free-tier quota
     )
 
     try:
@@ -152,7 +171,12 @@ def build_and_run_crew(
 def _parse_combined_output(report_raw: str, progress_raw: str) -> dict:
     """
     Parses and merges outputs from the Report Generator and Progress Tracker.
+
+    Also overrides the LLM-computed match_scores with deterministic Python
+    scores so the same student profile always produces the same numbers.
     """
+    from app.ai.scoring import recompute_career_matches
+
     # Define required keys for validation
     report_keys = [
         "career_matches", "recommendations", "summary",
@@ -164,11 +188,30 @@ def _parse_combined_output(report_raw: str, progress_raw: str) -> dict:
     report_dict = _parse_json_snippet(report_raw, required_keys=report_keys)
     progress_dict = _parse_json_snippet(progress_raw, required_keys=progress_keys)
 
+    # Deterministic re-scoring: use the matched/gap skill lists the LLM
+    # produced (its judgment is fine), but compute the match_score in Python.
+    # This eliminates the ±15-50pt variance from LLM arithmetic + alias
+    # resolution on identical inputs.
+    skill_profile = report_dict.get("skill_profile", {}) or {}
+    unified_skills = skill_profile.get("unified_skills", []) or []
+    rescored = recompute_career_matches(
+        report_dict.get("career_matches", []) or [],
+        unified_skills,
+    )
+
+    # Sync the progress block to the new top score so it's consistent.
+    if rescored:
+        progress_dict["career_readiness_score"] = rescored[0].get("match_score", 0)
+        prev = progress_dict.get("previous_readiness_score", 0) or 0
+        progress_dict["readiness_change"] = (
+            progress_dict["career_readiness_score"] - prev if prev else 0
+        )
+
     return {
-        "career_matches":  report_dict.get("career_matches", []),
+        "career_matches":  rescored,
         "recommendations": report_dict.get("recommendations", []),
         "summary":         report_dict.get("summary", ""),
-        "skill_profile":   report_dict.get("skill_profile", {}),
+        "skill_profile":   skill_profile,
         "gap_analysis":    report_dict.get("gap_analysis", []),
         "progress":        progress_dict,
     }

@@ -13,9 +13,7 @@ export const studentService = {
   getChosenCareer: ()           => request('GET',   '/api/student/career'),
   setChosenCareer: (career)     => request('PATCH', '/api/student/career', { career }),
 
-  // Skill interventions (independent of the 7-agent pipeline)
-  getInterventions: (studentId) => request('GET',  `/api/student/interventions/${studentId}`),
-  runInterventions: (studentId) => request('POST', `/api/student/interventions/${studentId}`),
+
 
   // Activity feed
   getActivityFeed: (limit = 10, unreadOnly = false) =>

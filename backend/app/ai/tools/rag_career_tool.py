@@ -71,7 +71,7 @@ class RAGCareerTool(BaseTool):
                 ORDER BY embedding <=> CAST(:vec AS vector)
                 LIMIT :k
             """)
-            params = {"vec": str(query_vec), "k": min(top_k, 10)}
+            params = {"vec": str(query_vec), "k": min(top_k, 30)}
         else:
             sql = text("""
                 SELECT title, category, content,
@@ -81,7 +81,7 @@ class RAGCareerTool(BaseTool):
                 ORDER BY embedding <=> CAST(:vec AS vector)
                 LIMIT :k
             """)
-            params = {"vec": str(query_vec), "k": min(top_k, 10), "cat": category}
+            params = {"vec": str(query_vec), "k": min(top_k, 30), "cat": category}
 
         try:
             with _sync_engine.connect() as conn:

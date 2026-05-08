@@ -5,12 +5,24 @@ Provides profile data, academic scores, enrolled classes, ML skill predictions,
 and career goal selection (PATCH/GET /career).
 """
 import asyncio
+import json
 from datetime import datetime
+from hashlib import sha256
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+
+# In-memory ML inference caches. Process-local; cleared on backend restart.
+# Keyed on (user_id, hash-of-inputs) so they self-invalidate when grades change.
+_predictions_cache: dict[str, dict] = {}
+_dashboard_cache: dict[str, dict] = {}
+
+
+def _hash_inputs(*parts) -> str:
+    payload = json.dumps(parts, sort_keys=True, default=str)
+    return sha256(payload.encode()).hexdigest()[:16]
 
 from app.core.database import get_session
 from app.api.deps import get_current_student
@@ -42,7 +54,7 @@ ROADMAP_LINKS = {
     "Backend Developer":    "https://roadmap.sh/backend",
     "Frontend Developer":   "https://roadmap.sh/frontend",
     "DevOps Engineer":      "https://roadmap.sh/devops",
-    "Data Scientist":       "https://roadmap.sh/data-scientist",
+    "Data Scientist":       "https://roadmap.sh/ai-data-scientist",
     "AI Engineer":          "https://roadmap.sh/ai-engineer",
     "Cybersecurity":        "https://roadmap.sh/cyber-security",
     "Machine Learning":     "https://roadmap.sh/machine-learning",
@@ -75,8 +87,9 @@ async def get_enrolled_classes(
     db: AsyncSession = Depends(get_session),
 ):
     """Return all classes the student is enrolled in, with instructor and classmates."""
+    from collections import defaultdict
     from app.models.instructor import Instructor
-    
+
     result = await db.execute(
         select(Class, ClassEnrollment, Instructor)
         .join(ClassEnrollment, Class.id == ClassEnrollment.class_id)
@@ -86,20 +99,19 @@ async def get_enrolled_classes(
     )
     rows = result.all()
 
+    class_ids = [cls.id for cls, _, _ in rows]
+    classmates_by_class: dict[int, list[dict]] = defaultdict(list)
+    if class_ids:
+        classmates_result = await db.execute(
+            select(ClassEnrollment.class_id, User.full_name, User.avatar_url)
+            .join(User, User.id == ClassEnrollment.student_id)
+            .where(ClassEnrollment.class_id.in_(class_ids))
+        )
+        for class_id, name, avatar in classmates_result.all():
+            classmates_by_class[class_id].append({"name": name, "avatar": avatar})
+
     data = []
     for cls, enrollment, instructor in rows:
-        from sqlalchemy.orm import aliased
-        EnrollmentAlias = aliased(ClassEnrollment)
-        classmates_result = await db.execute(
-            select(User.full_name, User.avatar_url)
-            .join(EnrollmentAlias, User.id == EnrollmentAlias.student_id)
-            .where(EnrollmentAlias.class_id == cls.id)
-        )
-        classmates = [
-            {"name": row.full_name, "avatar": row.avatar_url}
-            for row in classmates_result.all()
-        ]
-
         data.append({
             "id": cls.id,
             "subject_name": cls.subject_name,
@@ -108,10 +120,10 @@ async def get_enrolled_classes(
             "semester": cls.semester,
             "section": cls.section,
             "class_code": cls.class_code,
-            "enrolled_at": enrollment.enrolled_at.isoformat(),
+            "enrolled_at": enrollment.enrolled_at.isoformat() + "Z",
             "instructor_name": instructor.full_name,
             "instructor_avatar": instructor.avatar_url,
-            "classmates": classmates
+            "classmates": classmates_by_class.get(cls.id, []),
         })
 
     return {"data": data}
@@ -146,10 +158,10 @@ async def get_archived_classes(
             "semester": cls.semester,
             "section": cls.section,
             "class_code": cls.class_code,
-            "enrolled_at": enrollment.enrolled_at.isoformat(),
+            "enrolled_at": enrollment.enrolled_at.isoformat() + "Z",
             "instructor_name": instructor.full_name,
             "instructor_avatar": instructor.avatar_url,
-            "archived_at": cls.archived_at.isoformat() if cls.archived_at else None,
+            "archived_at": (cls.archived_at.isoformat() + "Z") if cls.archived_at else None,
         })
 
     return {"data": data}
@@ -194,8 +206,8 @@ async def join_class(
         "course_code": cls.course_code,
         "section": cls.section,
         "class_code": cls.class_code,
-        "enrolled_at": enrollment.enrolled_at.isoformat(),
-    }}
+        "enrolled_at": enrollment.enrolled_at.isoformat() + "Z",
+      }}
 
 
 # ── Academic Scores ──────────────────────────────────────────────────────────
@@ -229,7 +241,7 @@ async def get_student_scores(
             "max_score": ilo.max_score,
             "score": score.score,
             "percentage": pct,
-            "submitted_at": score.submitted_at.isoformat(),
+            "submitted_at": score.submitted_at.isoformat() + "Z",
         })
 
     return {"data": scores}
@@ -305,6 +317,12 @@ async def get_course_dashboard(
     )
     semester = semester_row.scalar_one_or_none()
 
+    # Cache lookup: same student + course + ILO totals → same report.
+    cache_key = f"{current_user.id}:{course}:{_hash_inputs(ilo_raw, ilo_totals, semester)}"
+    cached = _dashboard_cache.get(cache_key)
+    if cached is not None:
+        return {"data": cached}
+
     try:
         report = await asyncio.to_thread(
             build_course_report,
@@ -317,6 +335,7 @@ async def get_course_dashboard(
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Failed to build report") from exc
 
+    _dashboard_cache[cache_key] = report
     return {"data": report}
 
 
@@ -361,62 +380,19 @@ async def get_skill_predictions(
             entry[f"ilo{ilo_num}"] = round(sum(values) / len(values), 2) if values else 0.0
         scores_by_course.append(entry)
 
+    # Cache lookup: deterministic inputs → deterministic outputs.
+    cache_key = f"{current_user.id}:{_hash_inputs(scores_by_course)}"
+    cached = _predictions_cache.get(cache_key)
+    if cached is not None:
+        return {"data": cached}
+
     # Run ML model in a thread (joblib/numpy are CPU-bound)
     from app.services.ml_service import predict_student_aggregate
     predictions = await asyncio.to_thread(predict_student_aggregate, scores_by_course)
+    _predictions_cache[cache_key] = predictions
 
     return {"data": predictions}
 
-
-# ── Skill Interventions (standalone, RAG + Gemini) ────────────────────────────
-
-@router.get("/interventions/{student_id}")
-async def get_skill_interventions(
-    student_id: int,
-    current_user: User = Depends(get_current_student),
-    db: AsyncSession = Depends(get_session),
-):
-    """
-    Return the student's most recently saved skill interventions.
-    Returns 404 if generation has never run (typical before the first score).
-    """
-    if current_user.id != student_id:
-        raise HTTPException(status_code=403, detail="You can only view your own interventions.")
-
-    from app.services import interventions_service
-    saved = await interventions_service.get_for_student(db, student_id)
-    if saved is None:
-        raise HTTPException(
-            status_code=404,
-            detail="No interventions yet. They will be generated automatically once your instructor submits scores.",
-        )
-    return {"data": saved}
-
-
-@router.post("/interventions/{student_id}")
-async def run_skill_interventions(
-    student_id: int,
-    current_user: User = Depends(get_current_student),
-    db: AsyncSession = Depends(get_session),
-):
-    """
-    Synchronously generate fresh interventions and return them. Independent of
-    the 7-agent CrewAI pipeline — single Gemini call with curriculum RAG context.
-    """
-    if current_user.id != student_id:
-        raise HTTPException(status_code=403, detail="You can only generate interventions for your own account.")
-
-    from app.services import interventions_service
-    try:
-        result = await interventions_service.generate_for_student(db, student_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate interventions: {exc}",
-        )
-    return {"data": result}
 
 
 # ── Career goal selection ─────────────────────────────────────────────────────
@@ -454,7 +430,7 @@ async def set_chosen_career(
 
     return {
         "chosen_career": user.chosen_career,
-        "career_chosen_at": user.career_chosen_at.isoformat() if user.career_chosen_at else None,
+        "career_chosen_at": (user.career_chosen_at.isoformat() + "Z") if user.career_chosen_at else None,
         "roadmap_url": ROADMAP_LINKS.get(user.chosen_career),
     }
 
@@ -474,7 +450,7 @@ async def get_chosen_career(
     return {
         "chosen_career": user.chosen_career if user else None,
         "career_chosen_at": (
-            user.career_chosen_at.isoformat()
+            user.career_chosen_at.isoformat() + "Z"
             if user and user.career_chosen_at else None
         ),
         "roadmap_url": ROADMAP_LINKS.get(user.chosen_career) if user and user.chosen_career else None,

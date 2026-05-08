@@ -11,7 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories import admin_repository, token_repository, instructor_repository
 from app.services.email_service import send_instructor_invite
 
-FRONTEND_BASE_URL = "http://localhost:5173"
+from app.core.config import FRONTEND_URL
+
+FRONTEND_BASE_URL = FRONTEND_URL
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +86,7 @@ async def list_tokens(db: AsyncSession) -> list[dict]:
             "used_by_email": t.used_by_email,
             "used_at": t.used_at.isoformat() if t.used_at else None,
             "expires_at": t.expires_at.isoformat(),
-            "created_at": t.created_at.isoformat(),
+            "created_at": t.created_at.isoformat() + "Z",
         }
         for t in tokens
     ]
@@ -116,7 +118,7 @@ async def list_instructors(db: AsyncSession) -> list[dict]:
             "full_name": i.full_name,
             "avatar_url": i.avatar_url,
             "is_active": i.is_active,
-            "created_at": i.created_at.isoformat(),
+            "created_at": i.created_at.isoformat() + "Z",
         }
         for i in instructors
     ]

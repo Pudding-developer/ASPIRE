@@ -1,7 +1,7 @@
 /**
  * api.js — Shared fetch helper with JWT auth for all API calls.
  */
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const TOKEN_KEY = 'aspire_token';
 
 function getToken() {
@@ -27,6 +27,11 @@ async function request(method, path, body, options = {}) {
     ...(body ? { body: JSON.stringify(body) } : {}),
     ...(options.signal ? { signal: options.signal } : {}),
   });
+
+  const refreshed = res.headers.get('X-Refresh-Token');
+  if (refreshed) {
+    localStorage.setItem(TOKEN_KEY, refreshed);
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

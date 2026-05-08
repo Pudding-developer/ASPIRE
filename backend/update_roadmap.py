@@ -164,7 +164,7 @@ ROADMAP_NODES = {
         {"id": "ceh", "label": "CEH", "group": "Certifications", "order": 24},
         {"id": "cissps", "label": "CISSP", "group": "Certifications", "order": 25},
     ],
-    "data-scientist": [
+    "ai-data-scientist": [
         {"id": "python", "label": "Python / R", "group": "Programming", "order": 1},
         {"id": "sql", "label": "SQL", "group": "Programming", "order": 2},
         {"id": "linear-algebra", "label": "Linear Algebra", "group": "Math & Stats", "order": 3},

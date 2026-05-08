@@ -2,6 +2,7 @@
 chat_routes.py — Career-coach chatbot backed by Gemini with persistent sessions.
 """
 import json
+import asyncio
 from collections import defaultdict
 from typing import Literal, Optional
 from datetime import datetime, timezone, timedelta
@@ -33,7 +34,6 @@ from app.models.chat import ChatSession, ChatMessage
 from app.models.pipeline_models import CareerReport
 from app.models.class_model import Class, Assessment, AssessmentILO, StudentScore
 from app.models.github import GithubProfile, RepositoryCache, ContributionCache
-from app.models.student_interventions import StudentInterventions
 
 # Sync engine for pgvector retrieval (same pattern as RagCareerTool)
 _sync_kb_url = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
@@ -86,9 +86,9 @@ class SessionListItem(BaseModel):
 
 _BASE_SYSTEM = (
     "You are ASPIRE's AI career coach for {name}, a BSU Computer Engineering student. "
-    "Be concise (2-4 short paragraphs max), encouraging, and specific. The student's "
-    "FULL profile is included below — academic ILO scores, GitHub activity, career "
-    "matches, and active skill interventions. NEVER ask the student for their skill "
+    "Be encouraging and specific. The student's "
+    "FULL profile is included below — academic ILO scores, GitHub activity, and "
+    "career matches. NEVER ask the student for their skill "
     "breakdown, scores, or repos — you already have all of it. Cite exact skill names, "
     "percentages, course codes, and career titles when you answer. Never invent data "
     "that isn't present.\n\n"
@@ -227,34 +227,7 @@ async def _format_github(student_id: int, db: AsyncSession) -> list[str]:
     return out
 
 
-async def _format_interventions(student_id: int, db: AsyncSession) -> list[str]:
-    result = await db.execute(
-        select(StudentInterventions).where(StudentInterventions.student_id == student_id)
-    )
-    row = result.scalar_one_or_none()
-    if not row:
-        return []
-    try:
-        items = json.loads(row.interventions_json) or []
-    except (ValueError, TypeError):
-        return []
-    if not items:
-        return []
 
-    at_risk = [i for i in items if i.get("severity") == "at_risk"]
-    needs = [i for i in items if i.get("severity") == "needs_improvement"]
-    prep = [i for i in items if i.get("severity") == "preparatory"]
-    out = [
-        f"\n## Active Skill Interventions"
-        f" ({len(at_risk)} at risk, {len(needs)} developing, {len(prep)} preparatory)"
-    ]
-    for iv in (at_risk + needs)[:6]:
-        statement = (iv.get("ilo_statement") or "")[:160]
-        out.append(
-            f"- {iv.get('subject_code', '?')} ILO {iv.get('ilo_number', '?')}: "
-            f"{iv.get('current_score', '?')}% — {statement}"
-        )
-    return out
 
 
 def _query_knowledge_base(user_message: str, top_k: int = 6) -> list[dict]:
@@ -387,7 +360,6 @@ async def _build_full_system_prompt(
 
     lines.extend(await _format_ilo_performance(student.id, db))
     lines.extend(await _format_github(student.id, db))
-    lines.extend(await _format_interventions(student.id, db))
 
     # Per-turn RAG: pull curriculum/skillset/roadmap chunks relevant to THIS question
     if user_message:
@@ -445,7 +417,7 @@ async def list_sessions(
             {
                 "session_id": s.id,
                 "label": s.label,
-                "created_at": s.created_at.isoformat(),
+                "created_at": s.created_at.isoformat() + "Z",
                 "message_count": 0  # Simplified for now
             }
             for s in sessions
@@ -524,18 +496,28 @@ async def send_career_message(
             current_user, db, body.context, user_message=body.message
         )
 
-        try:
-            response = _client.models.generate_content(
-                model=_MODEL_ID,
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_prompt,
-                    temperature=0.7,
-                    max_output_tokens=600,
-                ),
-            )
-        except genai_errors.APIError as e:
-            raise HTTPException(status_code=502, detail=f"AI service error: {e}") from e
+        import time
+        max_chat_attempts = 3
+        for chat_attempt in range(1, max_chat_attempts + 1):
+            try:
+                response = _client.models.generate_content(
+                    model=_MODEL_ID,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_prompt,
+                        temperature=0.7,
+                    ),
+                )
+                break # Success
+            except genai_errors.APIError as e:
+                err_str = str(e)
+                is_rate_limit = "429" in err_str or "RESOURCE_EXHAUSTED" in err_str
+                if is_rate_limit and chat_attempt < max_chat_attempts:
+                    wait_secs = 2 * chat_attempt
+                    print(f"[chat] Rate-limit hit (attempt {chat_attempt}/{max_chat_attempts}). Waiting {wait_secs}s...")
+                    await asyncio.sleep(wait_secs)
+                    continue
+                raise HTTPException(status_code=502, detail=f"AI service error: {e}") from e
 
         reply = (response.text or "").strip()
         assistant_msg = ChatMessage(

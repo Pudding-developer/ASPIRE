@@ -7,7 +7,6 @@ import {
 
 import useStudentData from '../../dashboard/hooks/useStudentData';
 import useActivityFeed from '../../dashboard/hooks/useActivityFeed';
-import useInterventions from '../hooks/useInterventions';
 import { StudentPerformanceSkeleton } from '../../shared/StudentPageSkeletons';
 import StudentCourseDetailView from './StudentCourseDetailView';
 import { studentService } from '../../../../services/studentService';
@@ -777,7 +776,6 @@ export default function StudentPerformanceView({ user }) {
   }, []);
 
   const { classes, predictions, iloCoverage, loading } = useStudentData();
-  const { interventions: skillInterventions, updatedAt: interventionsUpdatedAt } = useInterventions(user?.id);
   const { items: notifications, refetch: refetchActivity } = useActivityFeed(10);
   const unreadCount = notifications.filter(n => n.unread).length;
 
@@ -797,8 +795,6 @@ export default function StudentPerformanceView({ user }) {
       <StudentCourseDetailView
         courseName={selectedCourse}
         user={user}
-        interventions={skillInterventions}
-        interventionsUpdatedAt={interventionsUpdatedAt}
         onBack={() => setSelectedCourse(null)}
       />
     );

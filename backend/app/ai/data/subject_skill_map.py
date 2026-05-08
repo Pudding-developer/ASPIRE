@@ -330,10 +330,12 @@ def build_subject_skill_context(enrolled_subjects: list[str]) -> str:
         if mapping:
             skills = ", ".join(mapping["primary_skills"])
             cats = ", ".join(mapping["skillset_categories"])
+            sos = ", ".join(mapping.get("abet_sos", []))
             lines.append(
                 f"Subject: {subject}\n"
                 f"  Primary skills: {skills}\n"
                 f"  BSCpE categories: {cats}\n"
+                f"  ABET Student Outcomes: {sos or 'unspecified'}\n"
                 f"  Career relevance: {', '.join(mapping['career_relevance'])}"
             )
         else:

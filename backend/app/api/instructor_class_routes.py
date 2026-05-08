@@ -10,7 +10,7 @@ from app.core.database import async_session_factory, get_session
 from app.api.deps import get_current_instructor
 from app.models.instructor import Instructor
 from app.schemas.class_schema import ClassCreate, ClassOut, DashboardStats, AssessmentBatchSubmit
-from app.services import class_service, interventions_service
+from app.services import class_service
 
 router = APIRouter()
 
@@ -96,12 +96,6 @@ async def submit_assessment(
     session: AsyncSession = Depends(get_session),
 ):
     await class_service.submit_assessment_scores(session, instructor.id, class_id, data)
-    for student_id in data.scores.keys():
-        background_tasks.add_task(
-            interventions_service.generate_in_background,
-            student_id,
-            async_session_factory,
-        )
     return {"data": {}, "message": "Scores submitted successfully."}
 
 
@@ -140,12 +134,6 @@ async def update_assessment(
     await class_service.update_assessment_scores(
         session, instructor.id, class_id, assessment_id, data
     )
-    for student_id in data.scores.keys():
-        background_tasks.add_task(
-            interventions_service.generate_in_background,
-            student_id,
-            async_session_factory,
-        )
     return {"data": {}, "message": "Assessment updated successfully."}
 
 

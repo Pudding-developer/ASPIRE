@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Layers, Zap, AlertCircle, Bot, CheckCircle2, Lightbulb, AlertTriangle, RefreshCw, Clock } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Layers, Zap, AlertCircle, Bot, CheckCircle2, Lightbulb, AlertTriangle, RefreshCw, Clock, ArrowRight } from 'lucide-react';
 import useCareerCoach from '../hooks/useCareerCoach';
 
 import CareerEmptyState from '../components/CareerEmptyState';
@@ -9,6 +9,8 @@ import CareerMatchDonut from '../components/CareerMatchDonut';
 import CareerAllPathsModal from '../components/CareerAllPathsModal';
 import CareerSectionHeading from '../components/CareerSectionHeading';
 import RoadmapViewer from '../components/RoadmapViewer';
+import AnalysisProgressionModal from '../components/AnalysisProgressionModal';
+import AnalysisProgressionCard from '../components/AnalysisProgressionCard';
 
 
 
@@ -30,7 +32,7 @@ function friendlyPipelineError(raw) {
     return 'Network error talking to the AI service. Check your connection and try again.';
   }
   if (s.includes('VertexAIException') || s.length > 200) {
-     return 'AI Pipeline execution failed. Please check backend logs or configuration.';
+    return 'AI Pipeline execution failed. Please check backend logs or configuration.';
   }
   return s;
 }
@@ -54,6 +56,7 @@ export default function StudentCareerView({ user }) {
     gaps,
     skills,
     insights,
+    recommendations,
     runPipeline,
     pipelineStatus,
     isRunning,
@@ -67,6 +70,8 @@ export default function StudentCareerView({ user }) {
   } = useCareerCoach(user.id);
 
   const [toast, setToast] = useState(null);
+  const [progressionOpen, setProgressionOpen] = useState(false);
+  const seenReportRef = useRef(undefined);
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -81,6 +86,20 @@ export default function StudentCareerView({ user }) {
       setToast({ message: friendlyPipelineError(error), type: 'error' });
     }
   }, [error]);
+
+  // Pop the progression modal each time a NEW analysis report lands.
+  // The first render seeds seenReportRef with the existing report timestamp
+  // so we don't show the modal for an old report on initial page load.
+  useEffect(() => {
+    if (seenReportRef.current === undefined) {
+      seenReportRef.current = reportCreatedAt || null;
+      return;
+    }
+    if (reportCreatedAt && reportCreatedAt !== seenReportRef.current) {
+      seenReportRef.current = reportCreatedAt;
+      if (progression) setProgressionOpen(true);
+    }
+  }, [reportCreatedAt, progression]);
 
   if (!user) return null;
 
@@ -130,7 +149,7 @@ export default function StudentCareerView({ user }) {
           <h1 className="text-[28px] font-black text-gray-900 tracking-tight leading-none">Career Strategy Engine</h1>
           <p className="text-[12px] text-gray-500 mt-2 font-medium">Personalized roadmap based on your academic performance & GitHub activity</p>
         </div>
-        
+
         <div className="flex flex-col items-end gap-2">
           <div className="flex gap-3">
             <button
@@ -177,9 +196,8 @@ export default function StudentCareerView({ user }) {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-8 py-4 text-[13px] font-bold transition-all relative whitespace-nowrap ${
-              activeTab === tab ? 'text-[#70170f]' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className={`px-8 py-4 text-[13px] font-bold transition-all relative whitespace-nowrap ${activeTab === tab ? 'text-[#70170f]' : 'text-gray-400 hover:text-gray-600'
+              }`}
           >
             {tab}
             {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.75 bg-[#70170f] rounded-t-full"></div>}
@@ -279,24 +297,37 @@ export default function StudentCareerView({ user }) {
                 </div>
               </div>
             )}
-            <CareerSectionHeading title="PRIMARY OBJECTIVE" />
-            <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm flex flex-col lg:flex-row items-center gap-10">
-              <div className="flex-1 space-y-4">
-                <h2 className="text-[22px] font-extrabold text-gray-900 leading-tight">Senior {activeTitle}</h2>
-                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
-                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block mb-1">MATCH SCORE</span>
-                  {selectedPath ? (
-                    <span className="text-[18px] font-black text-[#70170f]">
-                      {selectedPath.match_score}%
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Not analyzed
-                    </span>
-                  )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+              {/* Primary Objective — takes 2/3 of the row */}
+              <div className="lg:col-span-2">
+                <CareerSectionHeading title="PRIMARY OBJECTIVE" />
+                <div className="mt-4 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center gap-8">
+                  <div className="flex-1 space-y-4">
+                    <h2 className="text-[20px] font-extrabold text-gray-900 leading-tight">Senior {activeTitle}</h2>
+                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block mb-1">MATCH SCORE</span>
+                      {selectedPath ? (
+                        <span className="text-[16px] font-black text-[#70170f]">
+                          {selectedPath.match_score}%
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          Not analyzed
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0 scale-110"><CareerMatchDonut score={selectedPath?.match_score || 0} /></div>
                 </div>
               </div>
-              <div className="shrink-0 scale-125"><CareerMatchDonut score={selectedPath?.match_score || 0} /></div>
+
+              {/* Analysis Progression — takes 1/3 of the row, all data inline */}
+              <div>
+                <CareerSectionHeading title="ANALYSIS PROGRESSION" />
+                <div className="mt-4">
+                  <AnalysisProgressionCard progression={progression} />
+                </div>
+              </div>
             </div>
             <CareerSectionHeading title="LEARNING ROADMAP" />
             <RoadmapViewer careerTitle={activeTitle} />
@@ -313,6 +344,56 @@ export default function StudentCareerView({ user }) {
                 </div>
               ))}
             </div>
+
+            {/* AI Recommendations — filtered to match the active career's gap skills */}
+            {recommendations && recommendations.length > 0 && (() => {
+              // Build a set of the active career's gap skill names (lower-case for matching)
+              const gapSkillNames = selectedPath
+                ? (selectedPath.gap_skills || []).map(s =>
+                    (typeof s === 'string' ? s : s?.name || '').toLowerCase()
+                  ).filter(Boolean)
+                : [];
+
+              // Filter: keep recs that mention at least one gap skill of the active career.
+              // If there are no gap skills (unanalyzed path) fall back to showing all.
+              const filtered = gapSkillNames.length > 0
+                ? recommendations.filter(rec =>
+                    gapSkillNames.some(skill => rec.toLowerCase().includes(skill))
+                  )
+                : recommendations;
+
+              const hasFiltered = filtered.length > 0;
+
+              return (
+                <>
+                  <CareerSectionHeading title="AI RECOMMENDATIONS" />
+                  {hasFiltered ? (
+                    <div className="space-y-3">
+                      {filtered.map((rec, i) => (
+                        <div
+                          key={i}
+                          className="bg-white border border-gray-100 rounded-xl p-4 flex items-start gap-3 shadow-xs"
+                        >
+                          <div className="w-6 h-6 rounded-full bg-[#70170f]/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <ArrowRight size={12} className="text-[#70170f]" />
+                          </div>
+                          <p className="text-[12px] text-gray-700 leading-relaxed">{rec}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-5 text-center">
+                      <p className="text-[12px] text-gray-500">
+                        The last analysis generated recommendations for a different career path.
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-1">
+                        Run the analyzer with <strong className="text-gray-600">{activeTitle}</strong> selected to get tailored recommendations.
+                      </p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -346,13 +427,20 @@ export default function StudentCareerView({ user }) {
         />
       )}
 
+      {progressionOpen && (
+        <AnalysisProgressionModal
+          progression={progression}
+          careerTitle={activeTitle}
+          onClose={() => setProgressionOpen(false)}
+        />
+      )}
+
       {/* ── Toast notification ── */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-xl text-[12px] font-medium shadow-xl border ${
-          toast.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-700'
-            : 'bg-green-50 border-green-200 text-green-700'
-        }`}>
+        <div className={`fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-xl text-[12px] font-medium shadow-xl border ${toast.type === 'error'
+          ? 'bg-red-50 border-red-200 text-red-700'
+          : 'bg-green-50 border-green-200 text-green-700'
+          }`}>
           <div className="flex items-center gap-2">
             {toast.type === 'error' && <AlertCircle size={16} />}
             <span className="leading-relaxed break-words max-w-sm">{toast.message}</span>

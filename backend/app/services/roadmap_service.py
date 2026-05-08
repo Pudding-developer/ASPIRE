@@ -18,7 +18,7 @@ ROADMAP_SLUGS = {
     "Full Stack Developer": "full-stack",
     "DevOps Engineer": "devops",
     "Cybersecurity Analyst": "cyber-security",
-    "Data Scientist": "data-scientist",
+    "Data Scientist": "ai-data-scientist",
     "AI Engineer": "ai-engineer",
     "Machine Learning Engineer": "machine-learning",
     "Software Architect": "software-architect",
@@ -953,7 +953,7 @@ ROADMAP_NODES = {
             "order": 25
         }
     ],
-    "data-scientist": [
+    "ai-data-scientist": [
         {
             "id": "python",
             "label": "Python / R",
@@ -1635,6 +1635,50 @@ SKILL_KEYWORDS = {
         "rest",
         "api",
         "rest api",
+        "rest apis",
+        "restful",
+        "restful api",
+        "restful apis",
+        "http"
+    ],
+    "rest apis": [
+        "rest",
+        "api",
+        "rest api",
+        "rest apis",
+        "restful",
+        "restful api",
+        "restful apis",
+        "http"
+    ],
+    "rest api": [
+        "rest",
+        "api",
+        "rest api",
+        "rest apis",
+        "restful",
+        "restful api",
+        "restful apis",
+        "http"
+    ],
+    "restful apis": [
+        "rest",
+        "api",
+        "rest api",
+        "rest apis",
+        "restful",
+        "restful api",
+        "restful apis",
+        "http"
+    ],
+    "restful api": [
+        "rest",
+        "api",
+        "rest api",
+        "rest apis",
+        "restful",
+        "restful api",
+        "restful apis",
         "http"
     ],
     "graphql": [

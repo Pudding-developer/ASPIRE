@@ -223,24 +223,29 @@ export default function EnrolledClassesView({ classes, archivedClasses, onRefres
 
   const handleJoinSuccess = () => { onRefresh?.(); setJoinModalOpen(false); };
 
-  const yearOptions = [...new Set(classList.map((c) => String(c.year_level)).filter(Boolean))];
-  const semesterOptions = [...new Set(classList.map((c) => String(c.semester)).filter(Boolean))];
+  const yearOptions = [...new Set([...classList, ...archiveList].map((c) => String(c.year_level)).filter(Boolean))].sort();
+  const semesterOptions = [...new Set([...classList, ...archiveList].map((c) => String(c.semester)).filter(Boolean))].sort();
   const currentTerm = classList[0] ? `Year ${classList[0].year_level}, Semester ${classList[0].semester}` : 'No classes yet';
   const hasActiveFilters = Boolean(search.trim()) || yearFilter !== 'all' || semesterFilter !== 'all' || sortBy !== 'recent';
 
-  const filtered = classList
-    .filter((cls) => {
-      if (yearFilter !== 'all' && String(cls.year_level) !== yearFilter) return false;
-      if (semesterFilter !== 'all' && String(cls.semester) !== semesterFilter) return false;
-      if (!search.trim()) return true;
-      const q = search.toLowerCase();
-      return cls.subject_name?.toLowerCase().includes(q) || cls.course_code?.toLowerCase().includes(q) || cls.class_code?.toLowerCase().includes(q);
-    })
-    .sort((a, b) => {
-      if (sortBy === 'az') return (a.subject_name || '').localeCompare(b.subject_name || '');
-      if (sortBy === 'code') return (a.course_code || '').localeCompare(b.course_code || '');
-      return (b.enrolled_at ? new Date(b.enrolled_at).getTime() : 0) - (a.enrolled_at ? new Date(a.enrolled_at).getTime() : 0);
-    });
+  const filterFn = (cls) => {
+    if (yearFilter !== 'all' && String(cls.year_level) !== yearFilter) return false;
+    if (semesterFilter !== 'all' && String(cls.semester) !== semesterFilter) return false;
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return cls.subject_name?.toLowerCase().includes(q) || cls.course_code?.toLowerCase().includes(q) || cls.class_code?.toLowerCase().includes(q);
+  };
+
+  const sortFn = (a, b) => {
+    if (sortBy === 'az') return (a.subject_name || '').localeCompare(b.subject_name || '');
+    if (sortBy === 'code') return (a.course_code || '').localeCompare(b.course_code || '');
+    const dateA = a.archived_at || a.enrolled_at;
+    const dateB = b.archived_at || b.enrolled_at;
+    return (dateB ? new Date(dateB).getTime() : 0) - (dateA ? new Date(dateA).getTime() : 0);
+  };
+
+  const filtered = classList.filter(filterFn).sort(sortFn);
+  const filteredArchived = archiveList.filter(filterFn).sort(sortFn);
 
   const tabs = [
     { id: 'classes', label: 'Classes', icon: BookOpen, count: classList.length },
@@ -271,54 +276,55 @@ export default function EnrolledClassesView({ classes, archivedClasses, onRefres
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 rounded-2xl border border-[#e8e6e0] bg-white p-1.5 shadow-sm w-fit">
-        {tabs.map(({ id, label, icon: Icon, count }) => (
-          <button key={id} onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${activeTab === id ? 'bg-[#430202] text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>
-            <Icon size={15} />
-            {label}
-            {count > 0 && (
-              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
+      {/* Tabs & Filters */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-1 rounded-2xl border border-[#e8e6e0] bg-white p-1.5 shadow-sm w-fit">
+          {tabs.map(({ id, label, icon: Icon, count }) => (
+            <button key={id} onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${activeTab === id ? 'bg-[#430202] text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>
+              <Icon size={15} />
+              {label}
+              {count > 0 && (
+                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {((activeTab === 'classes' && classList.length > 0) || (activeTab === 'archived' && archiveList.length > 0)) && (
+          <div className="flex flex-wrap items-center gap-2 bg-white/50 p-1.5 rounded-2xl border border-[#e8e6e0] shadow-sm backdrop-blur-sm">
+            <div className="relative min-w-[200px]">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..."
+                className="w-full rounded-xl py-2 pl-9 pr-4 text-[12px] font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#70170f]/20 bg-white border-none" />
+            </div>
+            <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block" />
+            <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="bg-transparent text-[12px] font-bold text-gray-600 outline-none cursor-pointer hover:text-[#70170f] px-2">
+              <option value="all">All Years</option>
+              {yearOptions.map((y) => <option key={y} value={y}>Year {y}</option>)}
+            </select>
+            <div className="h-4 w-px bg-gray-200 mx-1" />
+            <select value={semesterFilter} onChange={(e) => setSemesterFilter(e.target.value)} className="bg-transparent text-[12px] font-bold text-gray-600 outline-none cursor-pointer hover:text-[#70170f] px-2">
+              <option value="all">All Semesters</option>
+              {semesterOptions.map((s) => <option key={s} value={s}>Semester {s}</option>)}
+            </select>
+            <div className="h-4 w-px bg-gray-200 mx-1 hidden sm:block" />
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="bg-transparent text-[12px] font-bold text-gray-600 outline-none cursor-pointer hover:text-[#70170f] px-2 hidden sm:block">
+              <option value="recent">Recent</option>
+              <option value="az">A–Z</option>
+              <option value="code">Code</option>
+            </select>
+            {hasActiveFilters && (
+              <button onClick={() => { setSearch(''); setYearFilter('all'); setSemesterFilter('all'); setSortBy('recent'); }}
+                className="ml-2 text-[11px] font-bold text-[#70170f] hover:underline uppercase tracking-wider px-2">Clear</button>
             )}
-          </button>
-        ))}
+          </div>
+        )}
       </div>
 
       {/* ── Classes Tab ── */}
       {activeTab === 'classes' && (
         <>
-          {!loading && classList.length > 0 && (
-            <div className="sticky top-0 z-10 rounded-xl border border-[#e8e6e0] bg-[linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,248,248,0.8))] p-3 shadow-[0_10px_30px_rgba(17,24,39,0.08)] backdrop-blur-sm">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="relative w-full md:max-w-[320px]">
-                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by code or title..."
-                    className="w-full rounded-xl py-2.5 pl-10 pr-4 text-[14px] font-medium text-gray-800 placeholder-gray-400 shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-[#70170f]/20"
-                    style={{ border: '1px solid #e8e6e0', backgroundColor: '#fff' }} />
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#70170f]/20">
-                    <option value="all">All Years</option>
-                    {yearOptions.map((y) => <option key={y} value={y}>Year {y}</option>)}
-                  </select>
-                  <select value={semesterFilter} onChange={(e) => setSemesterFilter(e.target.value)} className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#70170f]/20">
-                    <option value="all">All Semesters</option>
-                    {semesterOptions.map((s) => <option key={s} value={s}>Semester {s}</option>)}
-                  </select>
-                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#70170f]/20">
-                    <option value="recent">Recently Enrolled</option>
-                    <option value="az">Title A–Z</option>
-                    <option value="code">Course Code</option>
-                  </select>
-                  {hasActiveFilters && (
-                    <button onClick={() => { setSearch(''); setYearFilter('all'); setSemesterFilter('all'); setSortBy('recent'); }}
-                      className="rounded-lg border border-[#e8e6e0] bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 hover:bg-gray-50">Clear</button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
           {loading && <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-4">{[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}</div>}
           {!loading && classList.length === 0 && <EmptyState onSuccess={handleJoinSuccess} />}
           {!loading && classList.length > 0 && filtered.length === 0 && (
@@ -351,10 +357,17 @@ export default function EnrolledClassesView({ classes, archivedClasses, onRefres
                 <p className="text-[13px] text-amber-700 font-medium">These classes have been archived by your instructor. Your enrollment records are preserved for reference.</p>
               </div>
               <motion.div variants={gridVariants} initial="hidden" animate="visible" className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {archiveList.map((cls, i) => (
+                {filteredArchived.map((cls, i) => (
                   <motion.div key={cls.id} variants={cardVariants}><ArchivedCard cls={cls} index={i} /></motion.div>
                 ))}
               </motion.div>
+              {filteredArchived.length === 0 && hasActiveFilters && (
+                <div className="rounded-2xl border border-dashed border-gray-200 bg-white/50 p-10 text-center">
+                  <p className="text-gray-500 font-medium">No archived classes match your current filters.</p>
+                  <button onClick={() => { setSearch(''); setYearFilter('all'); setSemesterFilter('all'); setSortBy('recent'); }}
+                    className="mt-4 text-[13px] font-bold text-[#70170f] hover:underline">Clear filters</button>
+                </div>
+              )}
             </>
           )}
         </>

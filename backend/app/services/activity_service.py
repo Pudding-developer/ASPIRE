@@ -28,7 +28,7 @@ def _to_dict(e: ActivityEvent) -> dict:
         "subtitle": e.subtitle,
         "payload": payload,
         "unread": e.read_at is None,
-        "created_at": e.created_at.isoformat() if e.created_at else None,
+        "created_at": (e.created_at.isoformat() + "Z") if e.created_at else None,
     }
 
 

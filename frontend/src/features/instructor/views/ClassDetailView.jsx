@@ -163,8 +163,8 @@ function formatNameLastFirst(fullName = '') {
 }
 
 function ScoresInputPanel({ classId, classData, editingAssessmentId, students = [], studentsLoading = false, onSuccess }) {
-  const [numILOs, setNumILOs] = useState(4);
-  const iloRange = Array.from({ length: numILOs }, (_, i) => i + 1);
+  const [activeILOs, setActiveILOs] = useState([1, 2, 3, 4]);
+  const iloRange = useMemo(() => [...activeILOs].sort((a, b) => a - b), [activeILOs]);
 
   const [assessmentName, setAssessmentName] = useState('');
   const [assessmentType, setAssessmentType] = useState('Summative');
@@ -193,7 +193,7 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
     if (!editingAssessmentId || !classId) {
       setAssessmentName('');
       setAssessmentType('Summative');
-      setNumILOs(4);
+      setActiveILOs([1, 2, 3, 4]);
       setIloTotals({ 1: 50, 2: 50, 3: 50, 4: 50 });
       setStudentScores({});
       return;
@@ -209,8 +209,8 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
         setAssessmentType(data.type);
         
         const ilos = data.ilos || {};
-        const maxIlo = Math.max(...Object.keys(ilos).map(Number), 0) || 4;
-        setNumILOs(Math.max(maxIlo, 3));
+        const activeFromData = Object.keys(ilos).map(Number).filter(n => !isNaN(n) && n > 0);
+        setActiveILOs(activeFromData.length > 0 ? activeFromData : [1, 2, 3, 4]);
         setIloTotals(ilos);
         setStudentScores(data.scores || {});
       } catch (err) {
@@ -499,16 +499,34 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
       <div className="border border-gray-200 rounded-xl p-6 mb-8 bg-white shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-extrabold text-[#1e293b]">Set ILO Totals (for all students)</h3>
-          <div className="flex items-center gap-3 text-[16px] flex-row">
-            <span className="text-[#64748b] font-medium mr-1 tracking-wide">Number of ILOs:</span>
-            <span className={`font-semibold transition-colors ${numILOs === 3 ? 'text-[#64748b]' : 'text-gray-400'}`}>3 ILOs</span>
-            <button 
-              className="w-[42px] h-6 rounded-full bg-[#70170f] flex items-center relative transition-colors px-1 cursor-pointer hover:bg-[#4a0e09]"
-              onClick={() => setNumILOs(numILOs === 3 ? 4 : 3)}
-            >
-              <div className={`w-[18px] h-[18px] bg-white rounded-full shadow-sm transform transition-transform ${numILOs === 4 ? 'translate-x-[16px]' : 'translate-x-0'}`} />
-            </button>
-            <span className={`font-semibold transition-colors ${numILOs === 4 ? 'text-[#1e293b]' : 'text-gray-400'}`}>4 ILOs</span>
+          <div className="flex items-center gap-2">
+            {[1, 2, 3, 4].map((num) => {
+              const isActive = activeILOs.includes(num);
+              return (
+                <button
+                  key={num}
+                  onClick={() => {
+                    setActiveILOs(prev => {
+                      if (isActive) {
+                        // Don't allow removing the last one
+                        if (prev.length <= 1) return prev;
+                        return prev.filter(i => i !== num);
+                      } else {
+                        return [...prev, num];
+                      }
+                    });
+                  }}
+                  className={`w-10 h-10 rounded-lg font-bold transition-all shadow-sm border ${
+                    isActive
+                      ? 'bg-[#70170f] text-white border-[#70170f]'
+                      : 'bg-white text-[#64748b] border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {num}
+                </button>
+              );
+            })}
+            <span className="text-[#64748b] font-medium ml-2 tracking-wide">Select ILOs to Grade</span>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-6">

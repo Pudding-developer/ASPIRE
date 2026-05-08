@@ -8,7 +8,6 @@ from app.models.pipeline_models import PipelineJob, CareerReport
 from app.models.knowledge import KnowledgeChunk, EmbeddingCache
 from app.models.roadmap import RoadmapCache
 from app.models.chat import ChatSession, ChatMessage
-from app.models.student_interventions import StudentInterventions
 from app.models.activity import ActivityEvent
 
 __all__ = [
@@ -19,6 +18,5 @@ __all__ = [
     "KnowledgeChunk", "EmbeddingCache",
     "RoadmapCache",
     "ChatSession", "ChatMessage",
-    "StudentInterventions",
     "ActivityEvent",
 ]

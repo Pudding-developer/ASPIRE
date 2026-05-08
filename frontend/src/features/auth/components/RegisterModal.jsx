@@ -4,7 +4,8 @@ import { X } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import aspireLogo from '../../../assets/aspire-logo.png';
 
-const GOOGLE_AUTH_URL = 'http://localhost:8000/auth/login/google?flow=register';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const GOOGLE_AUTH_URL = `${API_BASE}/auth/login/google?flow=register`;
 
 export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   useEffect(() => {

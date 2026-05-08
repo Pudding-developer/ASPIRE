@@ -15,7 +15,7 @@ from sqlmodel import select
 
 # Existing models — actual names from this codebase
 from app.models.user import User
-from app.models.class_model import StudentScore, Assessment, AssessmentILO
+from app.models.class_model import StudentScore, Assessment, AssessmentILO, Class
 from app.models.github import GithubProfile, RepositoryCache, ContributionCache
 from app.models.pipeline_models import PipelineJob, CareerReport
 from app.ai.data.subject_skill_map import build_subject_skill_context
@@ -42,18 +42,21 @@ async def _fetch_student_data(db: AsyncSession, student_id: int) -> dict:
 
     # --- academic scores ---
     score_query = (
-        select(StudentScore, Assessment, AssessmentILO)
+        select(StudentScore, Assessment, AssessmentILO, Class)
         .join(Assessment, StudentScore.assessment_id == Assessment.id)
         .join(AssessmentILO, StudentScore.ilo_id == AssessmentILO.id)
+        .join(Class, Assessment.class_id == Class.id)
         .where(StudentScore.student_id == student_id)
     )
     result = await db.execute(score_query)
     score_rows = result.all()
 
     academic_scores = []
-    for score, assessment, ilo in score_rows:
+    for score, assessment, ilo, class_ in score_rows:
         pct = round((score.score / ilo.max_score) * 100, 1) if ilo.max_score > 0 else 0.0
         academic_scores.append({
+            "subject_name": class_.subject_name,
+            "course_code": class_.course_code,
             "assessment_name": assessment.name,
             "assessment_type": assessment.type,
             "ilo_number": ilo.ilo_number,

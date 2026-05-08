@@ -12,6 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from app.core.database import get_session
+from app.core.config import FRONTEND_URL
 from app.api.deps import security_scheme
 from app.schemas.user import TokenResponse, UserRead, RoleSelectionRequest
 from app.services.token_service import build_jwt, verify_access_token
@@ -31,8 +32,8 @@ from app.services.auth_service import (
 
 router = APIRouter()
 
-FRONTEND_CALLBACK_URL = "http://localhost:5173/auth/callback"
-FRONTEND_REGISTER_URL = "http://localhost:5173/instructor/register"
+FRONTEND_CALLBACK_URL = f"{FRONTEND_URL}/auth/callback"
+FRONTEND_REGISTER_URL = f"{FRONTEND_URL}/instructor/register"
 
 
 

@@ -9,7 +9,8 @@ from app.api.pipeline_routes import router as pipeline_router
 from app.api.chat_routes import router as chat_router
 from app.api.roadmap_routes import router as roadmap_router
 from app.core.database import init_db
-import app.models  # noqa: F401 — ensures all models are registered with SQLModel metadata
+import app.models  # noqa: F401
+from app.core.config import ALLOWED_ORIGINS
 
 
 @asynccontextmanager
@@ -24,14 +25,12 @@ app = FastAPI(title="ASPIRE API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
+
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Refresh-Token"],
 )
 
 # Auth routes (Google OAuth + local fallback)

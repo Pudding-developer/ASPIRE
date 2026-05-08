@@ -1,8 +1,10 @@
 """
 career_agent.py — Agent 4: Career Path Mapper.
 
-Uses the RAG knowledge base to match a student's unified skill profile
-to the top 3 relevant BSU CpE career paths with calculated match scores.
+Uses the RAG knowledge base to score the student's unified skill profile
+against EVERY BSU CpE career path in the knowledge base (not just a top-N).
+Returns one entry per career so the UI can render a stable, deterministic
+match score for any pinned card.
 """
 from crewai import Agent, LLM
 from crewai import Task
@@ -48,24 +50,20 @@ def create_career_mapping_task(agent: Agent, skill_task) -> Task:
             "Each skill has a name, proficiency (beginner/intermediate/advanced), and source.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
-            "STEP 1 — RUN AT LEAST 3 RAG QUERIES (use rag_career_knowledge)\n"
+            "STEP 1 — RETRIEVE EVERY CAREER PATH IN THE KNOWLEDGE BASE\n"
             "═══════════════════════════════════════════════════════\n"
-            "Make these queries with category='career_path' and top_k=5:\n\n"
-            "  Query A — Primary stack:\n"
-            "    Combine the student's top 3 programming languages + top 2 frameworks.\n"
-            "    Example: 'careers for Python FastAPI PostgreSQL React'\n\n"
-            "  Query B — Domain area:\n"
-            "    Use their dominant skillset category as a query.\n"
-            "    Examples: 'embedded systems engineer Philippines',\n"
-            "             'machine learning engineer fintech Philippines',\n"
-            "             'frontend developer React Philippines'\n\n"
-            "  Query C — Project evidence:\n"
-            "    If github_skills mentions specific demonstrative work\n"
-            "    (e.g., 'RAG chatbot', 'STM32 firmware', 'multi-container Docker'),\n"
-            "    query for the career best matching that project shape.\n\n"
-            "Collect ALL career titles returned across the 3 queries and dedupe.\n"
-            "DO NOT propose careers that did not appear in any RAG result —\n"
-            "every career_matches entry must come from the knowledge base.\n\n"
+            "Make ONE broad RAG call to surface every career chunk:\n"
+            "    rag_career_knowledge(\n"
+            "      query='BSU Computer Engineering career paths Philippines',\n"
+            "      category='career_path',\n"
+            "      top_k=30\n"
+            "    )\n\n"
+            "If the result has fewer than ~8 unique careers, run a second\n"
+            "complementary query (e.g. 'embedded hardware DevOps cybersecurity\n"
+            "data engineer roles') with top_k=30 and merge results.\n\n"
+            "Dedupe by 'Career Path:' title. The merged list is your full\n"
+            "candidate set. Every career_matches entry MUST come from this set —\n"
+            "do NOT invent careers that did not appear in any RAG result.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
             "STEP 2 — WEIGHTED MATCH SCORE (do not use a binary formula)\n"
@@ -114,17 +112,17 @@ def create_career_mapping_task(agent: Agent, skill_task) -> Task:
             "  • roadmap_url: copy verbatim from the chunk's 'Roadmap:' line.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
-            "STEP 5 — SELECT TOP 3 + RECOMMENDED CAREER\n"
+            "STEP 5 — RETURN EVERY VIABLE CAREER + RECOMMEND THE TOP\n"
             "═══════════════════════════════════════════════════════\n"
-            "Sort all valid candidates (score >= 25) by match_score descending.\n"
-            "Return the top 3.\n\n"
+            "Score every unique career from Step 1. Include in `career_matches`\n"
+            "every career whose score is >= 25 — do NOT cap at top 3. Sort the\n"
+            "list by match_score descending.\n\n"
             "  Tie-breaking when match_scores are within 3 points of each other:\n"
             "    1. Prefer the career with stronger Philippine market outlook\n"
             "       (look at the chunk's 'Philippine market outlook' line).\n"
             "    2. Then prefer the career with fewer gap_skills (closer to job-ready).\n\n"
-            "  recommended_career = title of the #1 result.\n\n"
-            "  If fewer than 3 careers score >= 25, return however many qualify\n"
-            "  (1, 2, or 3 entries). DO NOT pad with low-confidence picks.\n\n"
+            "  recommended_career = title of the #1 (highest-scoring) result.\n\n"
+            "  Drop any career whose true score < 25 — these are noise.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
             "OUTPUT (return ONLY this JSON, no explanation text)\n"
@@ -144,10 +142,11 @@ def create_career_mapping_task(agent: Agent, skill_task) -> Task:
             "}"
         ),
         expected_output=(
-            "A JSON object with keys: career_matches (list of up to 3 careers with "
-            "match_score >= 25, sorted by match_score desc; each must come from a RAG "
-            "result), recommended_career (str — the title of the top match). "
-            "Return ONLY the JSON."
+            "A JSON object with keys: career_matches (list of EVERY career "
+            "scoring >= 25 — typically 6–12 entries depending on how many career "
+            "paths are in the knowledge base — sorted by match_score desc; each "
+            "must come from a RAG result), recommended_career (str — the title "
+            "of the top match). Return ONLY the JSON."
         ),
         agent=agent,
         context=[skill_task],

@@ -127,7 +127,7 @@ def build_and_run_crew(
         ],
         process=Process.sequential,
         verbose=True,
-        max_rpm=3,  # conservative — 7 agents × multiple tool calls can blow the free-tier quota
+        max_rpm=15,  # bumped from 3 — gemini-2.5-flash has no explicit RPM cap on this project
     )
 
     try:

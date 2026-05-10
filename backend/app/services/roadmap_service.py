@@ -1790,12 +1790,15 @@ async def get_roadmap_with_overlay(
     unified_skills: list = []
     gap_skills: list = []
     progression: dict = {}
+    specific_match_score = None
 
     if career_report and career_report.report_json:
         report = json.loads(career_report.report_json)
         unified_skills = report.get("skill_profile", {}).get("unified_skills", [])
         for match in report.get("career_matches", []):
-            gap_skills.extend(match.get("gap_skills", []))
+            if match.get("title") == career_name:
+                gap_skills.extend(match.get("gap_skills", []))
+                specific_match_score = match.get("match_score")
         if career_report.progression_json:
             parsed = json.loads(career_report.progression_json)
             progression = parsed if isinstance(parsed, dict) else {}
@@ -1838,9 +1841,10 @@ async def get_roadmap_with_overlay(
     unassessed_count = sum(1 for n in nodes if n["status"] == "unassessed")
     total = len(nodes)
 
-    readiness_pct = career_readiness_score if career_readiness_score > 0 else (
-        round((has_count / total) * 100) if total > 0 else 0
-    )
+    if specific_match_score is not None:
+        readiness_pct = specific_match_score
+    else:
+        readiness_pct = round((has_count / total) * 100) if total > 0 else 0
 
     return {
         "career": career_name,

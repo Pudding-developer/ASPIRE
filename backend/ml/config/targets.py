@@ -448,3 +448,100 @@ def map_avg_to_outcome(avg: float) -> str:
     if x < 88:   return "Meritorious"
     if x < 91:   return "Good"
     return "Very Good"
+
+
+# ── Student Outcomes (CMO-aligned) ────────────────────────────────────────────
+# 13 program-level Student Outcomes for the BSCpE program. Order is fixed and
+# the frontend radar consumes scores in this exact sequence (SO1 … SO13).
+SO_NAMES: List[str] = [
+    "Discipline Knowledge",      # SO1
+    "Investigation",             # SO2
+    "Design/Dev. of Solutions",  # SO3
+    "Leadership",                # SO4
+    "Problem Analysis",          # SO5
+    "Ethics",                    # SO6
+    "Communication",             # SO7
+    "Environment",               # SO8
+    "Lifelong Learning",         # SO9
+    "Engineering & Society",     # SO10
+    "Modern Tools",              # SO11
+    "Project Management",        # SO12
+    "Social Responsibility",     # SO13
+]
+
+
+# ── Skill → Student-Outcome contribution matrix ───────────────────────────────
+# Rows: 20 SKILL_CATEGORIES (in the same order). Columns: 13 SOs (SO1..SO13).
+# Each row's weights represent how strongly that skill contributes to each SO,
+# and each row sums to 1.0 so the matrix expresses contribution share, not
+# magnitude. SO scores are weighted averages of contributing skill scores.
+SKILL_TO_SO_WEIGHTS = np.array([
+    # SO1   SO2   SO3   SO4   SO5   SO6   SO7   SO8   SO9   SO10  SO11  SO12  SO13
+    [0.60, 0.00, 0.00, 0.00, 0.40, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],  # 0  Math & Sci Foundations
+    [0.50, 0.00, 0.40, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00, 0.00],  # 1  Programming & SW Dev
+    [0.50, 0.00, 0.50, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],  # 2  Hardware & Circuit Design
+    [0.40, 0.00, 0.50, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00, 0.00],  # 3  Embedded & Microprocessor
+    [0.50, 0.00, 0.40, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00, 0.00],  # 4  Networking & Comms
+    [0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.30, 0.00, 0.00],  # 5  OS & Architecture
+    [0.50, 0.00, 0.00, 0.00, 0.50, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],  # 6  Signal Proc & Control
+    [0.30, 0.30, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.40, 0.00, 0.00],  # 7  Data Sci & AI/ML
+    [0.00, 0.40, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],  # 8  Engineering Design
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00],  # 9  Modern Engineering Tools
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],  # 10 Technical Communication
+    [0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],  # 11 Ethics & Professionalism
+    [0.00, 0.30, 0.00, 0.00, 0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],  # 12 Critical Thinking
+    [0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],  # 13 Leadership & Teamwork
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],  # 14 Project Management
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00],  # 15 Lifelong Learning
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50],  # 16 Societal & National Resp.
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00],  # 17 Sustainability Awareness
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00, 0.30],  # 18 Cultural & Global
+    [0.00, 0.00, 0.00, 0.40, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.60, 0.00],  # 19 Entrepreneurial Mindset
+], dtype=float)
+
+
+def primary_so_for_skill(skill_name: str) -> Optional[Dict[str, object]]:
+    """
+    Return the SO with the largest contribution weight from this skill.
+
+    Used to label which graduate outcome a highlighted skill maps to,
+    so Smart Insights can say "Strong in X — aligned to your <SO> outcome."
+    Returns None if the skill is unknown or contributes to no SO.
+    """
+    if skill_name not in SKILL_CATEGORIES:
+        return None
+    idx = SKILL_CATEGORIES.index(skill_name)
+    weights = SKILL_TO_SO_WEIGHTS[idx]
+    if float(weights.sum()) == 0.0:
+        return None
+    so_idx = int(weights.argmax())
+    return {
+        "so_id": f"SO{so_idx + 1}",
+        "so_name": SO_NAMES[so_idx],
+        "weight": round(float(weights[so_idx]), 2),
+    }
+
+
+def compute_so_scores(aggregated_skills: Dict[str, float]) -> Dict[str, float]:
+    """
+    Project the model's 20 aggregated skill scores onto the 13 program SOs.
+
+    SO_i = (Σ_j  W[j,i] · skill_j) / (Σ_j  W[j,i])  over skills with signal.
+
+    Skills with score ≤ 1.0 are treated as having no signal and excluded so
+    SOs reflect *current* proficiency rather than the curriculum's eventual
+    coverage. Returns scores on a 0–100 scale, e.g. {"SO1": 78.4, ...}.
+    """
+    skill_arr = np.array(
+        [aggregated_skills.get(s, 0.0) for s in SKILL_CATEGORIES],
+        dtype=float,
+    )
+    active = (skill_arr > 1.0).astype(float)
+
+    out: Dict[str, float] = {}
+    for so_idx in range(len(SO_NAMES)):
+        col = SKILL_TO_SO_WEIGHTS[:, so_idx] * active
+        denom = float(col.sum())
+        score = float((col * skill_arr).sum() / denom) if denom > 0 else 0.0
+        out[f"SO{so_idx + 1}"] = round(score, 2)
+    return out

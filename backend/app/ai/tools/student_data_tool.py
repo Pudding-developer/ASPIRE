@@ -50,9 +50,9 @@ class StudentDataTool(BaseTool):
                     }
                 }, indent=2, default=str)
             subset = {
+                # Omit sr_code and full_name — these are direct PII and the
+                # LLM has no analytical need for them (RA 10173 data minimization).
                 "student_id": self._data.get("student_id"),
-                "sr_code": self._data.get("sr_code"),
-                "full_name": self._data.get("full_name"),
                 "academic_scores": scores,
             }
         elif query == "github":

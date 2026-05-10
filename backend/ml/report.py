@@ -16,6 +16,8 @@ from ml.config import (
     SKILL_CATEGORIES,
     get_course_code,
     get_course_ilo_count,
+    compute_so_scores,
+    SO_NAMES,
 )
 from ml.predictor import SkillsPredictor
 
@@ -124,5 +126,9 @@ def build_course_report(
             "cv_r2_mean":   round(float(metrics.get("cv_r2_mean",   0.0)), 4),
             "cv_mae_mean":  round(float(metrics.get("cv_mae_mean",  0.0)), 3),
             "cv_rmse_mean": round(float(metrics.get("cv_rmse_mean", 0.0)), 3),
+        },
+        "so": {
+            "scores": compute_so_scores(predicted),
+            "names": SO_NAMES,
         },
     }

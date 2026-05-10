@@ -18,6 +18,7 @@ def _get_llm() -> LLM:
         max_retries=2,
         timeout=300,
         temperature=0,
+        thinking={"type": "enabled", "budget_tokens": 2048},
     )
 
 

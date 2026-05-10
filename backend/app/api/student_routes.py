@@ -9,6 +9,7 @@ import json
 from datetime import datetime
 from hashlib import sha256
 
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -343,25 +344,53 @@ async def get_course_dashboard(
 
 @router.get("/predictions")
 async def get_skill_predictions(
+    semester: Optional[int] = None,
+    year_level: Optional[int] = None,
+    category: Optional[str] = None,
     current_user: User = Depends(get_current_student),
     db: AsyncSession = Depends(get_session),
 ):
     """
     Aggregate the student's ILO scores per course, run the ML model,
     and return predicted skill scores.
+    Supports filtering by semester, year_level, and category.
     """
     # Fetch all scores grouped by class (course)
-    result = await db.execute(
-        select(StudentScore, AssessmentILO, Class)
-        .join(AssessmentILO, StudentScore.ilo_id == AssessmentILO.id)
-        .join(Assessment, StudentScore.assessment_id == Assessment.id)
-        .join(Class, Assessment.class_id == Class.id)
+    query = select(StudentScore, AssessmentILO, Class) \
+        .join(AssessmentILO, StudentScore.ilo_id == AssessmentILO.id) \
+        .join(Assessment, StudentScore.assessment_id == Assessment.id) \
+        .join(Class, Assessment.class_id == Class.id) \
         .where(StudentScore.student_id == current_user.id)
-    )
+
+    if semester:
+        query = query.where(Class.semester == semester)
+    if year_level:
+        query = query.where(Class.year_level == year_level)
+    
+    # Category mapping logic based on course_code prefixes
+    if category and category != 'All Subjects':
+        if category == 'Mathematics':
+            query = query.where(Class.course_code.like('MATH%'))
+        elif category == 'Engineering Core':
+            query = query.where(Class.course_code.like('ENGG%'))
+        elif category == 'General Education':
+            query = query.where(Class.course_code.like('GEd%'))
+        elif category == 'Computer Science':
+            query = query.where(Class.course_code.like('CpE%'))
+        elif category == 'Technical Electives':
+            query = query.where(Class.course_code.like('CpEE%'))
+
+    result = await db.execute(query)
     rows = result.all()
 
     if not rows:
-        raise HTTPException(status_code=404, detail="No scores found. Ask your instructor to post grades first.")
+        return {"data": {
+            "aggregated_skills": {},
+            "top_skills": [],
+            "weak_skills": [],
+            "per_course": [],
+            "overall_outcome": "No Data"
+        }}
 
     # Aggregate ILO scores per course: average percentage per ILO number
     from collections import defaultdict
@@ -381,7 +410,8 @@ async def get_skill_predictions(
         scores_by_course.append(entry)
 
     # Cache lookup: deterministic inputs → deterministic outputs.
-    cache_key = f"{current_user.id}:{_hash_inputs(scores_by_course)}"
+    # Include filters in cache key
+    cache_key = f"{current_user.id}:{semester}:{year_level}:{category}:{_hash_inputs(scores_by_course)}"
     cached = _predictions_cache.get(cache_key)
     if cached is not None:
         return {"data": cached}

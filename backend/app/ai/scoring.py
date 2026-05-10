@@ -43,7 +43,7 @@ PROFICIENCY_POINTS: dict[str, float] = {
 }
 
 GITHUB_BONUS = 5
-SCORE_FLOOR = 25  # below this → drop the career
+SCORE_FLOOR = 0  # below this -> drop the career
 SCORE_CAP = 95    # never give a perfect 100
 
 
@@ -201,8 +201,6 @@ def recompute_career_matches(
             skill_index=skill_index,
             has_github_bonus=has_bonus,
         )
-        if new_score == 0:
-            continue  # below the floor, drop
         updated = dict(career)
         updated["match_score"] = new_score
         rescored.append(updated)

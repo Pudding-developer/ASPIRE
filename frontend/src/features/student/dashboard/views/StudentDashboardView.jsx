@@ -385,7 +385,7 @@ export function EnrolledClassesOverview({ classes, onNavigate }) {
   return (
     <div className={`${panelBase} p-6 flex-1 flex flex-col`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[16px] font-bold text-gray-900">Enrolled Classes</h3>
+        <h3 className="text-[16px] font-bold text-gray-900">My Classes</h3>
         <span className="text-[11px] font-semibold text-gray-500">{classes.length} total</span>
       </div>
 

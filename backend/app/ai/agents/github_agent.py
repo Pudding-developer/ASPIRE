@@ -13,6 +13,8 @@ from app.core.config import GEMINI_MODEL
 def _get_llm() -> LLM:
     return LLM(
         model=GEMINI_MODEL,
+        temperature=0.2,   # low variance without crashing the thinking model (0 causes empty responses)
+        thinking={"type": "enabled", "budget_tokens": 2048},
         max_retries=2,
         timeout=300
     )

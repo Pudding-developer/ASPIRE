@@ -17,7 +17,7 @@ export default function StudentDashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('dashboard');
-  const { classes, archivedClasses, loading: classesLoading, refetch } = useStudentData();
+  const { classes, archivedClasses, loading: classesLoading, refetch, predictions } = useStudentData();
 
   const handleLogout = () => { logout(); navigate('/'); };
 
@@ -38,8 +38,10 @@ export default function StudentDashboardPage() {
         )}
         {activeView === 'enrolled-classes' && (
           <EnrolledClassesView
+            user={user}
             classes={classesLoading ? null : classes}
             archivedClasses={classesLoading ? null : archivedClasses}
+            predictions={classesLoading ? null : predictions}
             onRefresh={refetch}
           />
         )}

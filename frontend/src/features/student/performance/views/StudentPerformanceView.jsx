@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Filter, Bell, Lightbulb, GraduationCap, Microscope,
   ChevronRight, AlertCircle, CheckCircle2, ChevronDown, X, BookOpen, ArrowLeft, Target,
-  TrendingUp, Github, Star
+  TrendingUp, Github, Star, ShieldAlert, Award, Rocket, Compass, Zap
 } from 'lucide-react';
 
 import useStudentData from '../../dashboard/hooks/useStudentData';
@@ -37,7 +37,13 @@ function formatNotifTime(iso) {
 const panelBase = 'bg-white border border-[#eed7d3] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.1)]';
 
 /* ─── Constants ─── */
-const SEMESTERS = ['All Semesters', '1st Semester 2024-2025', '2nd Semester 2024-2025', '1st Semester 2023-2024', '2nd Semester 2023-2024'];
+const SEMESTERS = [
+  'All Semesters',
+  '1st Year, 1st Sem', '1st Year, 2nd Sem',
+  '2nd Year, 1st Sem', '2nd Year, 2nd Sem',
+  '3rd Year, 1st Sem', '3rd Year, 2nd Sem',
+  '4th Year, 1st Sem', '4th Year, 2nd Sem',
+];
 const CATEGORIES = ['All Subjects', 'Mathematics', 'Engineering Core', 'General Education', 'Computer Science', 'Technical Electives'];
 
 /* ─── Filter Dropdown ─── */
@@ -155,19 +161,33 @@ function NotificationDropdown({ open, onClose, notifications, unreadCount }) {
 }
 
 /* ─── Base Stat Card ─── */
-function StatCard({ label, main, sub, badge, progress }) {
+function StatCard({ label, main, sub, badge, badgeTone = 'green', progress, icon: Icon }) {
+  const toneClass = {
+    green: 'bg-green-50 text-green-600',
+    red: 'bg-red-50 text-red-600',
+    amber: 'bg-amber-50 text-amber-700',
+    indigo: 'bg-indigo-50 text-indigo-600',
+  }[badgeTone] || 'bg-green-50 text-green-600';
+
   return (
-    <div className={`${panelBase} p-6 flex flex-col justify-between`}>
-      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-4">{label}</p>
+    <div className={`${panelBase} p-6 flex flex-col justify-between min-h-[148px]`}>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">{label}</p>
+        {Icon && (
+          <div className="w-7 h-7 rounded-lg bg-[#fff2f2] text-[#70170f] flex items-center justify-center">
+            <Icon size={14} />
+          </div>
+        )}
+      </div>
       <div className="flex items-center gap-3">
         <h3 className="text-3xl font-extrabold text-gray-900 leading-none">{main}</h3>
         {badge && (
-          <span className="text-[11px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded-full">
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${toneClass}`}>
             {badge}
           </span>
         )}
       </div>
-      <p className="text-[11px] text-gray-400 font-medium mt-2">{sub}</p>
+      <p className="text-[11px] text-gray-400 font-medium mt-2 truncate" title={typeof sub === 'string' ? sub : undefined}>{sub}</p>
       {progress && (
         <div className="w-full h-1.5 bg-gray-100 rounded-full mt-3 overflow-hidden">
           <div className="h-full bg-gray-900 rounded-full" style={{ width: progress }} />
@@ -407,63 +427,95 @@ function CompetencyRadar({ soValues }) {
 }
 
 /* ─── Integrated AI Insights Panel ─── */
-function IntegratedInsights({ topSkills, weakSkills, topSkill, topVal, weakSkill, weakVal, target }) {
+function IntegratedInsights({
+  topSkill, topVal, topCeiling, topSO, topDriver,
+  weakSkill, weakVal, weakCeiling, weakSO, weakDriver,
+}) {
   const brandRed = '#70170f';
+  const topPotentialPct = Math.max(0, Math.round((topCeiling || 0) - (topVal || 0)));
+  const weakPotentialPct = Math.max(0, Math.round((weakCeiling || 0) - (weakVal || 0)));
+
   return (
-    <div 
+    <div
       className={`${panelBase} p-8 flex flex-col border-none text-white shadow-[0_20px_50px_-12px_rgba(112,23,15,0.4)] relative overflow-hidden group`}
       style={{ backgroundColor: brandRed }}
     >
-      {/* Decorative background element */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-[0.05] blur-3xl rounded-full -mr-24 -mt-24" />
-      
+
       <div className="flex items-center gap-3 mb-8 relative z-10">
         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm">
           <Lightbulb className="text-white" size={20} />
         </div>
         <div>
           <h3 className="text-[20px] font-black text-white leading-tight">Smart Insights</h3>
+          <p className="text-[10px] text-white/50 tracking-widest uppercase mt-0.5">From your latest ILO scores</p>
         </div>
       </div>
 
       <div className="space-y-8 relative z-10">
-        {/* Top Strength Section */}
+        {/* Core Strength */}
         <div>
           <div className="flex justify-between items-end mb-3">
-            <div>
+            <div className="min-w-0 mr-3">
               <span className="text-[9px] font-black text-white/50 uppercase tracking-widest block mb-1">CORE STRENGTH</span>
-              <h4 className="text-[14px] font-bold text-white leading-tight">{topSkill || (topSkills?.[0]?.name) || 'N/A'}</h4>
+              <h4 className="text-[14px] font-bold text-white leading-tight truncate" title={topSkill || ''}>
+                {topSkill || 'Awaiting graded scores'}
+              </h4>
+              {topSO && (
+                <p className="text-[10px] text-emerald-200/90 mt-1.5 font-semibold">
+                  Aligned to {topSO.so_id} · {topSO.so_name}
+                </p>
+              )}
             </div>
-            <div className="text-right shrink-0 ml-4">
-              <span className="text-[18px] font-black text-white leading-none">{Math.round(topVal || 0)}%</span>
-              <p className="text-[9px] font-bold text-emerald-300 mt-1">↑ Potential {Math.min(100, Math.round((topVal || 0) + 8))}%</p>
+            <div className="text-right shrink-0">
+              <span className="text-[18px] font-black text-white leading-none tabular-nums">{Math.round(topVal || 0)}%</span>
+              {topCeiling > 0 && (
+                <p className="text-[9px] font-bold text-emerald-300 mt-1">
+                  ↑ ML ceiling {Math.round(topCeiling)}% (+{topPotentialPct})
+                </p>
+              )}
             </div>
           </div>
           <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${topVal || 0}%` }} />
+            <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${Math.min(topVal || 0, 100)}%` }} />
           </div>
-          <p className="text-[11px] text-white/70 mt-3 leading-relaxed italic">
-             "Your performance in this area is exceptional. Focus on mentoring peers to further solidify your mastery."
+          <p className="text-[11px] text-white/75 mt-3 leading-relaxed">
+            {topDriver?.course
+              ? <>You're strongest here through <span className="font-bold text-white">{topDriver.course}</span>. Keep ILO performance high there to retain mastery.</>
+              : 'Consistent ILO performance is sustaining this skill — keep it up.'}
           </p>
         </div>
 
-        {/* Growth Opportunity Section */}
+        {/* Growth Opportunity */}
         <div>
           <div className="flex justify-between items-end mb-3">
-            <div>
+            <div className="min-w-0 mr-3">
               <span className="text-[9px] font-black text-white/50 uppercase tracking-widest block mb-1">GROWTH OPPORTUNITY</span>
-              <h4 className="text-[14px] font-bold text-white leading-tight">{weakSkill || (weakSkills?.[0]?.name) || 'N/A'}</h4>
+              <h4 className="text-[14px] font-bold text-white leading-tight truncate" title={weakSkill || ''}>
+                {weakSkill || 'Awaiting graded scores'}
+              </h4>
+              {weakSO && (
+                <p className="text-[10px] text-amber-200/90 mt-1.5 font-semibold">
+                  Lifts {weakSO.so_id} · {weakSO.so_name}
+                </p>
+              )}
             </div>
-            <div className="text-right shrink-0 ml-4">
-              <span className="text-[18px] font-black text-white leading-none">{Math.round(weakVal || 0)}%</span>
-              <p className="text-[9px] font-bold text-amber-300 mt-1">Target Milestone: {Math.round(target || 0)}%</p>
+            <div className="text-right shrink-0">
+              <span className="text-[18px] font-black text-white leading-none tabular-nums">{Math.round(weakVal || 0)}%</span>
+              {weakCeiling > 0 && (
+                <p className="text-[9px] font-bold text-amber-300 mt-1">
+                  Reachable {Math.round(weakCeiling)}% (+{weakPotentialPct})
+                </p>
+              )}
             </div>
           </div>
           <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-amber-400 rounded-full transition-all duration-1000" style={{ width: `${weakVal || 0}%` }} />
+            <div className="h-full bg-amber-400 rounded-full transition-all duration-1000" style={{ width: `${Math.min(weakVal || 0, 100)}%` }} />
           </div>
-          <p className="text-[11px] text-white/70 mt-3 leading-relaxed italic">
-            "Targeting these specific concepts could improve your overall outcome by {Math.round((target || 0) - (weakVal || 0))}% this semester."
+          <p className="text-[11px] text-white/75 mt-3 leading-relaxed">
+            {weakDriver?.course
+              ? <>Lifting your ILOs in <span className="font-bold text-white">{weakDriver.course}</span> gives the biggest predicted gain (+{weakPotentialPct}%) for this skill.</>
+              : 'No course-level signal yet — focus on ILOs once grades land.'}
           </p>
         </div>
       </div>
@@ -471,133 +523,7 @@ function IntegratedInsights({ topSkills, weakSkills, topSkill, topVal, weakSkill
   );
 }
 
-/* ─── Outcome Badge helpers ─── */
-const OUTCOME_STYLES = {
-  'EXCEEDING EXPECTATIONS': 'bg-green-50 text-green-700 border-green-200',
-  'ON TRACK': 'bg-blue-50 text-blue-700 border-blue-200',
-  'NEEDS ATTENTION': 'bg-amber-50 text-amber-700 border-amber-200',
-  'CRITICAL': 'bg-red-50 text-red-700 border-red-200',
-};
-function outcomeChipClass(label) {
-  if (!label) return 'bg-gray-50 text-gray-600 border-gray-200';
-  const key = label.toUpperCase();
-  return OUTCOME_STYLES[key] || 'bg-gray-50 text-gray-600 border-gray-200';
-}
 
-/* ─── Expandable Course Card ─── */
-function CourseBreakdownCard({ course, onViewDetails }) {
-  const [open, setOpen] = useState(false);
-
-  const ilos = course.ilo_scores || {};
-  const iloKeys = Object.keys(ilos).sort();
-  const skills = course.predicted_skills || {};
-
-  const mastery = Math.round(course.ilo_avg || 0);
-  const strongest = course.strongest_skill;
-  const weakest = course.weakest_skill;
-
-  const potentialSkill = strongest;
-  const potentialNew = course.scenario_high?.[potentialSkill];
-  const potentialNow = skills[potentialSkill];
-  const showPotential =
-    potentialSkill && typeof potentialNew === 'number' && typeof potentialNow === 'number';
-
-  return (
-    <div className="border border-[#f0dddd] rounded-2xl bg-white/75 overflow-hidden transition-shadow hover:shadow-[0_10px_24px_-18px_rgba(0,0,0,0.25)]">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#fff5f5]/60 transition-colors"
-      >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="text-[14px] font-bold text-gray-900 truncate">{course.course}</h4>
-            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${outcomeChipClass(course.outcome_label)}`}>
-              {course.outcome_label || 'No Data'}
-            </span>
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#1a0505] rounded-full transition-all"
-                style={{ width: `${Math.min(mastery, 100)}%` }}
-              />
-            </div>
-            <span className="text-[11px] font-bold text-gray-700 w-10 text-right">{mastery}%</span>
-          </div>
-        </div>
-        <ChevronDown
-          size={18}
-          className={`shrink-0 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      {open && (
-        <div className="px-5 pb-5 pt-1 border-t border-[#f7eaea] space-y-5">
-          {/* ILO chips */}
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">ILO Scores</p>
-            <div className="flex flex-wrap gap-2">
-              {iloKeys.length === 0 && <span className="text-[11px] text-gray-400">No ILO data.</span>}
-              {iloKeys.map(k => (
-                <span
-                  key={k}
-                  className="px-2.5 py-1 bg-[#fff1f1] border border-[#efd7d7] text-[#7b5656] text-[11px] font-bold rounded-lg"
-                >
-                  {k.toUpperCase()} · {Math.round(ilos[k])}%
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Strongest / Weakest */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50 border border-green-100">
-              <CheckCircle2 size={14} className="text-green-600 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[9px] font-bold text-green-700 uppercase tracking-widest">Strongest</p>
-                <p className="text-[12px] font-semibold text-gray-900 truncate">{strongest || '—'}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-100">
-              <AlertCircle size={14} className="text-red-600 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[9px] font-bold text-red-700 uppercase tracking-widest">Weakest</p>
-                <p className="text-[12px] font-semibold text-gray-900 truncate">{weakest || '—'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Potential hint */}
-          {showPotential && (
-            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-[#fff8e6] border border-[#f3e3a8]">
-              <Lightbulb size={14} className="text-[#a07b00] shrink-0 mt-0.5" />
-              <p className="text-[12px] text-[#5b4500] leading-snug">
-                <span className="font-bold">Potential if all ILOs = 90%:</span>{' '}
-                {potentialSkill} → <span className="font-bold">{potentialNew.toFixed(1)}</span>{' '}
-                <span className="text-[#866900]">(currently {potentialNow.toFixed(1)})</span>
-              </p>
-            </div>
-          )}
-
-          {/* View Details */}
-          <div className="flex justify-end pt-1">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewDetails(course.course);
-              }}
-              className="flex items-center gap-1.5 text-[12px] font-bold text-[#70170f] hover:text-[#7a0d0d] transition-colors"
-            >
-              View Details <ChevronRight size={14} />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ─── Proficiency Growth helpers ─── */
 function tierForIndex(idx, third) {
@@ -775,9 +701,23 @@ export default function StudentPerformanceView({ user }) {
     return () => clearTimeout(t);
   }, []);
 
-  const { classes, predictions, iloCoverage, loading } = useStudentData();
+  const getFilterParams = () => {
+    const params = {};
+    if (category !== 'All Subjects') params.category = category;
+    if (semester !== 'All Semesters') {
+      const match = semester.match(/(\d)(?:st|nd|rd|th)\sYear,\s(\d)(?:st|nd|rd|th)\sSem/);
+      if (match) {
+        params.year_level = parseInt(match[1]);
+        params.semester = parseInt(match[2]);
+      }
+    }
+    return params;
+  };
+
+  const { classes, predictions, iloCoverage, loading, refetch: refetchPredictions } = useStudentData(getFilterParams());
   const { items: notifications, refetch: refetchActivity } = useActivityFeed(10);
   const unreadCount = notifications.filter(n => n.unread).length;
+  const lastGradeTs = useRef(null);
 
   useEffect(() => {
     if (!notifOpen || unreadCount === 0) return;
@@ -785,6 +725,19 @@ export default function StudentPerformanceView({ user }) {
       .then(() => refetchActivity())
       .catch(() => {});
   }, [notifOpen, unreadCount, refetchActivity]);
+
+  // Refetch ML predictions whenever the instructor releases a new grade.
+  // Why: backend caches by hash(score_inputs); a new grade changes the hash,
+  // so a fetch returns fresh ML output. We trigger that fetch off the
+  // grade_released activity event the polling feed already surfaces.
+  useEffect(() => {
+    const latestGrade = notifications.find(n => n.type === 'grade_released');
+    if (!latestGrade) return;
+    if (lastGradeTs.current !== latestGrade.created_at) {
+      if (lastGradeTs.current !== null) refetchPredictions();
+      lastGradeTs.current = latestGrade.created_at;
+    }
+  }, [notifications, refetchPredictions]);
 
   if (loading) {
     return <StudentPerformanceSkeleton />;
@@ -839,14 +792,40 @@ export default function StudentPerformanceView({ user }) {
     return out;
   })();
 
-  // ML insight values
+  // ML insight values — Smart Insights leans on the trained pipeline output
+  // for both ceilings (scenario_high) and outcome alignment (skill_so_map).
   const topSkillName = predictions?.top_skills?.[0];
   const weakSkillName = predictions?.weak_skills?.[0];
   const topSkillVal = topSkillName != null ? aggSkills[topSkillName] : null;
   const weakSkillVal = weakSkillName != null ? aggSkills[weakSkillName] : null;
-  const skillAvg = sortedSkills.length
-    ? sortedSkills.reduce((a, [, v]) => a + v, 0) / sortedSkills.length
-    : 0;
+
+  // Per-skill ML ceiling — mean scenario_high across courses that produce
+  // a non-zero scenario for the skill. Replaces the old "+8" placeholder.
+  const meanCeilingForSkill = (skill) => {
+    if (!skill) return 0;
+    const per = predictions?.per_course || [];
+    const vals = per
+      .map(c => c.scenario_high?.[skill])
+      .filter(v => typeof v === 'number' && isFinite(v) && v > 0);
+    if (!vals.length) return 0;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  };
+  const topSkillCeiling = meanCeilingForSkill(topSkillName);
+  const weakSkillCeiling = meanCeilingForSkill(weakSkillName);
+
+  // Primary SO each highlighted skill aligns to (from backend skill_so_map).
+  const skillSoMap = predictions?.skill_so_map || {};
+  const topSkillSO = topSkillName ? skillSoMap[topSkillName] : null;
+  const weakSkillSO = weakSkillName ? skillSoMap[weakSkillName] : null;
+
+  // Driving course for each highlighted skill — the one to maintain (top) or
+  // focus on (weak). Reuses the same helper that powers the skill-row hints.
+  const topSkillDriver = topSkillName
+    ? topCoursesForSkill(topSkillName, predictions?.per_course || [], 'achieved')[0] || null
+    : null;
+  const weakSkillDriver = weakSkillName
+    ? topCoursesForSkill(weakSkillName, predictions?.per_course || [], 'developing')[0] || null
+    : null;
 
   // Predicted skillsets — biggest growth gap (current vs scenario_high) across courses
   const predictedPotential = (() => {
@@ -876,13 +855,74 @@ export default function StudentPerformanceView({ user }) {
       .slice(0, 3);
   })();
 
-  // Derived SO Values for ML-based metrics
+  // SO proficiency for the radar — sourced from the trained ML pipeline's
+  // skill→SO projection (predictions.so_scores, 0–100). Each grade upload
+  // invalidates the backend cache, so this re-fetches with fresh values.
+  const soScores = predictions?.so_scores || {};
   const soValues = Array.from({ length: 13 }, (_, i) => {
-    const seed = (i + 1) * 7;
-    const base = 0.65 + (Math.sin(seed) * 0.2); // Placeholder logic simulating ML analysis
-    return Math.min(Math.max(base, 0.4), 0.95);
+    const raw = soScores[`SO${i + 1}`];
+    if (typeof raw !== 'number' || !isFinite(raw)) return 0;
+    return Math.min(Math.max(raw / 100, 0), 1);
   });
-  const avgSO = (soValues.reduce((a, b) => a + b, 0) / 13) * 100;
+
+  // ── Four ML-driven key metrics ─────────────────────────────────────────────
+  // All values are derived from the trained pipeline output returned by
+  // /api/student/predictions; refetched whenever a grade_released event fires.
+  const activeSkills = Object.entries(aggSkills).filter(([, v]) => v > 1.0);
+  const totalActive = activeSkills.length;
+
+  // 1. Competencies Attained — skills at or above the competency threshold (75).
+  const COMPETENT_THRESHOLD = 75;
+  const AT_RISK_THRESHOLD = 60;
+  const attainedCount = activeSkills.filter(([, v]) => v >= COMPETENT_THRESHOLD).length;
+  const attainedPct = totalActive ? Math.round((attainedCount / totalActive) * 100) : 0;
+
+  // 2. Skills at Risk — count below at-risk threshold; surface lowest by name.
+  const atRiskSkills = activeSkills
+    .filter(([, v]) => v < AT_RISK_THRESHOLD)
+    .sort((a, b) => a[1] - b[1]);
+  const lowestRiskSkill = atRiskSkills[0]?.[0] || null;
+
+  // 3. Growth Headroom — mean (scenario_high − predicted) across active skills,
+  // averaged per-skill across courses. The scenario_high field is the model's
+  // "if all ILOs hit 90%" output, so this is pure ML projection.
+  const headroom = (() => {
+    const per = predictions?.per_course || [];
+    let total = 0;
+    let count = 0;
+    per.forEach(c => {
+      const cur = c.predicted_skills || {};
+      const high = c.scenario_high || {};
+      Object.keys(cur).forEach(s => {
+        if (cur[s] > 1.0 && typeof high[s] === 'number') {
+          total += (high[s] - cur[s]);
+          count += 1;
+        }
+      });
+    });
+    return count ? total / count : 0;
+  })();
+
+  // 4. Highest-Leverage Course — course whose mean skill gap to scenario_high
+  // is largest; the single course where focus pays off most.
+  const topLeverage = (() => {
+    const per = predictions?.per_course || [];
+    let best = null;
+    per.forEach(c => {
+      const cur = c.predicted_skills || {};
+      const high = c.scenario_high || {};
+      const keys = Object.keys(cur).filter(k => cur[k] > 1.0 && typeof high[k] === 'number');
+      if (!keys.length) return;
+      const meanGap = keys.reduce((acc, k) => acc + (high[k] - cur[k]), 0) / keys.length;
+      if (!best || meanGap > best.gap) best = { course: c.course, gap: meanGap };
+    });
+    return best;
+  })();
+
+  const TOTAL_SKILLS = 20;
+  const overallAvg = totalActive 
+    ? activeSkills.reduce((acc, [, v]) => acc + v, 0) / totalActive 
+    : 0;
 
   return (
     <div className="p-8 space-y-8 bg-white min-h-screen">
@@ -936,27 +976,49 @@ export default function StudentPerformanceView({ user }) {
         </div>
       </div>
 
-      {/* 4 Stat Cards */}
+      {/* 4 Stat Cards — ML-driven, refetched on grade_released */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          label="OVERALL PERFORMANCE"
-          main={`${Math.round(avgSO)}%`}
-          sub="Institutional proficiency"
+          label="SKILLS MASTERED"
+          icon={Award}
+          main={`${attainedCount} of ${TOTAL_SKILLS}`}
+          sub={totalActive
+            ? `Overall score: ${overallAvg.toFixed(1)}%`
+            : 'awaiting graded scores'}
+          badge={totalActive ? `${Math.round((attainedCount / TOTAL_SKILLS) * 100)}%` : null}
+          badgeTone="green"
         />
         <StatCard
-          label="SKILL ACHIEVEMENT"
-          main={`${Math.round(avgSO)}%`}
-          sub="Attained SO scores"
+          label="NEEDS ATTENTION"
+          icon={ShieldAlert}
+          main={totalActive
+            ? `${atRiskSkills.length} ${atRiskSkills.length === 1 ? 'skill' : 'skills'}`
+            : '—'}
+          sub={lowestRiskSkill
+            ? `under ${AT_RISK_THRESHOLD}% — start with ${lowestRiskSkill}`
+            : totalActive ? 'no skills below 60% — keep it up' : 'awaiting graded scores'}
+          badge={atRiskSkills.length > 0 ? `below ${AT_RISK_THRESHOLD}%` : null}
+          badgeTone="red"
         />
         <StatCard
-          label="SKILLS TRACKED"
-          main="13"
-          sub="Student Outcomes"
+          label="GROWTH POTENTIAL"
+          icon={Rocket}
+          main={headroom > 0 ? `+${headroom.toFixed(1)}%` : '—'}
+          sub={headroom > 0
+            ? 'average skill gain if your grades reach 90%'
+            : 'no projected growth available'}
+          badge={headroom >= 5 ? 'high' : headroom > 0 ? 'moderate' : null}
+          badgeTone="indigo"
         />
         <StatCard
-          label="PERFORMANCE LEVEL"
-          main={Math.round(avgSO) >= 75 ? 'Competent' : Math.round(avgSO) >= 60 ? 'Developing' : 'At Risk'}
-          sub="Current standing"
+          label="TOP COURSE TO IMPROVE"
+          icon={Compass}
+          main={topLeverage ? `+${topLeverage.gap.toFixed(1)}%` : '—'}
+          sub={topLeverage
+            ? `boost from focusing on ${topLeverage.course}`
+            : 'awaiting course-level signal'}
+          badge={topLeverage && topLeverage.gap >= 5 ? 'focus here' : null}
+          badgeTone="amber"
         />
       </div>
 
@@ -1029,13 +1091,16 @@ export default function StudentPerformanceView({ user }) {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3">
         <IntegratedInsights
-          topSkills={predictions?.top_skills}
-          weakSkills={predictions?.weak_skills}
           topSkill={topSkillName}
           topVal={topSkillVal}
+          topCeiling={topSkillCeiling}
+          topSO={topSkillSO}
+          topDriver={topSkillDriver}
           weakSkill={weakSkillName}
           weakVal={weakSkillVal}
-          target={skillAvg}
+          weakCeiling={weakSkillCeiling}
+          weakSO={weakSkillSO}
+          weakDriver={weakSkillDriver}
         />
 
         </div>
@@ -1081,49 +1146,17 @@ export default function StudentPerformanceView({ user }) {
         </div>
       </div>
 
-      {/* Row 4: Analysis & Breakdown Side-by-Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left: Proficiency Growth Analysis */}
-        <div className={`lg:col-span-2 ${panelBase} p-6 flex flex-col`}>
-          <div className="flex flex-col gap-1 mb-6">
-            <h3 className="text-[18px] font-black text-gray-900 leading-tight">Proficiency Growth Analysis</h3>
-            <p className="text-[11px] text-gray-500 font-medium">
-              {skillsTotal} categories ranked by score
-            </p>
-          </div>
-          
-          <div className="flex-1 pt-2">
-              <RankedSkillsChart sortedSkills={sortedSkills} third={skillsThird} animated={barsAnimated} compact />
-          </div>
+      {/* Row 4: Proficiency Growth Analysis */}
+      <div className={`${panelBase} p-6 flex flex-col`}>
+        <div className="flex flex-col gap-1 mb-6">
+          <h3 className="text-[18px] font-black text-gray-900 leading-tight">Proficiency Growth Analysis</h3>
+          <p className="text-[11px] text-gray-500 font-medium">
+            {skillsTotal} categories ranked by score
+          </p>
         </div>
-
-        {/* Right: Course Breakdown */}
-        <div className={`lg:col-span-3 ${panelBase} p-6 flex flex-col`}>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">PER-COURSE ANALYSIS</p>
-              <h3 className="text-[18px] font-black text-gray-900">Course Breakdown</h3>
-            </div>
-            <span className="text-[11px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
-              {(predictions?.per_course?.length || 0)} course{(predictions?.per_course?.length || 0) === 1 ? '' : 's'}
-            </span>
-          </div>
-
-          {(!predictions?.per_course || predictions.per_course.length === 0) ? (
-            <div className="flex-1 flex items-center justify-center text-gray-500 text-sm italic py-12">
-              No course predictions available yet.
-            </div>
-          ) : (
-            <div className="space-y-3 pr-1">
-              {predictions.per_course.map((course, i) => (
-                <CourseBreakdownCard
-                  key={course.course || i}
-                  course={course}
-                  onViewDetails={setSelectedCourse}
-                />
-              ))}
-            </div>
-          )}
+        
+        <div className="flex-1 pt-2">
+            <RankedSkillsChart sortedSkills={sortedSkills} third={skillsThird} animated={barsAnimated} compact />
         </div>
       </div>
     </div>

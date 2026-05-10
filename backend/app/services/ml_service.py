@@ -8,7 +8,14 @@ Provides two entry points:
 import json
 from pathlib import Path
 
-from ml.config import map_avg_to_outcome, get_course_ilo_count, COURSE_PROFILES
+from ml.config import (
+    map_avg_to_outcome,
+    get_course_ilo_count,
+    COURSE_PROFILES,
+    SO_NAMES,
+    compute_so_scores,
+    primary_so_for_skill,
+)
 from ml.predictor import SkillsPredictor
 
 # ── Paths ────────────────────────────────────────────────────────────────────
@@ -92,6 +99,8 @@ def predict_student_aggregate(scores_by_course: list[dict]) -> dict:
             "aggregated_skills": {},
             "top_skills": [],
             "weak_skills": [],
+            "so_scores": {f"SO{i + 1}": 0.0 for i in range(len(SO_NAMES))},
+            "so_names": SO_NAMES,
         }
 
     per_course = []
@@ -142,18 +151,42 @@ def predict_student_aggregate(scores_by_course: list[dict]) -> dict:
 
     aggregated = {}
     for skill, values in skill_totals.items():
-        aggregated[skill] = round(sum(values) / len(values), 2) if values else 0.0
+        # Use max() to reflect 'attainment accumulation' as requested.
+        # This prevents mastery achieved in one course from being diluted by 
+        # lower scores in other courses that map to the same skill.
+        aggregated[skill] = round(max(values), 2) if values else 0.0
 
     sorted_skills = sorted(aggregated.items(), key=lambda x: x[1], reverse=True)
     active_skills = [(s, v) for s, v in sorted_skills if v > 1.0]
 
-    overall_avg = round(sum(all_ilo_avgs) / len(all_ilo_avgs), 2)
+    # Overall performance is now the average of the accumulated skill proficiencies.
+    active_vals = [v for s, v in active_skills]
+    overall_avg = round(sum(active_vals) / len(active_vals), 2) if active_vals else 0.0
+
+    # Project the 20 aggregated skills onto the 13 program SOs.
+    # Recomputed on every aggregation, so SO proficiency moves whenever an
+    # instructor's grade upload invalidates the predictions cache.
+    so_scores = compute_so_scores(aggregated)
+
+    top_names = [s for s, _ in active_skills[:5]]
+    weak_names = [s for s, _ in active_skills[-5:]]
+
+    # Map each highlighted skill to its primary SO so Smart Insights can show
+    # the accreditation outcome a strong/weak skill aligns to.
+    skill_so_map: dict[str, dict] = {}
+    for s in {*top_names, *weak_names}:
+        primary = primary_so_for_skill(s)
+        if primary is not None:
+            skill_so_map[s] = primary
 
     return {
         "overall_ilo_avg": overall_avg,
         "overall_outcome": map_avg_to_outcome(overall_avg),
         "per_course": per_course,
         "aggregated_skills": aggregated,
-        "top_skills": [s for s, _ in active_skills[:5]],
-        "weak_skills": [s for s, _ in active_skills[-5:]],
+        "top_skills": top_names,
+        "weak_skills": weak_names,
+        "so_scores": so_scores,
+        "so_names": SO_NAMES,
+        "skill_so_map": skill_so_map,
     }

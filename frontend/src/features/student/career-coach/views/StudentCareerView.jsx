@@ -11,6 +11,8 @@ import CareerSectionHeading from '../components/CareerSectionHeading';
 import RoadmapViewer from '../components/RoadmapViewer';
 import AnalysisProgressionModal from '../components/AnalysisProgressionModal';
 import AnalysisProgressionCard from '../components/AnalysisProgressionCard';
+import AnalysisLoadingCard from '../components/AnalysisLoadingCard';
+import PipelineResultModal from '../components/PipelineResultModal';
 
 
 
@@ -36,6 +38,7 @@ function friendlyPipelineError(raw) {
   }
   return s;
 }
+
 
 
 export default function StudentCareerView({ user }) {
@@ -67,6 +70,8 @@ export default function StudentCareerView({ user }) {
     visibleCareerTitles,
     showCareer,
     hideCareer,
+    pipelineResult,
+    clearPipelineResult,
   } = useCareerCoach(user.id);
 
   const [toast, setToast] = useState(null);
@@ -287,7 +292,7 @@ export default function StudentCareerView({ user }) {
                     {activeTitle} hasn't been analyzed yet for your profile. The roadmap below shows the standard learning path, but you'll need to run the AI analyzer to get a personalized match score, skill breakdown, and gap analysis.
                   </p>
                   <button
-                    onClick={runPipeline}
+                    onClick={() => runPipeline({ force: true })}
                     disabled={isRunning}
                     className="px-4 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition-all flex items-center gap-2 disabled:opacity-50"
                   >
@@ -435,6 +440,16 @@ export default function StudentCareerView({ user }) {
         />
       )}
 
+      {/* ── Pipeline result modal ── */}
+      <PipelineResultModal result={pipelineResult} onClose={clearPipelineResult} />
+
+      {/* ── Refresh-analysis loading overlay ── */}
+      {isRunning && (
+        <div className="fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4">
+          <AnalysisLoadingCard isRunning={isRunning} pipelineStatus={pipelineStatus} />
+        </div>
+      )}
+
       {/* ── Toast notification ── */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-xl text-[12px] font-medium shadow-xl border ${toast.type === 'error'
@@ -534,7 +549,7 @@ function InsightsTab({ insights, activeTitle, selectedPath, reportCreatedAt, run
               </span>
             )}
             <button
-              onClick={runPipeline}
+              onClick={() => runPipeline({ force: true })}
               disabled={isRunning}
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 text-gray-700 rounded-lg text-[11px] font-bold transition-colors"
             >
@@ -580,7 +595,7 @@ function InsightsTab({ insights, activeTitle, selectedPath, reportCreatedAt, run
                 : `${activeTitle} hasn't been analyzed yet. Run the AI analyzer to get a match score, skill breakdown, and personalized insights for this career.`}
             </p>
             <button
-              onClick={runPipeline}
+              onClick={() => runPipeline({ force: true })}
               disabled={isRunning}
               className="mt-2 px-5 py-2 bg-[#70170f] text-white rounded-lg text-[11px] font-bold hover:bg-[#4a0e09] transition-all flex items-center gap-2 disabled:opacity-50"
             >

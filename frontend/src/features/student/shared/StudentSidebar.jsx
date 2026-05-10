@@ -25,7 +25,7 @@ export default function StudentSidebar({ activeView, setActiveView, onLogout, us
 
   const nav = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'enrolled-classes', icon: BookOpen, label: 'Enrolled Classes' },
+    { id: 'enrolled-classes', icon: BookOpen, label: 'My Classes' },
     { id: 'my-performance', icon: TrendingUp, label: 'My Performance' },
     { id: 'github-analytics', icon: Github, label: 'GitHub Analytics' },
     { id: 'career-coach', icon: Bot, label: 'Career Coach' },

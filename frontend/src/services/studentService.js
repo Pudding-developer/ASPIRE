@@ -5,7 +5,10 @@ export const studentService = {
   getClasses:      ()           => request('GET',   '/api/student/classes'),
   getArchivedClasses: ()        => request('GET',   '/api/student/classes/archived'),
   getScores:       ()           => request('GET',   '/api/student/scores'),
-  getPredictions:  ()           => request('GET',   '/api/student/predictions'),
+  getPredictions:  (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request('GET', `/api/student/predictions${qs ? '?' + qs : ''}`);
+  },
   getCourseDashboard: (course)  => request('GET',   `/api/student/dashboard?course=${encodeURIComponent(course)}`),
   joinClass:       (classCode)  => request('POST',  '/api/student/join', { class_code: classCode }),
 

@@ -18,6 +18,7 @@ def _get_llm() -> LLM:
         max_retries=2,
         timeout=300,
         temperature=0,
+        thinking={"type": "enabled", "budget_tokens": 8192},
     )
 
 
@@ -52,16 +53,28 @@ def create_career_mapping_task(agent: Agent, skill_task) -> Task:
             "═══════════════════════════════════════════════════════\n"
             "STEP 1 — RETRIEVE EVERY CAREER PATH IN THE KNOWLEDGE BASE\n"
             "═══════════════════════════════════════════════════════\n"
-            "Make ONE broad RAG call to surface every career chunk:\n"
+            "You MUST run ALL THREE of these RAG calls and merge the results.\n"
+            "Do not skip any — skipping causes some careers to silently disappear.\n\n"
+            "  Query A (broad sweep):\n"
             "    rag_career_knowledge(\n"
             "      query='BSU Computer Engineering career paths Philippines',\n"
             "      category='career_path',\n"
             "      top_k=30\n"
             "    )\n\n"
-            "If the result has fewer than ~8 unique careers, run a second\n"
-            "complementary query (e.g. 'embedded hardware DevOps cybersecurity\n"
-            "data engineer roles') with top_k=30 and merge results.\n\n"
-            "Dedupe by 'Career Path:' title. The merged list is your full\n"
+            "  Query B (software, data, AI careers):\n"
+            "    rag_career_knowledge(\n"
+            "      query='Full Stack Backend Frontend AI Engineer Data Scientist Machine Learning',\n"
+            "      category='career_path',\n"
+            "      top_k=30\n"
+            "    )\n\n"
+            "  Query C (infrastructure, hardware, security careers):\n"
+            "    rag_career_knowledge(\n"
+            "      query='DevOps Cybersecurity Embedded Systems Network Engineer IoT',\n"
+            "      category='career_path',\n"
+            "      top_k=30\n"
+            "    )\n\n"
+            "Merge all three results. Dedupe by 'Career Path:' title — keep the\n"
+            "first occurrence of each unique title. The merged list is your full\n"
             "candidate set. Every career_matches entry MUST come from this set —\n"
             "do NOT invent careers that did not appear in any RAG result.\n\n"
 
@@ -90,11 +103,8 @@ def create_career_mapping_task(agent: Agent, skill_task) -> Task:
             "         Ready to pursue this role with focused gap closure.\n"
             "  65–84: Good fit. Solid foundation, several gaps remain.\n"
             "  45–64: Moderate fit. Real interest signals but significant skill gaps.\n"
-            "  25–44: Stretch fit. Could pursue but requires major investment.\n"
-            "  < 25:  DO NOT include this career in the output.\n\n"
             "  A perfect 100 is unrealistic for a student — cap at 95.\n"
-            "  A 0 is unrealistic too — if a chunk surfaced from RAG, the student has SOME\n"
-            "  alignment. Floor at 25 (drop the chunk if true score < 25).\n\n"
+            "  Include ALL careers even if the score is very low (e.g., 0). Do not drop them.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
             "STEP 4 — POPULATE EACH CAREER MATCH\n"
@@ -122,7 +132,6 @@ def create_career_mapping_task(agent: Agent, skill_task) -> Task:
             "       (look at the chunk's 'Philippine market outlook' line).\n"
             "    2. Then prefer the career with fewer gap_skills (closer to job-ready).\n\n"
             "  recommended_career = title of the #1 (highest-scoring) result.\n\n"
-            "  Drop any career whose true score < 25 — these are noise.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
             "OUTPUT (return ONLY this JSON, no explanation text)\n"
@@ -143,7 +152,7 @@ def create_career_mapping_task(agent: Agent, skill_task) -> Task:
         ),
         expected_output=(
             "A JSON object with keys: career_matches (list of EVERY career "
-            "scoring >= 25 — typically 6–12 entries depending on how many career "
+            "scored — typically 6–12 entries depending on how many career "
             "paths are in the knowledge base — sorted by match_score desc; each "
             "must come from a RAG result), recommended_career (str — the title "
             "of the top match). Return ONLY the JSON."

@@ -140,7 +140,7 @@ export function deriveInsights(match, isOptimal) {
 /* ── Main hook ── */
 
 export default function useCareerCoach(userId) {
-  const { report, loading: apiLoading, error, runPipeline, pipelineStatus, isRunning } = usePipeline(userId);
+  const { report, loading: apiLoading, error, runPipeline, pipelineStatus, isRunning, pipelineResult, clearPipelineResult } = usePipeline(userId);
   const { predictions } = useStudentData();
 
   /* Selection is driven by career *title* (not array index) so the active
@@ -357,6 +357,8 @@ export default function useCareerCoach(userId) {
     runPipeline,
     pipelineStatus,
     isRunning,
+    pipelineResult,
+    clearPipelineResult,
   };
 }
 

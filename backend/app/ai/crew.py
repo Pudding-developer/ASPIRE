@@ -9,8 +9,10 @@ Pipeline order:
   5. Gap Analyst          — finds learning resources for each skill gap
   6. Report Generator     — produces the final CareerReport JSON
 """
-import time
+import hashlib
 import json
+import time
+import uuid
 
 from crewai import Crew, Process
 from litellm.exceptions import RateLimitError as LiteLLMRateLimitError
@@ -127,13 +129,25 @@ def build_and_run_crew(
         ],
         process=Process.sequential,
         verbose=True,
-        max_rpm=15,  # bumped from 3 — gemini-2.5-flash has no explicit RPM cap on this project
+        max_rpm=30,  # bumped from 15 — gemini-2.5-flash has no explicit RPM cap on this project
+    )
+
+    # ── Pseudonymize identifiers before they reach Vertex AI ────────────────
+    # Real names and SR codes are direct PII under RA 10173. The LLM has no
+    # analytical need for them — all real data comes through student_data_tool.
+    # A per-session opaque token is used instead so retry logs can be
+    # correlated without exposing the student's identity.
+    _session_token = uuid.uuid4().hex[:8]
+    _raw_sr = student_data.get("sr_code") or ""
+    _pseudo_sr = (
+        hashlib.sha256(_raw_sr.encode()).hexdigest()[:12]
+        if _raw_sr else "unknown"
     )
 
     try:
         result = _run_with_retry(crew, inputs={
-            "student_name": student_data.get("full_name", "Unknown"),
-            "sr_code":      student_data.get("sr_code", "N/A"),
+            "student_name": f"Student-{_session_token}",
+            "sr_code":      _pseudo_sr,
             "previous_report_json": previous_report or "null",
             "subject_skill_context": subject_skill_context,
         })

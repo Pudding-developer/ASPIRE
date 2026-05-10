@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { studentService } from '../../../../services/studentService';
 
-export default function useStudentData() {
+export default function useStudentData(filters = {}) {
   const [profile, setProfile] = useState(null);
   const [classes, setClasses] = useState([]);
   const [archivedClasses, setArchivedClasses] = useState([]);
@@ -19,7 +19,7 @@ export default function useStudentData() {
         studentService.getClasses(),
         studentService.getArchivedClasses(),
         studentService.getScores(),
-        studentService.getPredictions(),
+        studentService.getPredictions(filters),
       ]);
 
       if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
@@ -29,7 +29,6 @@ export default function useStudentData() {
       if (archivedClassesRes.status === 'fulfilled') setArchivedClasses(archivedClassesRes.value.data || []);
       if (scoresRes.status === 'fulfilled') setScores(scoresRes.value.data || []);
       
-      // Predictions might fail if no scores exist yet
       if (predictionsRes.status === 'fulfilled') {
         setPredictions(predictionsRes.value.data);
       }
@@ -38,7 +37,7 @@ export default function useStudentData() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [JSON.stringify(filters)]);
 
   useEffect(() => {
     fetchAll();

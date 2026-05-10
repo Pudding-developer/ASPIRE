@@ -11,6 +11,7 @@ Pipeline order:
 """
 import hashlib
 import json
+import logging
 import time
 import uuid
 
@@ -29,6 +30,8 @@ from app.ai.agents.career_agent import create_career_mapper, create_career_mappi
 from app.ai.agents.gap_agent import create_gap_analyst, create_gap_analysis_task
 from app.ai.agents.report_agent import create_report_generator, create_report_generation_task
 from app.ai.agents.progress_tracker_agent import create_progress_tracker, create_progress_tracking_task
+
+logger = logging.getLogger(__name__)
 
 
 def _run_with_retry(crew: Crew, inputs: dict, max_attempts: int = 5):
@@ -58,16 +61,42 @@ def _run_with_retry(crew: Crew, inputs: dict, max_attempts: int = 5):
             raise  # re-raise on non-rate-limit errors or final attempt
 
 
+import re
+
+def _parse_json(raw: str) -> dict:
+    """Robust JSON parsing that strips markdown code blocks and surrounding text."""
+    raw = raw.strip()
+    # Try to find a JSON block enclosed in markdown backticks
+    match = re.search(r'```(?:json)?\s*(.*?)\s*```', raw, re.DOTALL)
+    if match:
+        raw = match.group(1).strip()
+    
+    # If no backticks, or after extracting, try to find the first { and last }
+    start_idx = raw.find('{')
+    end_idx = raw.rfind('}')
+    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+        raw = raw[start_idx:end_idx+1]
+        
+    return json.loads(raw)
+
+
 def build_and_run_crew(
-    student_data: dict, 
+    student_data: dict,
     previous_report: str = None,
-    subject_skill_context: str = "No subjects enrolled yet."
+    subject_skill_context: str = "No subjects enrolled yet.",
+    student_id: int | None = None,
+    sync_db=None,
 ) -> dict:
     """
     Synchronous entry point — called via asyncio.to_thread() from pipeline_service.
 
     Builds the 7-agent crew, runs it sequentially, and returns the parsed
     CareerReport dict that matches the schema expected by the frontend.
+
+    student_id + sync_db: when provided, Agent 1's output is cached in
+    github_skill_cache. On cache hit the agent is skipped and the last
+    stable extraction is reused — eliminating run-to-run score variance
+    caused by LLM non-determinism on the same repo data.
     """
     # ── Instantiate shared tools ──────────────────────────────────────────────
     student_data_tool = StudentDataTool()
@@ -75,6 +104,28 @@ def build_and_run_crew(
 
     rag_career_tool = RAGCareerTool()
     github_search_tool = GitHubSearchTool()
+
+    # ── GitHub Skill Cache check ───────────────────────────────────────────────
+    # If student_id + sync_db were passed and the GitHub data hasn't changed
+    # since the last run, reuse Agent 1's cached output and skip re-extraction.
+    _cached_github_output: str | None = None
+    _github_data_hash: str | None = None
+    _use_cached_github = False
+
+    if student_id and sync_db is not None:
+        try:
+            from app.ai.cache.github_skill_cache import hash_github_data, get_cached_github_skills
+            github_block = student_data.get("github_profile", {})
+            _github_data_hash = hash_github_data(github_block)
+            cached = get_cached_github_skills(student_id, _github_data_hash, sync_db)
+            if cached is not None:
+                _use_cached_github = True
+                _cached_github_output = json.dumps(cached)
+                logger.info("[crew] GitHub skill cache HIT — skipping Agent 1")
+            else:
+                logger.info("[crew] GitHub skill cache MISS — running Agent 1")
+        except Exception as exc:
+            logger.warning("[crew] Cache check failed: %s — falling back to Agent 1", exc)
 
     # ── Create agents ─────────────────────────────────────────────────────────
     github_analyzer   = create_github_analyzer(student_data_tool)
@@ -100,6 +151,11 @@ def build_and_run_crew(
         gap_task,
     )
     progress_task = create_progress_tracking_task(progress_tracker, report_task)
+
+    # ── If cache hit: pre-fill github_task output so Agent 1 is skipped ──────
+    if _use_cached_github and _cached_github_output:
+        github_task.output = type("TaskOutput", (), {"raw": _cached_github_output})()
+        logger.info("[crew] Injected cached github_skills into github_task.output")
 
     # ── Inject deterministic subject mappings into Agent 2 ───────────────
     academic_task.description = academic_task.description.replace(
@@ -161,6 +217,22 @@ def build_and_run_crew(
             "error": f"AI Pipeline execution failed: {str(e)}",
             "note": "The crew failed to complete the analysis tasks."
         }
+
+    # ── Save fresh Agent 1 output to cache (only on cache miss) ───────────────
+    if not _use_cached_github and student_id and sync_db is not None and _github_data_hash:
+        try:
+            from app.ai.cache.github_skill_cache import save_github_skills
+            if hasattr(result, 'tasks_output') and len(result.tasks_output) >= 1:
+                raw_github = result.tasks_output[0].raw or ""
+                try:
+                    skills_dict = _parse_json(raw_github)
+                    save_github_skills(student_id, _github_data_hash, skills_dict, sync_db)
+                except (json.JSONDecodeError, Exception) as parse_err:
+                    logger.warning("[crew] Could not parse Agent 1 output for cache: %s", parse_err)
+                    with open('/tmp/err.log', 'a') as f:
+                        f.write(f"Parse error: {parse_err}\nRaw output was: {raw_github}\n")
+        except Exception as exc:
+            logger.warning("[crew] Cache save failed: %s — continuing without cache", exc)
 
     # Extract raw outputs from the result object
     report_raw = ""

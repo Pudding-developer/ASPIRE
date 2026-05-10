@@ -17,8 +17,7 @@ def _get_llm() -> LLM:
         model=GEMINI_MODEL,
         max_retries=2,
         timeout=300,
-        temperature=0,
-        thinking={"type": "enabled", "budget_tokens": 8192},
+        temperature=0.0,
     )
 
 
@@ -125,8 +124,8 @@ def create_career_mapping_task(agent: Agent, skill_task) -> Task:
             "STEP 5 — RETURN EVERY VIABLE CAREER + RECOMMEND THE TOP\n"
             "═══════════════════════════════════════════════════════\n"
             "Score every unique career from Step 1. Include in `career_matches`\n"
-            "every career whose score is >= 25 — do NOT cap at top 3. Sort the\n"
-            "list by match_score descending.\n\n"
+            "every career, regardless of its score. Do NOT drop careers with low scores.\n"
+            "Sort the list by match_score descending.\n\n"
             "  Tie-breaking when match_scores are within 3 points of each other:\n"
             "    1. Prefer the career with stronger Philippine market outlook\n"
             "       (look at the chunk's 'Philippine market outlook' line).\n"

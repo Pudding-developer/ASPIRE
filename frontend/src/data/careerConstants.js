@@ -47,12 +47,6 @@ export const CAREER_OPTIONS = [
     roadmap: 'https://roadmap.sh/ai-engineer',
   },
   {
-    title: 'Cybersecurity',
-    blurb: 'Defend systems and people — pentesting, incident response, and beyond.',
-    skills: ['Networking', 'Linux', 'SIEM', 'Pentesting'],
-    roadmap: 'https://roadmap.sh/cyber-security',
-  },
-  {
     title: 'Machine Learning',
     blurb: 'Build and deploy ML systems that learn from data at production scale.',
     skills: ['Python', 'PyTorch / TF', 'Feature Eng.', 'MLOps'],
@@ -63,12 +57,6 @@ export const CAREER_OPTIONS = [
     blurb: 'Design the large-scale shape of systems — services, data, and tradeoffs.',
     skills: ['System Design', 'Distributed Systems', 'Cloud', 'Security'],
     roadmap: 'https://roadmap.sh/software-architect',
-  },
-  {
-    title: 'QA Engineer',
-    blurb: 'Build the test infrastructure that lets teams ship fast without breaking things.',
-    skills: ['Test Automation', 'CI/CD', 'API Testing', 'Performance'],
-    roadmap: 'https://roadmap.sh/qa',
   },
 ];
 

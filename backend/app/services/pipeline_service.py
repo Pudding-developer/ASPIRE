@@ -310,13 +310,30 @@ async def run_pipeline_job(
 
             # ── Run the entire 7-agent crew in a background thread ────────────
             from app.ai.crew import build_and_run_crew
+            from app.core.database import engine
 
-            pipeline_result = await asyncio.to_thread(
-                build_and_run_crew,
-                student_data,
-                prev_report_json,
-                subject_context
-            )
+            # Crew.py runs in a synchronous thread. We must pass a sync db session
+            # if we want it to read/write the GithubSkillCache.
+            def _run_crew_with_sync_db():
+                from sqlalchemy.orm import Session
+                # The engine in app.core.database is usually an async engine.
+                # However, SQLModel/SQLAlchemy async engines cannot be used synchronously.
+                # We need to construct a synchronous engine string from the async one.
+                from app.core.config import DATABASE_URL
+                sync_url = DATABASE_URL.replace("+asyncpg", "").replace("+psycopg2", "")
+                from sqlalchemy import create_engine
+                sync_engine = create_engine(sync_url)
+                
+                with Session(sync_engine) as sync_db:
+                    return build_and_run_crew(
+                        student_data,
+                        prev_report_json,
+                        subject_context,
+                        student_id=student_id,
+                        sync_db=sync_db
+                    )
+
+            pipeline_result = await asyncio.to_thread(_run_crew_with_sync_db)
 
             # Stamp the input hash so the next run can detect "no change".
             pipeline_result["_input_hash"] = input_hash

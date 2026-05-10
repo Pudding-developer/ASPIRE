@@ -44,10 +44,8 @@ VALID_CAREERS = [
     "DevOps Engineer",
     "Data Scientist",
     "AI Engineer",
-    "Cybersecurity",
     "Machine Learning",
     "Software Architect",
-    "QA Engineer",
 ]
 
 ROADMAP_LINKS = {
@@ -57,10 +55,8 @@ ROADMAP_LINKS = {
     "DevOps Engineer":      "https://roadmap.sh/devops",
     "Data Scientist":       "https://roadmap.sh/ai-data-scientist",
     "AI Engineer":          "https://roadmap.sh/ai-engineer",
-    "Cybersecurity":        "https://roadmap.sh/cyber-security",
     "Machine Learning":     "https://roadmap.sh/machine-learning",
     "Software Architect":   "https://roadmap.sh/software-architect",
-    "QA Engineer":          "https://roadmap.sh/qa",
 }
 
 # ── Profile ──────────────────────────────────────────────────────────────────

@@ -440,14 +440,16 @@ def get_course_ilo_count(course: str) -> int:
 
 def map_avg_to_outcome(avg: float) -> str:
     x = float(avg)
-    if x < 75:   return "Failure"
-    if x < 78:   return "Passing"
-    if x < 80:   return "Fairly Satisfactory"
-    if x < 82:   return "Satisfactory"
-    if x < 85:   return "Very Satisfactory"
-    if x < 88:   return "Meritorious"
-    if x < 91:   return "Good"
-    return "Very Good"
+    if x >= 98:   return "Excellent"
+    if x >= 94:   return "Superior"
+    if x >= 90:   return "Very Good"
+    if x >= 88:   return "Good"
+    if x >= 85:   return "Meritorious"
+    if x >= 83:   return "Very Satisfactory"
+    if x >= 80:   return "Satisfactory"
+    if x >= 78:   return "Fairly Satisfactory"
+    if x >= 75:   return "Passing"
+    return "Failure"
 
 
 # ── Student Outcomes (CMO-aligned) ────────────────────────────────────────────

@@ -535,15 +535,21 @@ function IntegratedInsights({
 
 
 /* ─── Proficiency Growth helpers ─── */
-function tierForIndex(idx, third) {
-  if (idx < third) return { name: 'text-green-800 font-medium', bar: 'bg-green-600', val: 'text-green-700' };
-  if (idx < third * 2) return { name: 'text-amber-800', bar: 'bg-amber-500', val: 'text-amber-700' };
-  return { name: 'text-red-800', bar: 'bg-red-600', val: 'text-red-700' };
-}
+/* ─── Proficiency Growth helpers ─── */
+const GRADING_SYSTEM = [
+  { label: "Excellent", min: 98, color: "bg-emerald-600", bg: "bg-emerald-50/50", border: "border-emerald-200", text: "text-emerald-900" },
+  { label: "Superior", min: 94, color: "bg-teal-500", bg: "bg-teal-50/50", border: "border-teal-200", text: "text-teal-900" },
+  { label: "Very Good", min: 90, color: "bg-cyan-500", bg: "bg-cyan-50/50", border: "border-cyan-200", text: "text-cyan-900" },
+  { label: "Good", min: 88, color: "bg-blue-500", bg: "bg-blue-50/50", border: "border-blue-200", text: "text-blue-900" },
+  { label: "Meritorious", min: 85, color: "bg-indigo-500", bg: "bg-indigo-50/50", border: "border-indigo-200", text: "text-indigo-900" },
+  { label: "Very Satisfactory", min: 83, color: "bg-violet-500", bg: "bg-violet-50/50", border: "border-violet-200", text: "text-violet-900" },
+  { label: "Satisfactory", min: 80, color: "bg-amber-500", bg: "bg-amber-50/50", border: "border-amber-200", text: "text-amber-900" },
+  { label: "Fairly Satisfactory", min: 78, color: "bg-orange-500", bg: "bg-orange-50/50", border: "border-orange-200", text: "text-orange-900" },
+  { label: "Passing", min: 75, color: "bg-rose-500", bg: "bg-rose-50/50", border: "border-rose-200", text: "text-rose-900" },
+  { label: "Failure", min: 0, color: "bg-red-600", bg: "bg-red-50", border: "border-[#70170f]/30", text: "text-[#70170f]" },
+];
 
-function RankedSkillsChart({ sortedSkills, third, animated }) {
-  const maxScore = sortedSkills[0]?.[1] || 1;
-
+function RankedSkillsChart({ sortedSkills, animated }) {
   if (sortedSkills.length === 0) {
     return (
       <div className="bg-white border border-gray-100 rounded-2xl p-5">
@@ -552,50 +558,43 @@ function RankedSkillsChart({ sortedSkills, third, animated }) {
     );
   }
 
-  const topThird = sortedSkills.slice(0, third);
-  const midThird = sortedSkills.slice(third, third * 2);
-  const bottomThird = sortedSkills.slice(third * 2);
-
-  const boxes = [
-    { title: "Excelled Skills", skills: topThird, bg: "bg-emerald-50/50", border: "border-emerald-200", text: "text-emerald-900" },
-    { title: "Developing Skills", skills: midThird, bg: "bg-amber-50/50", border: "border-amber-200", text: "text-amber-900" },
-    { title: "Needs Attention", skills: bottomThird, bg: "bg-red-50", border: "border-[#70170f]/30", text: "text-[#70170f]" },
-  ];
+  // Group skills into the 10 categories based on the GRADING_SYSTEM ranges
+  const categorizedBoxes = GRADING_SYSTEM.map((level, idx) => {
+    const nextLevel = GRADING_SYSTEM[idx - 1]; // next higher level (since the array is sorted high to low)
+    const skills = sortedSkills.filter(([, val]) => {
+      const isAboveMin = val >= level.min;
+      const isBelowNextMin = nextLevel ? val < nextLevel.min : true;
+      return isAboveMin && isBelowNextMin;
+    });
+    return { ...level, skills };
+  }).filter(box => box.skills.length > 0);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 h-full">
-      {boxes.map((box, idx) => {
-        if (box.skills.length === 0) return null;
-        return (
-          <div key={idx} className={`rounded-2xl border ${box.border} ${box.bg} p-6 flex flex-col shadow-sm transition-all hover:shadow-md`}>
-            <div className="flex justify-between items-center mb-6">
-              <h4 className={`text-[15px] font-black ${box.text} tracking-tight`}>{box.title}</h4>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/60 ${box.text} border ${box.border}`}>{box.skills.length} Skills</span>
-            </div>
-            <div className="flex-1 space-y-4">
-              {box.skills.map(([name, val], j) => {
-                const i = (idx === 0 ? 0 : idx === 1 ? topThird.length : topThird.length + midThird.length) + j;
-                const cls = tierForIndex(i, third);
-                const target = maxScore > 0 ? (val / maxScore) * 100 : 0;
-                return (
-                  <div key={name} className="group">
-                    <div className="flex justify-between items-center mb-1.5 gap-2">
-                      <span className={`text-[12px] font-bold truncate ${box.text} opacity-90 group-hover:opacity-100 transition-opacity`} title={name}>{name}</span>
-                      <span className={`text-[11px] font-black tabular-nums ${box.text}`}>{val.toFixed(1)}</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-black/5 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${cls.bar} rounded-full transition-all duration-1000 ease-out`}
-                        style={{ width: animated ? `${target}%` : '0%' }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+      {categorizedBoxes.map((box, idx) => (
+        <div key={idx} className={`rounded-2xl border ${box.border} ${box.bg} p-5 flex flex-col shadow-sm transition-all hover:shadow-md`}>
+          <div className="flex justify-between items-center mb-5">
+            <h4 className={`text-[13px] font-black ${box.text} tracking-tight`}>{box.label}</h4>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 ${box.text} border ${box.border}`}>{box.skills.length}</span>
           </div>
-        );
-      })}
+          <div className="flex-1 space-y-3.5">
+            {box.skills.map(([name, val]) => (
+              <div key={name} className="group">
+                <div className="flex justify-between items-center mb-1 gap-2">
+                  <span className={`text-[11px] font-bold truncate ${box.text} opacity-90 group-hover:opacity-100 transition-opacity`} title={name}>{name}</span>
+                  <span className={`text-[10px] font-black tabular-nums ${box.text}`}>{val.toFixed(1)}</span>
+                </div>
+                <div className="w-full h-1 bg-black/5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${box.color} rounded-full transition-all duration-1000 ease-out`}
+                    style={{ width: animated ? `${val}%` : '0%' }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -941,6 +940,7 @@ export default function StudentPerformanceView({ user }) {
     : 0;
 
   return (
+    <>
     <div className="p-8 space-y-8 bg-white min-h-screen">
       {/* Header */}
       <div className="flex items-start justify-between">
@@ -1171,11 +1171,12 @@ export default function StudentPerformanceView({ user }) {
         </div>
 
         <div className="flex-1 pt-2">
-          <RankedSkillsChart sortedSkills={sortedSkills} third={skillsThird} animated={barsAnimated} compact />
+          <RankedSkillsChart sortedSkills={sortedSkills} animated={barsAnimated} />
         </div>
       </div>
     </div>
 
       { showAllActivities && <AllActivitiesModal onClose={() => setShowAllActivities(false)} /> }
+    </>
   );
 }

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.repositories import class_repository
-from app.schemas.class_schema import ClassCreate, ClassOut, DashboardStats, AssessmentBatchSubmit, AssessmentSummary, AssessmentBatchDetail
+from app.schemas.class_schema import ClassCreate, ClassOut, DashboardStats, StudentPerformanceRow, ClassRepresentativeRow, AssessmentBatchSubmit, AssessmentSummary, AssessmentBatchDetail
 from app.models.class_model import Assessment, AssessmentILO, ClassEnrollment, StudentScore
 from app.models.user import User
 from app.services import activity_service
@@ -79,11 +79,15 @@ async def delete_class(session: AsyncSession, instructor_id: int, class_id: int)
 
 async def get_dashboard_stats(session: AsyncSession, instructor_id: int) -> DashboardStats:
     stats = await class_repository.get_dashboard_stats(session, instructor_id)
+    performance_rows = await class_repository.get_student_performance_rows(session, instructor_id)
+    rep_rows = await class_repository.get_class_representatives(session, instructor_id)
     return DashboardStats(
         total_students=stats["total_students"],
         active_courses=stats["active_courses"],
         school_year=_get_school_year(),
         avg_performance=stats["avg_performance"],
+        student_performance=[StudentPerformanceRow(**row) for row in performance_rows],
+        class_representatives=[ClassRepresentativeRow(**row) for row in rep_rows],
     )
 
 
@@ -94,6 +98,25 @@ async def get_class_students(
 ) -> list[dict[str, object | None]]:
     await _verify_ownership(session, instructor_id, class_id)
     return await class_repository.get_students_by_class(session, class_id)
+
+
+async def set_class_representative(
+    session: AsyncSession,
+    instructor_id: int,
+    class_id: int,
+    student_id: int,
+    is_rep: bool,
+) -> dict:
+    await _verify_ownership(session, instructor_id, class_id)
+    enrollment = await class_repository.set_class_representative(
+        session, class_id, student_id, is_rep
+    )
+    if not enrollment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student is not enrolled in this class.",
+        )
+    return {"student_id": student_id, "class_id": class_id, "is_class_rep": is_rep}
 
 
 async def submit_assessment_scores(

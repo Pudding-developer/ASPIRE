@@ -100,11 +100,293 @@ function getStanding(avg) {
   return { label: 'NEEDS ATTENTION', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' };
 }
 
-const ILO_SO_MAP = {
-  1: { id: 'SO 1', name: 'Discipline Knowledge' },
-  2: { id: 'SO 5', name: 'Problem Analysis' },
-  3: { id: 'SO 3', name: 'Design/Dev. of Solutions' },
-  4: { id: 'SO 2', name: 'Investigation' }
+const SO_NAMES = {
+  1: "Discipline Knowledge",
+  2: "Investigation",
+  3: "Design/Dev. of Solutions",
+  4: "Leadership",
+  5: "Problem Analysis",
+  6: "Ethics",
+  7: "Communication",
+  8: "Environment",
+  9: "Lifelong Learning",
+  10: "Engineering & Society",
+  11: "Modern Tools",
+  12: "Project Management",
+  13: "Social Responsibility",
+};
+
+const COURSE_ILO_SO_MAP = {
+  "CpE 410": {
+    1: [{ so: 5, pi: "R" }, { so: 11, pi: "D" }],
+    2: [{ so: 2, pi: "R" }, { so: 11, pi: "D" }],
+    3: [{ so: 2, pi: "R" }],
+  },
+  "ENGG 401": {
+    1: [{ so: 5, pi: "R" }, { so: 13, pi: "I" }],
+    2: [{ so: 3, pi: "I" }, { so: 10, pi: "I/R" }, { so: 11, pi: "R" }],
+    3: [{ so: 3, pi: "I" }, { so: 10, pi: "I/R" }, { so: 11, pi: "R" }],
+  },
+  "GEd 101": {
+    1: [{ so: 9, pi: "R" }],
+    2: [{ so: 7, pi: "R" }, { so: 9, pi: "R" }],
+  },
+  "GEd 102": {
+    1: [{ so: 1, pi: "I" }],
+    2: [{ so: 1, pi: "I" }],
+    3: [{ so: 1, pi: "I" }],
+  },
+  "GEd 105": {
+    1: [{ so: 9, pi: "I" }, { so: 10, pi: "I" }],
+    2: [{ so: 10, pi: "I" }, { so: 13, pi: "I" }],
+  },
+  "GEd 106": {
+    1: [{ so: 6, pi: "R" }],
+    2: [{ so: 6, pi: "R" }, { so: 7, pi: "R" }],
+    3: [{ so: 6, pi: "R" }],
+  },
+  "MATH 401": {
+    1: [{ so: 1, pi: "I" }],
+    2: [{ so: 1, pi: "I" }],
+    3: [{ so: 1, pi: "I" }],
+  },
+  "SCl 401": {
+    1: [{ so: 1, pi: "I" }, { so: 5, pi: "I" }],
+    2: [{ so: 1, pi: "I" }],
+    3: [{ so: 2, pi: "I" }],
+  },
+  "CpE 401": {
+    1: [{ so: 1, pi: "I" }, { so: 5, pi: "I" }, { so: 9, pi: "I" }, { so: 11, pi: "R" }, { so: 13, pi: "R" }],
+    2: [{ so: 10, pi: "R" }, { so: 11, pi: "R" }],
+    3: [{ so: 10, pi: "R" }, { so: 11, pi: "R" }],
+  },
+  "ENGG 402": {
+    1: [{ so: 2, pi: "R" }, { so: 9, pi: "R" }, { so: 10, pi: "R" }, { so: 11, pi: "R" }],
+    2: [{ so: 7, pi: "R" }],
+  },
+  "GEd 104": {
+    1: [{ so: 7, pi: "I" }, { so: 10, pi: "I" }],
+  },
+  "GEd 108": {
+    1: [{ so: 4, pi: "R" }, { so: 9, pi: "R" }],
+  },
+  "GEd 109": {
+    1: [{ so: 6, pi: "I" }, { so: 9, pi: "I" }, { so: 10, pi: "I" }],
+  },
+  "MATH 102": {
+    1: [{ so: 1, pi: "I" }],
+  },
+  "SCI 403": {
+    1: [{ so: 1, pi: "R" }, { so: 2, pi: "R" }, { so: 5, pi: "R" }],
+    2: [{ so: 1, pi: "R" }, { so: 2, pi: "R" }],
+    3: [{ so: 1, pi: "R" }, { so: 2, pi: "R" }],
+  },
+  "GEd 103": {
+    1: [{ so: 4, pi: "I" }, { so: 9, pi: "I" }, { so: 10, pi: "I" }],
+    2: [{ so: 10, pi: "I" }],
+    3: [{ so: 10, pi: "I" }],
+  },
+  "GEd 107": {
+    1: [{ so: 6, pi: "I" }],
+    2: [{ so: 6, pi: "I" }],
+    3: [{ so: 6, pi: "I" }],
+  },
+  "SCI 402": {
+    1: [{ so: 2, pi: "I" }],
+    2: [{ so: 1, pi: "I" }, { so: 6, pi: "I" }],
+  },
+  "CpE 403": {
+    1: [{ so: 9, pi: "I" }, { so: 10, pi: "I" }],
+    2: [{ so: 10, pi: "I" }],
+    3: [{ so: 10, pi: "I" }],
+  },
+  "CpE 404": {
+    1: [{ so: 11, pi: "I" }],
+    2: [{ so: 11, pi: "I" }],
+    3: [{ so: 11, pi: "I" }],
+  },
+  "CpE 405": {
+    1: [{ so: 1, pi: "R" }, { so: 6, pi: "R" }],
+    2: [{ so: 1, pi: "R" }],
+    3: [{ so: 1, pi: "R" }],
+    4: [{ so: 1, pi: "R" }],
+  },
+  "EE 423": {
+    1: [{ so: 1, pi: "R" }, { so: 5, pi: "R" }],
+    2: [{ so: 2, pi: "R" }],
+  },
+  "ENGG 403": {
+    1: [{ so: 11, pi: "R" }],
+    2: [{ so: 11, pi: "R" }],
+    3: [{ so: 11, pi: "R" }],
+  },
+  "ENGG 404": {
+    1: [{ so: 5, pi: "R" }, { so: 9, pi: "R" }],
+    2: [{ so: 12, pi: "I" }],
+  },
+  "MATH 403": {
+    1: [{ so: 2, pi: "R" }],
+    2: [{ so: 5, pi: "R" }],
+    3: [{ so: 2, pi: "R" }],
+  },
+  "MATH 404": {
+    1: [{ so: 1, pi: "I" }, { so: 5, pi: "R" }],
+    2: [{ so: 1, pi: "I" }],
+  },
+  "CpE 406": {
+    1: [{ so: 3, pi: "R" }, { so: 11, pi: "D" }, { so: 12, pi: "R" }],
+    2: [{ so: 11, pi: "D" }],
+    3: [{ so: 3, pi: "R" }, { so: 11, pi: "D" }],
+    4: [{ so: 3, pi: "R" }, { so: 11, pi: "D" }],
+  },
+  "CpE 407": {
+    1: [{ so: 6, pi: "D" }, { so: 9, pi: "R" }, { so: 10, pi: "R" }],
+    2: [{ so: 6, pi: "D" }, { so: 10, pi: "R" }],
+    3: [{ so: 6, pi: "D" }, { so: 10, pi: "R" }],
+    4: [{ so: 6, pi: "D" }, { so: 7, pi: "R" }, { so: 10, pi: "R" }],
+  },
+  "CpE 408": {
+    1: [{ so: 1, pi: "R" }, { so: 5, pi: "R" }],
+    2: [{ so: 1, pi: "R" }],
+    3: [{ so: 1, pi: "R" }],
+    4: [{ so: 1, pi: "R" }],
+  },
+  "CpEE 401": {
+    1: [{ so: 11, pi: "R" }],
+    2: [{ so: 3, pi: "I" }],
+  },
+  "ECE 421": {
+    1: [{ so: 1, pi: "R" }, { so: 2, pi: "I" }],
+    2: [{ so: 2, pi: "I" }, { so: 11, pi: "R" }],
+    3: [{ so: 2, pi: "I" }],
+  },
+  "ENGG 411": {
+    1: [{ so: 9, pi: "R" }, { so: 10, pi: "I" }, { so: 13, pi: "I" }],
+    2: [{ so: 10, pi: "I" }],
+    3: [{ so: 10, pi: "I" }],
+  },
+  "ENGG 414": {
+    1: [{ so: 1, pi: "R" }],
+    2: [{ so: 1, pi: "R" }],
+    3: [{ so: 1, pi: "R" }, { so: 5, pi: "R" }],
+    4: [{ so: 1, pi: "R" }],
+  },
+  "CpE 411": {
+    1: [{ so: 11, pi: "D" }],
+    2: [{ so: 5, pi: "R" }],
+  },
+  "CpE 412": {
+    1: [{ so: 2, pi: "I" }, { so: 5, pi: "I" }, { so: 11, pi: "I" }],
+  },
+  "CpE 413": {
+    1: [{ so: 1, pi: "I" }, { so: 2, pi: "I" }, { so: 5, pi: "I" }],
+    2: [{ so: 2, pi: "I" }],
+  },
+  "CpE 414": {
+    1: [{ so: 1, pi: "I" }, { so: 2, pi: "D" }, { so: 5, pi: "D" }],
+    2: [{ so: 2, pi: "D" }, { so: 11, pi: "I" }],
+    3: [{ so: 11, pi: "I" }],
+  },
+  "CpE 415": {
+    1: [{ so: 11, pi: "R" }],
+  },
+  "ENGG 416": {
+    1: [{ so: 1, pi: "R" }, { so: 3, pi: "R" }, { so: 6, pi: "R" }],
+    2: [{ so: 3, pi: "R" }],
+    3: [{ so: 3, pi: "R" }, { so: 6, pi: "R" }, { so: 7, pi: "R" }],
+  },
+  "CpE 417": {
+    1: [{ so: 2, pi: "D" }, { so: 5, pi: "D" }],
+    2: [{ so: 2, pi: "D" }],
+    3: [{ so: 2, pi: "D" }],
+  },
+  "CpE 418": {
+    1: [{ so: 3, pi: "D" }],
+    2: [{ so: 3, pi: "D" }],
+    3: [{ so: 3, pi: "D" }],
+    4: [{ so: 3, pi: "D" }, { so: 7, pi: "D" }],
+  },
+  "CpE 419": {
+    1: [{ so: 2, pi: "R" }, { so: 5, pi: "R" }],
+  },
+  "CpE 420": {
+    1: [{ so: 5, pi: "D" }],
+    2: [{ so: 1, pi: "D" }],
+    3: [{ so: 1, pi: "D" }],
+    4: [{ so: 1, pi: "D" }],
+  },
+  "CpE 421": {
+    1: [{ so: 9, pi: "D" }, { so: 10, pi: "R" }, { so: 13, pi: "R" }],
+    2: [{ so: 10, pi: "R" }],
+    3: [{ so: 10, pi: "R" }, { so: 13, pi: "R" }],
+  },
+  "CpE 422": {
+    1: [{ so: 1, pi: "D" }, { so: 3, pi: "D" }],
+    2: [{ so: 2, pi: "D" }, { so: 3, pi: "D" }],
+    3: [{ so: 3, pi: "D" }, { so: 4, pi: "D" }, { so: 12, pi: "D" }],
+    4: [{ so: 3, pi: "D" }, { so: 4, pi: "D" }, { so: 7, pi: "D" }],
+  },
+  "CpEE 402": {
+    1: [{ so: 11, pi: "D" }],
+    2: [{ so: 3, pi: "R" }],
+    3: [{ so: 3, pi: "R" }],
+  },
+  "CpE 423": {
+    1: [{ so: 5, pi: "D" }, { so: 11, pi: "D" }],
+    2: [{ so: 2, pi: "D" }],
+  },
+  "CpE 424": {
+    1: [{ so: 5, pi: "D" }, { so: 9, pi: "D" }],
+  },
+  "CpE 425": {
+    1: [{ so: 2, pi: "D" }, { so: 5, pi: "D" }],
+    2: [{ so: 2, pi: "D" }],
+  },
+  "CpE 426": {
+    1: [{ so: 9, pi: "D" }],
+    2: [{ so: 11, pi: "D" }],
+  },
+  "CpE 427": {
+    1: [{ so: 5, pi: "D" }],
+    2: [{ so: 2, pi: "D" }, { so: 11, pi: "D" }],
+  },
+  "CpE 428": {
+    1: [{ so: 3, pi: "D" }],
+    2: [{ so: 3, pi: "D" }, { so: 4, pi: "D" }],
+    3: [{ so: 3, pi: "D" }],
+  },
+  "CpE 429": {
+    1: [{ so: 6, pi: "D" }, { so: 10, pi: "D" }, { so: 13, pi: "D" }],
+    2: [{ so: 10, pi: "D" }],
+    3: [{ so: 8, pi: "D" }, { so: 10, pi: "D" }],
+  },
+  "IE 424": {
+    1: [{ so: 2, pi: "I" }, { so: 8, pi: "I" }, { so: 11, pi: "I" }],
+    2: [{ so: 2, pi: "I" }],
+  },
+  "CpEE 403": {
+    1: [{ so: 11, pi: "D" }],
+    2: [{ so: 3, pi: "D" }, { so: 11, pi: "D" }],
+  },
+  "Litr 102": {
+    1: [{ so: 1, pi: "I" }, { so: 7, pi: "I" }, { so: 9, pi: "I" }],
+  },
+  "ENGG 405": {
+    1: [{ so: 8, pi: "D" }, { so: 13, pi: "D" }],
+    2: [{ so: 3, pi: "D" }, { so: 7, pi: "D" }],
+    3: [{ so: 4, pi: "D" }],
+  },
+  "ENGG 417": {
+    1: [{ so: 6, pi: "D" }, { so: 10, pi: "D" }, { so: 13, pi: "D" }],
+    2: [{ so: 6, pi: "D" }, { so: 9, pi: "D" }, { so: 10, pi: "D" }],
+    3: [{ so: 6, pi: "D" }, { so: 7, pi: "D" }],
+  },
+  "CpE 430": {
+    1: [{ so: 1, pi: "D" }, { so: 2, pi: "D" }, { so: 5, pi: "D" }],
+    2: [{ so: 2, pi: "D" }, { so: 6, pi: "D" }],
+    3: [{ so: 6, pi: "D" }, { so: 7, pi: "D" }, { so: 12, pi: "D" }],
+    4: [{ so: 6, pi: "D" }, { so: 7, pi: "D" }, { so: 13, pi: "D" }],
+  },
 };
 
 export default function StudentCourseDetailView({ courseName, user, onBack }) {
@@ -256,7 +538,10 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
 
             <div className="space-y-12">
               {data.ilo?.percentages?.map((val, i) => {
-                const so = ILO_SO_MAP[i + 1] || { id: `SO ${i + 1}`, name: 'General Competency' };
+                const courseMap = COURSE_ILO_SO_MAP[data.course_code] || {};
+                const soEntries = courseMap[i + 1] || [];
+                const headerText = soEntries.map(e => `SO ${e.so} "${SO_NAMES[e.so]}" (${e.pi})`).join(' · ') || 'No SO Mapping';
+
                 const isILOFocused = focusedSegment?.index === i && focusedSegment?.type === 'ilo';
                 const isSOFocused = focusedSegment?.index === i && focusedSegment?.type === 'so';
                 const rawScore = data.ilo?.raw?.[i] ?? 0;
@@ -265,7 +550,7 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
                 return (
                   <div key={i} className="group">
                     <div className="flex items-center gap-3 mb-6">
-                      <h4 className="text-[14px] font-bold text-gray-900">ILO {i + 1} — {so.id}: {so.name}</h4>
+                      <h4 className="text-[14px] font-bold text-gray-900">ILO {i + 1} — {headerText}</h4>
                       <div className="h-px flex-1 bg-gray-100" />
                     </div>
 
@@ -375,7 +660,9 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
                   const lowestIlo = allIloScores.length > 0
                     ? allIloScores.sort((a, b) => a.percentage - b.percentage)[0]
                     : null;
-                  const lowSoId = lowestIlo ? (ILO_SO_MAP[lowestIlo.ilo_number]?.id || 'SO 2') : 'SO 2';
+                  const courseMap = COURSE_ILO_SO_MAP[data.course_code] || {};
+                  const firstEntry = lowestIlo ? courseMap[lowestIlo.ilo_number]?.[0] : null;
+                  const lowSoId = firstEntry ? `SO ${firstEntry.so}` : 'SO 2';
 
                   const courseSuggestions = {
                     'ENGG 403': {

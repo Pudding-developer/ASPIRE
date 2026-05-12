@@ -10,12 +10,13 @@ import useActivityFeed from '../../dashboard/hooks/useActivityFeed';
 import { StudentPerformanceSkeleton } from '../../shared/StudentPageSkeletons';
 import StudentCourseDetailView from './StudentCourseDetailView';
 import { studentService } from '../../../../services/studentService';
+import AllActivitiesModal from '../../dashboard/components/AllActivitiesModal';
 
 const NOTIF_VISUALS = {
   grade_released: { icon: BookOpen, color: 'bg-emerald-100 text-emerald-600' },
   career_updated: { icon: TrendingUp, color: 'bg-purple-100 text-purple-600' },
-  github_synced:  { icon: Github,    color: 'bg-blue-100 text-blue-600' },
-  skill_milestone:{ icon: Star,      color: 'bg-yellow-100 text-yellow-600' },
+  github_synced: { icon: Github, color: 'bg-blue-100 text-blue-600' },
+  skill_milestone: { icon: Star, color: 'bg-yellow-100 text-yellow-600' },
 };
 
 function formatNotifTime(iso) {
@@ -108,7 +109,7 @@ function FilterDropdown({ open, onClose, semester, setSemester, category, setCat
 }
 
 /* ─── Notification Dropdown ─── */
-function NotificationDropdown({ open, onClose, notifications, unreadCount }) {
+function NotificationDropdown({ open, onClose, notifications, unreadCount, onShowAll }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -120,8 +121,8 @@ function NotificationDropdown({ open, onClose, notifications, unreadCount }) {
   if (!open) return null;
 
   return (
-    <div ref={ref} className="absolute right-0 top-full mt-2 w-80 bg-linear-to-br from-white via-[#fff9f9] to-[#fcf4f2] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(0,0,0,0.25)] z-50 overflow-hidden">
-      <div className="p-4 border-b border-[#f2dfdf] flex items-center justify-between">
+    <div ref={ref} className="absolute right-0 top-full mt-2 w-80 bg-linear-to-br from-white via-[#fff9f9] to-[#fcf4f2] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(0,0,0,0.25)] z-50 overflow-hidden flex flex-col">
+      <div className="p-4 border-b border-[#f2dfdf] flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <h4 className="text-[12px] font-bold text-gray-900">Notifications</h4>
           {unreadCount > 0 && (
@@ -155,6 +156,14 @@ function NotificationDropdown({ open, onClose, notifications, unreadCount }) {
             );
           })
         )}
+      </div>
+      <div className="p-3 border-t border-[#f2dfdf] bg-white shrink-0">
+        <button
+          onClick={() => { onClose(); onShowAll(); }}
+          className="w-full bg-[#9f0707] hover:bg-[#430202] text-white py-2 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10"
+        >
+          View all activities
+        </button>
       </div>
     </div>
   );
@@ -369,7 +378,7 @@ function CompetencyRadar({ soValues }) {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-0.5 h-3 bg-gray-300" />
-              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Required level (80%)</span>
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Required level (75%)</span>
             </div>
           </div>
         </div>
@@ -408,8 +417,8 @@ function CompetencyRadar({ soValues }) {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden relative">
-                      {/* 80% mark */}
-                      <div className="absolute left-[80%] top-0 bottom-0 w-px bg-gray-300 z-10" />
+                      {/* 75% mark */}
+                      <div className="absolute left-[75%] top-0 bottom-0 w-px bg-gray-300 z-10" />
                       <div className={`h-full ${colorClass} rounded-full transition-all duration-1000`} style={{ width: `${val}%` }} />
                     </div>
                     <span className={`w-8 text-right text-[11px] font-black tabular-nums ${textClass}`}>
@@ -532,55 +541,61 @@ function tierForIndex(idx, third) {
   return { name: 'text-red-800', bar: 'bg-red-600', val: 'text-red-700' };
 }
 
-function GrowthLegend() {
-  return (
-    <div className="flex items-center gap-3 shrink-0">
-      <span className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500">
-        <span className="w-2 h-2 rounded-full bg-green-600" /> Top third
-      </span>
-      <span className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500">
-        <span className="w-2 h-2 rounded-full bg-amber-500" /> Middle third
-      </span>
-      <span className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500">
-        <span className="w-2 h-2 rounded-full bg-red-600" /> Bottom third
-      </span>
-    </div>
-  );
-}
-
 function RankedSkillsChart({ sortedSkills, third, animated }) {
   const maxScore = sortedSkills[0]?.[1] || 1;
+
+  if (sortedSkills.length === 0) {
+    return (
+      <div className="bg-white border border-gray-100 rounded-2xl p-5">
+        <p className="text-[12px] text-gray-400 font-medium">No skill data available.</p>
+      </div>
+    );
+  }
+
+  const topThird = sortedSkills.slice(0, third);
+  const midThird = sortedSkills.slice(third, third * 2);
+  const bottomThird = sortedSkills.slice(third * 2);
+
+  const boxes = [
+    { title: "Excelled Skills", skills: topThird, bg: "bg-emerald-50/50", border: "border-emerald-200", text: "text-emerald-900" },
+    { title: "Developing Skills", skills: midThird, bg: "bg-amber-50/50", border: "border-amber-200", text: "text-amber-900" },
+    { title: "Needs Attention", skills: bottomThird, bg: "bg-red-50", border: "border-[#70170f]/30", text: "text-[#70170f]" },
+  ];
+
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl h-full flex flex-col">
-      <div className="p-5 border-b border-gray-100">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <h4 className="text-[12px] font-bold text-gray-900">All skills — sorted highest to lowest</h4>
-          <span className="text-[10px] text-gray-400 font-medium">Bars scaled relative to top score</span>
-        </div>
-        <GrowthLegend />
-      </div>
-      <div className="flex-1 p-5 space-y-3.5">
-        {sortedSkills.length === 0 ? (
-          <p className="text-[12px] text-gray-400 font-medium">No skill data available.</p>
-        ) : sortedSkills.map(([name, val], i) => {
-          const cls = tierForIndex(i, third);
-          const target = maxScore > 0 ? (val / maxScore) * 100 : 0;
-          return (
-            <div key={name}>
-              <div className="flex justify-between items-center mb-1 gap-2">
-                <span className={`text-[12px] truncate ${cls.name}`} title={name}>{name}</span>
-                <span className={`text-[11px] font-bold tabular-nums ${cls.val}`}>{val.toFixed(1)}</span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${cls.bar} rounded-full transition-all duration-1000 ease-out`}
-                  style={{ width: animated ? `${target}%` : '0%' }}
-                />
-              </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 h-full">
+      {boxes.map((box, idx) => {
+        if (box.skills.length === 0) return null;
+        return (
+          <div key={idx} className={`rounded-2xl border ${box.border} ${box.bg} p-6 flex flex-col shadow-sm transition-all hover:shadow-md`}>
+            <div className="flex justify-between items-center mb-6">
+              <h4 className={`text-[15px] font-black ${box.text} tracking-tight`}>{box.title}</h4>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/60 ${box.text} border ${box.border}`}>{box.skills.length} Skills</span>
             </div>
-          );
-        })}
-      </div>
+            <div className="flex-1 space-y-4">
+              {box.skills.map(([name, val], j) => {
+                const i = (idx === 0 ? 0 : idx === 1 ? topThird.length : topThird.length + midThird.length) + j;
+                const cls = tierForIndex(i, third);
+                const target = maxScore > 0 ? (val / maxScore) * 100 : 0;
+                return (
+                  <div key={name} className="group">
+                    <div className="flex justify-between items-center mb-1.5 gap-2">
+                      <span className={`text-[12px] font-bold truncate ${box.text} opacity-90 group-hover:opacity-100 transition-opacity`} title={name}>{name}</span>
+                      <span className={`text-[11px] font-black tabular-nums ${box.text}`}>{val.toFixed(1)}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-black/5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${cls.bar} rounded-full transition-all duration-1000 ease-out`}
+                        style={{ width: animated ? `${target}%` : '0%' }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -690,6 +705,7 @@ function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, bar
 export default function StudentPerformanceView({ user }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [showAllActivities, setShowAllActivities] = useState(false);
   const [semester, setSemester] = useState('All Semesters');
   const [category, setCategory] = useState('All Subjects');
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -723,7 +739,7 @@ export default function StudentPerformanceView({ user }) {
     if (!notifOpen || unreadCount === 0) return;
     studentService.markActivityRead()
       .then(() => refetchActivity())
-      .catch(() => {});
+      .catch(() => { });
   }, [notifOpen, unreadCount, refetchActivity]);
 
   // Refetch ML predictions whenever the instructor releases a new grade.
@@ -920,8 +936,8 @@ export default function StudentPerformanceView({ user }) {
   })();
 
   const TOTAL_SKILLS = 20;
-  const overallAvg = totalActive 
-    ? activeSkills.reduce((acc, [, v]) => acc + v, 0) / totalActive 
+  const overallAvg = totalActive
+    ? activeSkills.reduce((acc, [, v]) => acc + v, 0) / totalActive
     : 0;
 
   return (
@@ -957,13 +973,11 @@ export default function StudentPerformanceView({ user }) {
           <div className="relative">
             <button
               onClick={() => { setNotifOpen(!notifOpen); setFilterOpen(false); }}
-              className="relative w-10 h-10 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
+              className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
             >
-              <Bell size={18} className="text-[#70170f]" />
+              <Bell size={16} className="text-[#8b6363]" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#70170f] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#fffdfd]" />
               )}
             </button>
             <NotificationDropdown
@@ -971,6 +985,7 @@ export default function StudentPerformanceView({ user }) {
               onClose={() => setNotifOpen(false)}
               notifications={notifications}
               unreadCount={unreadCount}
+              onShowAll={() => setShowAllActivities(true)}
             />
           </div>
         </div>
@@ -1090,18 +1105,18 @@ export default function StudentPerformanceView({ user }) {
       {/* Row 3: Insight | Priority Recommendations */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3">
-        <IntegratedInsights
-          topSkill={topSkillName}
-          topVal={topSkillVal}
-          topCeiling={topSkillCeiling}
-          topSO={topSkillSO}
-          topDriver={topSkillDriver}
-          weakSkill={weakSkillName}
-          weakVal={weakSkillVal}
-          weakCeiling={weakSkillCeiling}
-          weakSO={weakSkillSO}
-          weakDriver={weakSkillDriver}
-        />
+          <IntegratedInsights
+            topSkill={topSkillName}
+            topVal={topSkillVal}
+            topCeiling={topSkillCeiling}
+            topSO={topSkillSO}
+            topDriver={topSkillDriver}
+            weakSkill={weakSkillName}
+            weakVal={weakSkillVal}
+            weakCeiling={weakSkillCeiling}
+            weakSO={weakSkillSO}
+            weakDriver={weakSkillDriver}
+          />
 
         </div>
 
@@ -1154,11 +1169,13 @@ export default function StudentPerformanceView({ user }) {
             {skillsTotal} categories ranked by score
           </p>
         </div>
-        
+
         <div className="flex-1 pt-2">
-            <RankedSkillsChart sortedSkills={sortedSkills} third={skillsThird} animated={barsAnimated} compact />
+          <RankedSkillsChart sortedSkills={sortedSkills} third={skillsThird} animated={barsAnimated} compact />
         </div>
       </div>
     </div>
+
+      { showAllActivities && <AllActivitiesModal onClose={() => setShowAllActivities(false)} /> }
   );
 }

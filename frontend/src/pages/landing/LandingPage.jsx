@@ -12,6 +12,7 @@ import FeaturesSection from '../../features/landing/components/FeaturesSection';
 import HowItWorksSection from '../../features/landing/components/HowItWorksSection';
 import FaqSection from '../../features/landing/components/FaqSection';
 import Footer from '../../features/landing/components/Footer';
+
 import RegisterModal from '../../features/auth/components/RegisterModal';
 import LoginModal from '../../features/auth/components/LoginModal';
 import SelectRoleModal from '../../features/auth/components/SelectRoleModal';
@@ -63,6 +64,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#430202] overflow-x-hidden font-sans scroll-smooth">
+
       {/* Main Content "Curtain" Layer */}
       <div ref={mainContentRef} className="relative z-10 bg-white mb-[600px]">
         <Navbar scrollToSection={scrollToSection} onLogin={handleLogin} />

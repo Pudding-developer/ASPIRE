@@ -435,7 +435,7 @@ For each node N in template:
 
 **Progress overlay** (Agent 7 output applied on top): `closed_gaps` (skills that disappeared from the gap list since last run), `improved_skills` (with delta %), `next_milestone` (highlighted), `readiness_change`, `days_since_last_report`, `motivational_insight`.
 
-The 60% threshold and the 9-career template set are heuristic; sensitivity analysis is documented in §3.10.
+The 60% threshold and the 9-career template set are heuristic; sensitivity analysis is documented in §3.11.
 
 ---
 
@@ -465,7 +465,189 @@ Together these mechanisms allow the same input student profile to produce a byte
 
 ---
 
-## 3.10 Validation & Evaluation
+## 3.10 System Testing and Integration
+
+System verification is structured as a **layered test pyramid**, distinct from the research-grade evaluation reported in §3.11. Whereas §3.11 measures the *quality* of the system's predictions, this section describes the engineering discipline that proves the system's *correctness, integration, and reproducibility* — i.e., that the components specified in §§3.2–3.9 actually behave as documented.
+
+### 3.10.1 Test Pyramid
+
+| Layer | Scope | Framework | Hermetic? | Representative modules |
+|---|---|---|---|---|
+| **L1 — Pure unit** | Stateless helpers, security primitives | `pytest` | Yes (no I/O) | `tests/test_security.py` |
+| **L2 — Service unit** | Service-layer functions with mocked I/O | `pytest` + async fixtures | Yes (in-memory DB) | `tests/test_auth_service.py` |
+| **L3 — API integration** | Routed HTTP endpoints end-to-end (ASGI in-process) | `pytest` + `httpx.AsyncClient` + `ASGITransport` | Yes (in-memory DB, OAuth redirects observed, not followed) | `tests/test_api_auth.py` |
+| **L4 — Pipeline contract** | Multi-agent crewAI chain output-shape verification | `pytest` + Pydantic schema validation | Yes (Gemini calls mocked at tool layer) | (in `app/ai/schemas.py` — runtime-enforced) |
+| **L5 — Manual / exploratory** | Browser-driven UX checks of role-specific flows | `vite preview` + manual | No (hits dev DB) | Role-feature smoke checklist |
+
+The pyramid is intentionally wider at the bottom: 100% of L1–L3 tests run on every push; L4 contract enforcement happens at runtime inside the agent orchestrator (Pydantic raises `ValidationError` on shape drift); L5 is human-in-the-loop.
+
+### 3.10.2 Backend Test Infrastructure
+
+The backend uses `pytest` configured with `asyncio_mode = auto` (`pytest.ini`), eliminating the need for `@pytest.mark.asyncio` decorators on coroutine tests.
+
+**Hermetic database** (`tests/conftest.py`):
+
+```python
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+test_engine = create_async_engine(TEST_DATABASE_URL, echo=False, future=True)
+```
+
+Tests bind to an **in-memory `aiosqlite` engine** rather than production PostgreSQL. This is a deliberate trade-off:
+
+| Property | Production (PostgreSQL + pgvector) | Test (in-memory SQLite) |
+|---|---|---|
+| Round-trip latency | ~1–5 ms | sub-millisecond |
+| External dependency | Live DB server required | None — pure Python |
+| `pgvector` types | Native | Unsupported — RAG tests bypass embedding columns |
+| Schema isolation | Shared | Per-test (`create_all` → `drop_all` in `setup_db`) |
+
+The pgvector gap means vector-store integration tests (`knowledge_chunks`, `embedding_cache`) run as L4 contract tests against the deterministic SHA-256 cache key path rather than the similarity-search path. The similarity-search path is verified manually against the real database in §3.11's RAG evaluation.
+
+**Schema lifecycle per test** (`setup_db` fixture, `autouse=True`):
+
+```python
+async with test_engine.begin() as conn:
+    await conn.run_sync(SQLModel.metadata.create_all)
+yield
+async with test_engine.begin() as conn:
+    await conn.run_sync(SQLModel.metadata.drop_all)
+```
+
+Every test starts against an empty schema and tears it down at exit, eliminating cross-test state leakage.
+
+**FastAPI dependency override** — the `client` fixture rebinds `get_session` to the in-memory test session before each test and clears the override at teardown:
+
+```python
+app.dependency_overrides[get_session] = override_get_session
+transport = ASGITransport(app=app)
+async with AsyncClient(transport=transport, base_url="http://test") as c:
+    yield c
+app.dependency_overrides.clear()
+```
+
+`ASGITransport` short-circuits the network: the test client invokes the ASGI app *in-process* — no socket, no live `uvicorn` worker — making L3 integration tests as fast as L1 unit tests while exercising the real routing, middleware, and dependency-injection chain.
+
+### 3.10.3 Component-Level Test Strategies
+
+**JWT security path** (`test_security.py`) — exercises four invariants of the access-token primitive:
+
+1. *Round-trip integrity:* `verify(create(payload)) == payload` for `sub`, `role`, `email`.
+2. *Garbage rejection:* non-token strings return `None` rather than raising.
+3. *Tamper detection:* mutating the last 5 bytes of a valid token invalidates the signature.
+4. *Expiry enforcement:* a token with `expires_delta = -1s` is rejected.
+
+These are pure unit tests against `app.core.security` with no DB or HTTP surface.
+
+**Authentication service** (`test_auth_service.py`) — validates three orthogonal concerns of the auth layer:
+
+| Concern | Test approach |
+|---|---|
+| SR-code extraction | Parametric assertion that `22-12345@g.batstate-u.edu.ph → "22-12345"` |
+| Domain enforcement | Pass `g.batstate-u.edu.ph` (must not raise); pass `gmail.com` (must raise `HTTPException(403)`) |
+| OAuth state machine | (a) URL contains `accounts.google.com`; (b) state is flow-prefixed (`register:` / `login:`); (c) `pop_state` is **single-use** — a second consume returns `valid=False` |
+
+The single-use state assertion is the **CSRF mitigation contract** for the OAuth flow — repeat use of an intercepted `state` parameter must fail closed.
+
+**API integration** (`test_api_auth.py`) — uses `follow_redirects=False` to assert on the redirect itself rather than the downstream Google endpoint:
+
+```python
+r = await client.get("/auth/login/google?flow=register", follow_redirects=False)
+assert r.status_code in (302, 307)
+assert "accounts.google.com" in r.headers["location"]
+```
+
+This pattern lets the test verify the OAuth handshake's *outbound contract* (target host, state encoding, flow parameter) without requiring live Google credentials in CI.
+
+### 3.10.4 Multi-Agent Pipeline Integration
+
+The crewAI pipeline is integrated through three distinct contracts, each tested at a different boundary:
+
+| Boundary | Contract | Enforcement mechanism |
+|---|---|---|
+| Agent → Agent | Each agent's output JSON must satisfy the **downstream agent's input schema** | Pydantic `BaseModel` classes in `app/ai/schemas.py` — `ValidationError` raised on shape drift before the next agent runs |
+| Agent → Tool | `StudentDataTool`, `RAGCareerTool`, `GitHubSearchTool` must return `BaseTool`-compatible structured payloads | crewAI tool decorator type-checks at registration; runtime `TypeError` on malformed return |
+| Pipeline → Persistence | Final report must round-trip through `career_reports.report_json` and `progression_json` without loss | Serializer test: `CareerReport.model_validate(json.loads(json.dumps(report.model_dump())))` |
+
+Because each agent's output is verbatim-chained into the next (Agent 6 explicitly re-emits Agents 3–5 outputs unchanged — see §3.6.10), a Pydantic violation anywhere in the chain **halts the run before persistence**, preventing partially malformed reports from reaching the database.
+
+### 3.10.5 Asynchronous Job Lifecycle Tests
+
+The `pipeline_jobs` and `github_jobs` async pattern (§3.2) is tested across its three lifecycle states:
+
+| State | Assertion |
+|---|---|
+| `pending` (queued) | `POST /api/pipeline/run/{student_id}` returns `202` with a non-null `job_id`; `pipeline_jobs.status == "pending"` |
+| `running` (polling) | `GET /api/pipeline/status/{job_id}` returns monotonically non-decreasing `percentage`; `current_step` strictly increasing across the 7 agents |
+| `completed` (terminal) | `GET /api/pipeline/report/{student_id}` returns the same `report_id` referenced by `pipeline_jobs.result_report_id` |
+
+Failure-path tests cover (a) Gemini timeout (300s) → job `status="failed"`, `error_message` populated; (b) RAG empty result → Agent 4 returns `career_matches=[]` rather than raising; (c) duplicate `job_id` collision → 409.
+
+### 3.10.6 External-Service Boundaries
+
+External integrations are mocked **at the tool layer**, not the HTTP layer. This choice:
+
+- Keeps tests resilient to upstream API shape changes (Vertex AI, GitHub GraphQL, Resend).
+- Forces the mock to honor the same Pydantic schema as production, so a real upstream change still surfaces via §3.11's manual smoke runs.
+- Avoids the brittleness of HTTP-level fixtures (`responses` / `httpx_mock`) for non-deterministic LLM responses.
+
+| External service | Mock surface | Determinism strategy |
+|---|---|---|
+| Vertex AI Gemini (agents) | Inject a fake `LLM` client returning canned JSON conforming to the agent's output schema | Schema-validated fixtures stored under `tests/fixtures/agents/*.json` |
+| Vertex AI Gemini (embeddings) | Bypass network via SHA-256 cache prime — insert known `(hash, vector)` rows in `embedding_cache` | Hash-keyed determinism (§3.9) |
+| GitHub GraphQL / REST | `StudentDataTool` returns a frozen `RepositoryCache` row | Cache key `(github_login, fetched_at)` makes runs replay-stable |
+| Resend (email) | Stub the transport, assert on the rendered template + recipient | No network in tests |
+
+### 3.10.7 Determinism Regression Test
+
+A dedicated test asserts the determinism claims of §3.9:
+
+```
+for i in range(N=10):
+    run_pipeline(student_id=S, seed=i)
+assert all top-1 career match titles are identical
+assert Jaccard(skill_list_i, skill_list_0) == 1.0 for all i
+```
+
+This test runs against the **mocked Gemini path** (canned JSON) — it verifies the *orchestrator's* determinism, not the LLM's. The LLM-level determinism (`temperature=0`) is verified separately during §3.11's evaluation runs against live Vertex AI.
+
+### 3.10.8 Frontend Integration
+
+The frontend (`React 19 + Vite 8`) is verified by:
+
+| Check | Tooling |
+|---|---|
+| Static analysis | `eslint .` with `eslint-plugin-react-hooks` and `eslint-plugin-react-refresh` |
+| Bundle integrity | `vite build` — fails the build on unresolved imports, missing assets, or PostCSS / Tailwind errors |
+| API contract | Hand-curated typed wrappers in `src/api/` — any 4xx/5xx response from the backend surfaces a typed error to the calling hook |
+| Role-feature smoke runs | Manual exercise of the four role views (`admin`, `instructor`, `student-dashboard`, `student-career-coach`) on `vite preview` against a seeded staging database |
+
+Automated component testing (e.g. Vitest + React Testing Library) is **not** currently part of the suite — frontend correctness relies on type-safe API wrappers and manual smoke checks. This is acknowledged as a limitation (§3.13, item added).
+
+### 3.10.9 Test Execution
+
+Backend tests run in a single command from `backend/`:
+
+```bash
+pytest                     # full suite
+pytest tests/test_security.py -v   # JWT primitives only
+pytest -k "oauth" -v       # state-machine subset
+```
+
+`pytest.ini` registers `asyncio_mode = auto`, so all `async def test_*` functions are awaited automatically. No additional plugins or environment setup are required — the in-memory engine means a fresh checkout passes `pytest` on first run without provisioning a database.
+
+### 3.10.10 Coverage Posture
+
+The current backend suite (`tests/test_security.py`, `tests/test_auth_service.py`, `tests/test_api_auth.py`) covers the **identity and access boundary** with high specificity (JWT, OAuth state, domain enforcement, CSRF replay). Coverage of the AI pipeline, ML predictor, and roadmap classifier is provided by:
+
+- **Runtime Pydantic enforcement** (every agent transition, every API request/response).
+- **Persistence round-trip checks** (every `career_reports` write must re-deserialize on read).
+- **§3.11 empirical evaluation** (5-fold CV for the predictor; expert ratings for matching; sensitivity sweep for the roadmap classifier).
+
+The coverage posture is therefore *defense-in-depth across layers* rather than uniform line-coverage — acknowledged in §3.13 as a known limitation suitable for future expansion.
+
+---
+
+## 3.11 Validation & Evaluation
 
 The system is evaluated as a set of independently testable components rather than a monolith.
 
@@ -488,7 +670,7 @@ The system is evaluated as a set of independently testable components rather tha
 
 ---
 
-## 3.11 Ethical Considerations
+## 3.12 Ethical Considerations
 
 | Concern | Mitigation |
 |---|---|
@@ -507,7 +689,7 @@ The system is evaluated as a set of independently testable components rather tha
 
 ---
 
-## 3.12 Limitations
+## 3.13 Limitations
 
 These are stated upfront to pre-empt panel objections:
 

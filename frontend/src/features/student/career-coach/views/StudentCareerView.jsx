@@ -9,8 +9,6 @@ import CareerMatchDonut from '../components/CareerMatchDonut';
 import CareerAllPathsModal from '../components/CareerAllPathsModal';
 import CareerSectionHeading from '../components/CareerSectionHeading';
 import RoadmapViewer from '../components/RoadmapViewer';
-import AnalysisProgressionModal from '../components/AnalysisProgressionModal';
-import AnalysisProgressionCard from '../components/AnalysisProgressionCard';
 import AnalysisLoadingCard from '../components/AnalysisLoadingCard';
 import PipelineResultModal from '../components/PipelineResultModal';
 
@@ -63,7 +61,6 @@ export default function StudentCareerView({ user }) {
     runPipeline,
     pipelineStatus,
     isRunning,
-    progression,
     chosenCareer,
     setChosenCareer,
     careerLoading,
@@ -75,7 +72,6 @@ export default function StudentCareerView({ user }) {
   } = useCareerCoach(user.id);
 
   const [toast, setToast] = useState(null);
-  const [progressionOpen, setProgressionOpen] = useState(false);
   const seenReportRef = useRef(undefined);
 
   // Auto-dismiss toast
@@ -92,19 +88,7 @@ export default function StudentCareerView({ user }) {
     }
   }, [error]);
 
-  // Pop the progression modal each time a NEW analysis report lands.
-  // The first render seeds seenReportRef with the existing report timestamp
-  // so we don't show the modal for an old report on initial page load.
-  useEffect(() => {
-    if (seenReportRef.current === undefined) {
-      seenReportRef.current = reportCreatedAt || null;
-      return;
-    }
-    if (reportCreatedAt && reportCreatedAt !== seenReportRef.current) {
-      seenReportRef.current = reportCreatedAt;
-      if (progression) setProgressionOpen(true);
-    }
-  }, [reportCreatedAt, progression]);
+
 
   if (!user) return null;
 
@@ -302,36 +286,25 @@ export default function StudentCareerView({ user }) {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-              {/* Primary Objective — takes 2/3 of the row */}
-              <div className="lg:col-span-2">
-                <CareerSectionHeading title="PRIMARY OBJECTIVE" />
-                <div className="mt-4 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center gap-8">
-                  <div className="flex-1 space-y-4">
-                    <h2 className="text-[20px] font-extrabold text-gray-900 leading-tight">Senior {activeTitle}</h2>
-                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
-                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block mb-1">MATCH SCORE</span>
-                      {selectedPath ? (
-                        <span className="text-[16px] font-black text-[#70170f]">
-                          {selectedPath.match_score}%
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                          Not analyzed
-                        </span>
-                      )}
-                    </div>
+            <div className="space-y-4">
+              <CareerSectionHeading title="PRIMARY OBJECTIVE" />
+              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-1 space-y-4">
+                  <h2 className="text-[20px] font-extrabold text-gray-900 leading-tight">Senior {activeTitle}</h2>
+                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block mb-1">MATCH SCORE</span>
+                    {selectedPath ? (
+                      <span className="text-[16px] font-black text-[#70170f]">
+                        {selectedPath.match_score}%
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Not analyzed
+                      </span>
+                    )}
                   </div>
-                  <div className="shrink-0 scale-110"><CareerMatchDonut score={selectedPath?.match_score || 0} /></div>
                 </div>
-              </div>
-
-              {/* Analysis Progression — takes 1/3 of the row, all data inline */}
-              <div>
-                <CareerSectionHeading title="ANALYSIS PROGRESSION" />
-                <div className="mt-4">
-                  <AnalysisProgressionCard progression={progression} />
-                </div>
+                <div className="shrink-0 scale-110"><CareerMatchDonut score={selectedPath?.match_score || 0} /></div>
               </div>
             </div>
             <CareerSectionHeading title="LEARNING ROADMAP" />
@@ -432,13 +405,7 @@ export default function StudentCareerView({ user }) {
         />
       )}
 
-      {progressionOpen && (
-        <AnalysisProgressionModal
-          progression={progression}
-          careerTitle={activeTitle}
-          onClose={() => setProgressionOpen(false)}
-        />
-      )}
+
 
       {/* ── Pipeline result modal ── */}
       <PipelineResultModal result={pipelineResult} onClose={clearPipelineResult} />

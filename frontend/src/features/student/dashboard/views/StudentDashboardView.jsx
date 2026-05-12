@@ -12,7 +12,7 @@ import useGithubData from '../../github/hooks/useGithubData';
 import usePipeline from '../hooks/usePipeline';
 import useActivityFeed from '../hooks/useActivityFeed';
 import { StudentDashboardSkeleton } from '../../shared/StudentPageSkeletons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { studentService } from '../../../../services/studentService';
 import RoadmapViewer from '../../career-coach/components/RoadmapViewer';
 import AllActivitiesModal from '../components/AllActivitiesModal';
@@ -20,8 +20,8 @@ import AllActivitiesModal from '../components/AllActivitiesModal';
 const ACTIVITY_VISUALS = {
   grade_released: { icon: BookOpen, color: 'bg-emerald-100 text-emerald-600' },
   career_updated: { icon: TrendingUp, color: 'bg-purple-100 text-purple-600' },
-  github_synced:  { icon: Github,    color: 'bg-blue-100 text-blue-600' },
-  skill_milestone:{ icon: Star,      color: 'bg-yellow-100 text-yellow-600' },
+  github_synced: { icon: Github, color: 'bg-blue-100 text-blue-600' },
+  skill_milestone: { icon: Star, color: 'bg-yellow-100 text-yellow-600' },
 };
 
 function formatActivityTime(iso) {
@@ -45,9 +45,14 @@ const primaryBtn = 'bg-[#9f0707] hover:bg-[#430202] text-white py-2.5 rounded-xl
 const subtleBtn = 'border border-[#eed8d8] rounded-xl py-2 text-[13px] font-semibold text-[#6f4a4a] hover:bg-[#fff5f5] transition-colors';
 
 /* ─── Stat Card ─── */
-export function StatCard({ label, value, sub, trend, badge }) {
+export function StatCard({ label, value, sub, trend, badge, badgeTone = 'green' }) {
   const trendColor = trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-red-400' : 'text-gray-400';
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+  const badgeClass = badgeTone === 'red'
+    ? 'bg-red-50 text-red-600 border-red-200'
+    : badgeTone === 'amber'
+    ? 'bg-amber-50 text-amber-600 border-amber-200'
+    : 'bg-emerald-50 text-emerald-600 border-emerald-200';
   return (
     <div className={`${panelBase} p-5 hover:shadow-[0_16px_36px_-20px_rgba(0,0,0,0.25)] transition-shadow`}>
       <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">{label}</p>
@@ -62,7 +67,7 @@ export function StatCard({ label, value, sub, trend, badge }) {
           </div>
         )}
         {badge && (
-          <span className="text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-1 rounded-full flex items-center gap-1">
+          <span className={`text-[11px] font-bold border px-2 py-1 rounded-full flex items-center gap-1 ${badgeClass}`}>
             {badge} <ArrowUpRight size={10} />
           </span>
         )}
@@ -74,9 +79,9 @@ export function StatCard({ label, value, sub, trend, badge }) {
 /* ─── ILO Donut ─── */
 export function ILOCoverage({ coverage }) {
   const segments = [
-    { label: 'Technical Depth', pct: coverage.techPct || 0, color: '#70170f' },
-    { label: 'Analytical Rigor', pct: coverage.analyticalPct || 0, color: '#e97b7b' },
-    { label: 'Professional Ethics', pct: coverage.ethicsPct || 0, color: '#fcd5d5' },
+    { label: 'Technical Competency', pct: coverage.techPct || 0, color: '#70170f' },
+    { label: 'Professional Practice', pct: coverage.analyticalPct || 0, color: '#e97b7b' },
+    { label: 'Social Responsibility', pct: coverage.ethicsPct || 0, color: '#fcd5d5' },
   ];
 
   const size = 120, stroke = 16, r = (size - stroke) / 2;
@@ -131,46 +136,60 @@ export function ILOCoverage({ coverage }) {
   );
 }
 
-/* ─── Recent Activity ─── */
-export function RecentActivity() {
-  const { items, loading } = useActivityFeed(3);
-  const [showAll, setShowAll] = useState(false);
+/* ─── Notification Dropdown ─── */
+export function NotificationDropdown({ open, onClose, notifications, unreadCount, onShowAll }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) onClose(); }
+    if (open) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open, onClose]);
+
+  if (!open) return null;
 
   return (
-    <div className={`${panelBase} p-6 flex flex-col justify-between min-h-[300px]`}>
-      <div>
-        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Recent Activity</p>
-        <h3 className="text-[16px] font-bold text-gray-900 mb-5">System Feed</h3>
-        <div className="space-y-4">
-          {loading && items.length === 0 ? (
-            <p className="text-[12px] text-gray-400">Loading…</p>
-          ) : items.length === 0 ? (
-            <p className="text-[12px] text-gray-400">No recent activity yet.</p>
-          ) : (
-            items.map((it) => {
-              const visual = ACTIVITY_VISUALS[it.type] ?? { icon: Star, color: 'bg-gray-100 text-gray-500' };
-              const Icon = visual.icon;
-              const timeAgo = formatActivityTime(it.created_at);
-              const sub = it.subtitle ? `${it.subtitle} · ${timeAgo}` : timeAgo;
-              return (
-                <div key={it.id} className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${visual.color}`}>
-                    <Icon size={14} />
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold text-gray-800 leading-snug">{it.title}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>
-                  </div>
-                </div>
-              );
-            })
+    <div ref={ref} className="absolute right-0 top-full mt-2 w-80 bg-linear-to-br from-white via-[#fff9f9] to-[#fcf4f2] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(0,0,0,0.25)] z-50 overflow-hidden flex flex-col">
+      <div className="p-4 border-b border-[#f2dfdf] flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <h4 className="text-[12px] font-bold text-gray-900">Notifications</h4>
+          {unreadCount > 0 && (
+            <span className="text-[9px] font-bold bg-[#70170f] text-white px-1.5 py-0.5 rounded-full">{unreadCount} new</span>
           )}
         </div>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={14} /></button>
       </div>
-      <button onClick={() => setShowAll(true)} className={`mt-5 w-full ${primaryBtn}`}>
-        View all activities
-      </button>
-      {showAll && <AllActivitiesModal onClose={() => setShowAll(false)} />}
+      <div className="max-h-80 overflow-y-auto">
+        {notifications.length === 0 ? (
+          <div className="p-4 text-center text-gray-500 text-sm">No new notifications.</div>
+        ) : (
+          notifications.map(n => {
+            const visual = ACTIVITY_VISUALS[n.type] ?? { icon: Star, color: 'bg-gray-100 text-gray-500' };
+            const Icon = visual.icon;
+            const accent = n.unread ? 'bg-[#70170f]/10 text-[#70170f]' : visual.color;
+            return (
+              <div key={n.id} className={`p-4 border-b border-[#f8ebeb] hover:bg-[#fff5f5]/70 transition-colors cursor-pointer ${n.unread ? 'bg-red-50/30' : ''}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${accent}`}>
+                    <Icon size={14} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-bold text-gray-900 leading-snug">{n.title}</p>
+                    {n.subtitle && <p className="text-[11px] text-gray-600 mt-0.5">{n.subtitle}</p>}
+                    <p className="text-[10px] text-gray-400 mt-1">{formatActivityTime(n.created_at)}</p>
+                  </div>
+                  {n.unread && <span className="w-2 h-2 bg-[#70170f] rounded-full shrink-0 mt-2" />}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+      <div className="p-3 border-t border-[#f2dfdf] bg-white shrink-0">
+        <button onClick={() => { onClose(); onShowAll(); }} className={`w-full ${primaryBtn} py-2`}>
+          View all activities
+        </button>
+      </div>
     </div>
   );
 }
@@ -223,10 +242,10 @@ export function DevelopingSkills({ weakSkills, aggregatedSkills }) {
 }
 
 /* ─── Excelled Skills ─── */
-export function ExcelledSkills({ topSkills }) {
+export function ExcelledSkills({ topSkills, onNavigate }) {
   if (!topSkills || !topSkills.length) {
     return (
-      <div className={`${panelBase} p-6 h-full flex flex-col`}>
+      <div className="bg-[#fff5f5] border border-[#e8a0a0] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)] p-6 flex flex-col">
         <h3 className="text-[16px] font-bold text-gray-900 mb-5">Excelled Skills</h3>
         <p className="text-[12px] text-gray-400 mb-5">Not enough data to predict excelled skills yet.</p>
       </div>
@@ -234,14 +253,17 @@ export function ExcelledSkills({ topSkills }) {
   }
 
   return (
-    <div className={`${panelBase} p-6 h-full flex flex-col`}>
+    <div className="bg-[#fff5f5] border border-[#e8a0a0] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)] p-6 flex flex-col">
       <h3 className="text-[16px] font-bold text-gray-900 mb-5">Excelled Skills</h3>
-      <div className="flex flex-wrap content-start items-start gap-2 mb-5 flex-1">
+      <div className="flex flex-wrap content-start items-start gap-2 mb-5">
         {topSkills.map((s) => (
-          <span key={s} className="px-3 py-1.5 bg-gray-900 text-white text-[12px] font-medium rounded-full">{s}</span>
+          <span key={s} className="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-500 text-[12px] font-semibold rounded-full">{s}</span>
         ))}
       </div>
-      <button className={`w-full ${primaryBtn} mt-auto`}>
+      <button
+        onClick={() => onNavigate('my-performance')}
+        className={`w-full ${primaryBtn} mt-auto`}
+      >
         View all achieved skills
       </button>
     </div>
@@ -322,11 +344,11 @@ export function GitHubCard({ githubStatus, onConnect }) {
       <div className={`${panelBase} p-6`}>
         <h3 className="text-[16px] font-bold text-gray-900 mb-2">GitHub</h3>
         <p className="text-[12px] text-gray-500 mb-4">Connect GitHub to track projects.</p>
-        <button 
+        <button
           onClick={onConnect}
           className={`w-full ${primaryBtn} flex items-center justify-center gap-2`}
         >
-           Connect <Github size={14} />
+          Connect <Github size={14} />
         </button>
       </div>
     );
@@ -363,7 +385,7 @@ export function JoinClassCard({ onNavigate }) {
       <p className="text-[12px] text-gray-500 mb-5 leading-relaxed">
         Enter a class code provided by your instructor to join their roster and access your materials.
       </p>
-      <button 
+      <button
         onClick={() => onNavigate('enrolled-classes')}
         className="w-full bg-[#9f0707] hover:bg-[#4a0e09] text-white py-2.5 rounded-xl text-[13px] font-bold transition-colors mt-auto"
       >
@@ -373,44 +395,73 @@ export function JoinClassCard({ onNavigate }) {
   );
 }
 
-/* ─── Enrolled Classes Overview ─── */
-export function EnrolledClassesOverview({ classes, onNavigate }) {
-  if (!classes || classes.length === 0) {
-    return <JoinClassCard onNavigate={onNavigate} />;
+/* ─── Top Courses Card ─── */
+export function TopCoursesCard({ predictions, onNavigate }) {
+  // Derive per-course mean proficiency from the ML pipeline output.
+  // predictions.per_course is an array of { course, predicted_skills: {skill: score} }
+  const perCourse = predictions?.per_course || [];
+
+  const ranked = perCourse
+    .map(c => {
+      const vals = Object.values(c.predicted_skills || {}).filter(v => typeof v === 'number' && v > 0);
+      const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+      return { course: c.course, proficiency: Math.round(avg) };
+    })
+    .filter(c => c.proficiency > 0)
+    .sort((a, b) => b.proficiency - a.proficiency)
+    .slice(0, 4);
+
+  if (!ranked.length) {
+    return (
+      <div className={`${panelBase} p-6 flex flex-col`}>
+        <h3 className="text-[16px] font-bold text-gray-900 mb-2">Top Courses</h3>
+        <p className="text-[12px] text-gray-400">No course performance data yet.</p>
+      </div>
+    );
   }
 
-  const previewClasses = classes.slice(0, 3);
-  const hiddenCount = Math.max(0, classes.length - previewClasses.length);
+  const top = ranked[0].proficiency || 1;
 
   return (
-    <div className={`${panelBase} p-6 flex-1 flex flex-col`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[16px] font-bold text-gray-900">My Classes</h3>
-        <span className="text-[11px] font-semibold text-gray-500">{classes.length} total</span>
+    <div className={`${panelBase} p-6 flex flex-col`}>
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-[16px] font-bold text-gray-900">Top Courses</h3>
+        <span className="text-[10px] font-bold text-[#70170f] uppercase tracking-widest">by Proficiency</span>
       </div>
 
-      <div className="space-y-3">
-        {previewClasses.map((cls) => (
-          <button
-            key={cls.id}
-            onClick={() => onNavigate('enrolled-classes')}
-            className="w-full text-left border border-[#f0dddd] hover:border-[#e8c6c6] bg-white/70 rounded-xl p-3 transition-colors"
-          >
-            <p className="text-[13px] font-bold text-gray-900 leading-snug truncate">{cls.subject_name}</p>
-            <p className="text-[11px] text-gray-500 mt-1">{cls.course_code} • {cls.section}</p>
-          </button>
-        ))}
+      <div className="space-y-4 flex-1">
+        {ranked.map((c, i) => {
+          const barPct = top > 0 ? (c.proficiency / top) * 100 : 0;
+          const isTop = i === 0;
+          return (
+            <div key={c.course}>
+              <div className="flex items-center justify-between mb-1.5 gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {isTop && (
+                    <span className="w-4 h-4 bg-[#9f0707] text-white text-[8px] font-black rounded-full flex items-center justify-center shrink-0">#1</span>
+                  )}
+                  <span className="text-[12px] font-semibold text-gray-800 truncate" title={c.course}>{c.course}</span>
+                </div>
+                <span className={`text-[12px] font-black tabular-nums shrink-0 ${isTop ? 'text-[#9f0707]' : 'text-gray-700'}`}>
+                  {c.proficiency}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${barPct}%`, background: 'linear-gradient(to right, #6b0505, #9f0707, #e97b7b)' }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
-
-      {hiddenCount > 0 && (
-        <p className="text-[11px] text-gray-500 mt-3">+{hiddenCount} more classes</p>
-      )}
 
       <button
-        onClick={() => onNavigate('enrolled-classes')}
-        className={`w-full ${primaryBtn} mt-auto`}
+        onClick={() => onNavigate('my-performance')}
+        className={`w-full ${primaryBtn} mt-5`}
       >
-        View all classes
+        View full performance
       </button>
     </div>
   );
@@ -485,11 +536,11 @@ export function CareerChoiceCard({ report, chosenCareer }) {
         </div>
       </div>
 
-      <button 
-        onClick={() => setShowRoadmap(true)} 
+      <button
+        onClick={() => setShowRoadmap(true)}
         className="w-full bg-[#9f0707] hover:bg-[#430202] text-white py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10 mt-auto"
       >
-        View detailed roadmap
+        View Career Roadmap
       </button>
 
       {showRoadmap && targetCareer && (
@@ -523,7 +574,7 @@ export function CTABanner({ onNavigate }) {
         <p className="text-[13px] text-gray-400">Our AI engine has prepared updated career paths based on your latest grades and GitHub activity.</p>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <button 
+        <button
           onClick={() => onNavigate('career-coach')}
           className="px-5 py-2.5 bg-[#9f0707] hover:bg-[#430202] text-white text-[13px] font-bold rounded-xl transition-all duration-300 shadow-lg shadow-[#9f0707]/20 flex items-center gap-2"
         >
@@ -540,6 +591,18 @@ export default function StudentDashboardView({ user, onNavigate }) {
   const { status: githubStatus, repos, loading: githubLoading, connectGithub } = useGithubData();
   const { report, loading: pipelineLoading } = usePipeline(user?.id);
   const [chosenCareer, setChosenCareer] = useState(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [showAllActivities, setShowAllActivities] = useState(false);
+
+  const { items: notifications, refetch: refetchActivity } = useActivityFeed(10);
+  const unreadCount = notifications.filter(n => n.unread).length;
+
+  useEffect(() => {
+    if (!notifOpen || unreadCount === 0) return;
+    studentService.markActivityRead()
+      .then(() => refetchActivity())
+      .catch(() => { });
+  }, [notifOpen, unreadCount, refetchActivity]);
 
   useEffect(() => {
     studentService.getChosenCareer()
@@ -560,6 +623,19 @@ export default function StudentDashboardView({ user, onNavigate }) {
   // Aggregate stats from backend
   const masteryScore = iloCoverage.totalMastery || 0;
   const overallOutcome = predictions?.overall_outcome || 'N/A';
+
+  // Career Match Calculation
+  let careerMatches = [];
+  try {
+    const pipelineData = report?.report || (typeof report?.report_data === 'string' ? JSON.parse(report.report_data) : report?.report_data);
+    careerMatches = pipelineData?.career_matches || [];
+  } catch (e) { }
+
+  const targetCareer = chosenCareer
+    ? careerMatches.find(o => o.title === chosenCareer) || { title: chosenCareer, match_score: 0 }
+    : careerMatches[0];
+
+  const matchPct = Math.round(targetCareer?.match_score || 0);
 
   return (
     <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)]">
@@ -583,9 +659,24 @@ export default function StudentDashboardView({ user, onNavigate }) {
           <button className="flex items-center gap-2 px-4 py-2 border border-[#ead3d3] rounded-xl text-[13px] font-semibold text-[#7a5454] hover:bg-[#fff5f5] transition-colors">
             <Filter size={14} /> Filter
           </button>
-          <button className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors">
-            <Bell size={16} className="text-[#8b6363]" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setNotifOpen(true)}
+              className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
+            >
+              <Bell size={16} className="text-[#8b6363]" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#fffdfd]" />
+              )}
+            </button>
+            <NotificationDropdown
+              open={notifOpen}
+              onClose={() => setNotifOpen(false)}
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onShowAll={() => setShowAllActivities(true)}
+            />
+          </div>
         </div>
       </div>
 
@@ -594,7 +685,17 @@ export default function StudentDashboardView({ user, onNavigate }) {
         <StatCard label="Overall Mastery" value={`${masteryScore}%`} trend="up" />
         <StatCard label="Computed Outcome" value={overallOutcome} sub="Model Aggregate" />
         <StatCard label="Top Skill" value={predictions?.top_skills?.[0] || 'N/A'} sub="Strongest predicted skillset" />
-        <StatCard label="Career Target" value="ON TRACK" badge="On Track" />
+        <StatCard
+          label="Career Target"
+          value={matchPct >= 75 ? 'On Track' : matchPct >= 60 ? 'Developing' : 'Needs Focus'}
+          sub={matchPct >= 75
+            ? `Achieved ${matchPct}% match for ${targetCareer?.title || 'career'}`
+            : matchPct >= 60
+            ? `${matchPct}% match — developing key competencies`
+            : `${matchPct}% match — requires significant skill growth`}
+          badge={matchPct >= 75 ? 'On Track' : matchPct >= 60 ? 'Developing' : 'Needs Focus'}
+          badgeTone={matchPct >= 75 ? 'green' : matchPct >= 60 ? 'amber' : 'red'}
+        />
       </div>
 
       {/* Body: Main Left Column & Sidebar Right Column */}
@@ -611,7 +712,7 @@ export default function StudentDashboardView({ user, onNavigate }) {
           {/* Skills row */}
           <div className="grid md:grid-cols-2 gap-6">
             <DevelopingSkills weakSkills={predictions?.weak_skills} aggregatedSkills={predictions?.aggregated_skills} />
-            <ExcelledSkills topSkills={predictions?.top_skills} />
+            <ExcelledSkills topSkills={predictions?.top_skills} onNavigate={onNavigate} />
           </div>
 
           {/* Projects */}
@@ -619,17 +720,15 @@ export default function StudentDashboardView({ user, onNavigate }) {
         </div>
 
         {/* Right Column (Sidebar) */}
-        <div className="flex flex-col gap-6 h-full">
+        <div className="flex flex-col gap-6">
           <GitHubCard githubStatus={githubStatus} onConnect={connectGithub} />
-          <RecentActivity />
-          <EnrolledClassesOverview classes={classes} onNavigate={onNavigate} />
+          <TopCoursesCard predictions={predictions} onNavigate={onNavigate} />
+          <CTABanner onNavigate={onNavigate} />
         </div>
 
       </div>
 
-      {/* Full-width CTA */}
-      <CTABanner onNavigate={onNavigate} />
-
+      {showAllActivities && <AllActivitiesModal onClose={() => setShowAllActivities(false)} />}
     </div>
   );
 }

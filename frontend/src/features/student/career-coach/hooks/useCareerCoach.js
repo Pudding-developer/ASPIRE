@@ -217,22 +217,16 @@ export default function useCareerCoach(userId) {
 
   const pipelineData = report?.report;
   
-  const careerMatches   = useMemo(() => pipelineData?.career_matches || [], [pipelineData]);
+  const careerMatches = useMemo(() => {
+    const validTitles = new Set(CAREER_OPTIONS.map(o => o.title));
+    return (pipelineData?.career_matches || []).filter(m => validTitles.has(m.title));
+  }, [pipelineData]);
   const skillProfile    = pipelineData?.skill_profile || {};
   const recommendations = pipelineData?.recommendations || [];
   const summary         = pipelineData?.summary || report?.summary || '';
   const aggregatedSkills = predictions?.aggregated_skills || {};
 
-  // Agent 7 progression data
-  const progression = useMemo(() => {
-    const raw = pipelineData?.progression;
-    if (raw && typeof raw === 'object') return raw;
-    // Try parsing if stored as JSON string
-    if (typeof raw === 'string') {
-      try { return JSON.parse(raw); } catch { return null; }
-    }
-    return null;
-  }, [pipelineData]);
+
 
   const optimalIndex = useMemo(() => {
     if (!careerMatches.length) return 0;
@@ -254,7 +248,8 @@ export default function useCareerCoach(userId) {
         - Otherwise (first run/zero progress), pick the "left-most" pinned career.
      3. Fallback to chosenCareer (if pinned), then optimal, then the first pinned entry. */
   const activeTitle = useMemo(() => {
-    const visibleArr = [...visibleCareerTitles];
+    const validTitles = new Set(CAREER_OPTIONS.map(o => o.title));
+    const visibleArr = [...visibleCareerTitles].filter(t => validTitles.has(t));
     if (visibleArr.length === 0) return null;
 
     // 1. Valid manual selection
@@ -267,24 +262,15 @@ export default function useCareerCoach(userId) {
       .filter(m => visibleCareerTitles.has(m.title))
       .sort((a, b) => b.match_score - a.match_score);
 
-    const hasProgression = (progression?.career_readiness_score > 0) || (progression?.readiness_change !== 0);
-
     if (pinnedMatches.length > 0) {
-      if (hasProgression) {
-        // Pick the highest scoring pinned career
-        return pinnedMatches[0].title;
-      } else {
-        // Pick the "left-most" pinned career that has a match score
-        const firstVisibleMatch = visibleArr.find(title => careerMatches.some(m => m.title === title && visibleCareerTitles.has(title)));
-        if (firstVisibleMatch) return firstVisibleMatch;
-        return pinnedMatches[0].title;
-      }
+      // Pick the highest scoring pinned career
+      return pinnedMatches[0].title;
     }
 
     // 3. Fallback to the very first pinned career (even if unanalyzed)
     if (chosenCareer && visibleCareerTitles.has(chosenCareer)) return chosenCareer;
     return visibleArr[0] || null;
-  }, [selectedCareerTitle, visibleCareerTitles, careerMatches, progression, chosenCareer]);
+  }, [selectedCareerTitle, visibleCareerTitles, careerMatches, chosenCareer]);
 
   const selectedIndex = useMemo(
     () => activeTitle ? careerMatches.findIndex(m => m.title === activeTitle) : -1,
@@ -343,8 +329,7 @@ export default function useCareerCoach(userId) {
     gaps,
     skills,
     insights,
-    // Agent 7 — progression
-    progression,
+
     // Career goal
     chosenCareer,
     setChosenCareer,

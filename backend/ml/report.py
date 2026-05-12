@@ -91,6 +91,10 @@ def build_course_report(
     scenario_low   = {s: round(float(v), 2) for s, v in result.scenario_low.items()}
     scenario_high  = {s: round(float(v), 2) for s, v in result.scenario_high.items()}
 
+    # Map skill scenarios to SO scenarios for the course breakdown view
+    so_scenario_low = compute_so_scores(result.scenario_low)
+    so_scenario_high = compute_so_scores(result.scenario_high)
+
     return {
         "student_name": student_name,
         "course": course,
@@ -120,6 +124,8 @@ def build_course_report(
         "trend": {
             "scenario_low":  scenario_low,
             "scenario_high": scenario_high,
+            "so_scenario_low":  so_scenario_low,
+            "so_scenario_high": so_scenario_high,
         },
 
         "model": {

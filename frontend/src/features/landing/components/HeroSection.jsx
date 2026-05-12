@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
+import VideoBackground from './VideoBackground';
 
 export default function HeroSection({ scrollToSection, onGetStarted }) {
   const navigate = useNavigate();
@@ -75,8 +76,9 @@ export default function HeroSection({ scrollToSection, onGetStarted }) {
   return (
     <section 
       ref={containerRef} 
-      className="relative min-h-screen flex flex-col items-center justify-center pt-48 pb-48 overflow-hidden bg-white"
+      className="relative min-h-screen flex flex-col items-center justify-center pt-48 pb-48 overflow-hidden bg-transparent"
     >
+      <VideoBackground />
       {/* Seamless aligned grid overlay */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 opacity-[0.03]" style={{

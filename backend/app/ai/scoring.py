@@ -33,6 +33,20 @@ SKILL_ALIASES: dict[str, str] = {
     "ci/cd": "ci-cd",
     "tf": "tensorflow",
     "psql": "postgresql",
+    "html5": "html",
+    "css3": "css",
+    "c++": "cpp",
+    "c#": "csharp",
+    "aws": "amazon web services",
+    "gcp": "google cloud",
+    "google cloud platform": "google cloud",
+    "pytorch": "pytorch",
+    "llm": "llms",
+    "large language models": "llms",
+    "db": "database",
+    "dbs": "database",
+    "vector dbs": "vector databases",
+    "feature eng.": "feature engineering",
 }
 
 # Proficiency → points (must match what the LLM was asked to use)
@@ -153,10 +167,19 @@ def compute_match_score(
 
     points = 0.0
     for skill in required:
-        prof = skill_index.get(skill)
-        if prof:
-            points += PROFICIENCY_POINTS.get(prof, 0.0)
-        # else: not present → 0 pts
+        # Handle composite skills like "Python / JS" or "AWS / GCP"
+        # Split by / or | and take the max proficiency among the options
+        options = [s.strip() for s in skill.replace('|', '/').split('/') if s.strip()]
+        best_prof_points = 0.0
+        
+        for opt in options:
+            prof = skill_index.get(opt)
+            if prof:
+                opt_points = PROFICIENCY_POINTS.get(prof, 0.0)
+                if opt_points > best_prof_points:
+                    best_prof_points = opt_points
+                    
+        points += best_prof_points
 
     raw = (points / len(required)) * 100
     if has_github_bonus:

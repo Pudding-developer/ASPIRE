@@ -43,34 +43,35 @@ export default function useStudentData(filters = {}) {
     fetchAll();
   }, [fetchAll]);
 
-  // Derived calculations
-  const globalRank = 'Top 5%'; // Placeholder or require an aggregation backend API
-  
-  // ILO Coverage
+  // ILO Coverage — derived from ML pipeline's SO scores (predictions.so_scores, 0–100).
+  // The 13 Student Outcomes are grouped into 3 meaningful domains per the EE Curriculum Map:
+  //   Technical Competency   → SO1, SO2, SO3, SO5, SO11
+  //   Professional Practice  → SO4, SO6, SO7, SO8, SO9, SO12
+  //   Social Responsibility  → SO10, SO13
   const calculateILO = () => {
-    if (!scores.length) return { tech: 0, analytical: 0, ethics: 0, total: 0 };
-    // MOCK MAPPING: We'll map ILO 1 to Tech, 2 to Analytical, 3 to Ethics for the donut
-    const ilos = [1, 2, 3];
-    const grouped = { 1: [], 2: [], 3: [] };
-    scores.forEach(s => {
-      if (grouped[s.ilo_number]) grouped[s.ilo_number].push(s.percentage);
-    });
-    
-    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-    const tech = avg(grouped[1]);
-    const analytical = avg(grouped[2]);
-    const ethics = avg(grouped[3]);
-    const total = (tech + analytical + ethics) / 3;
+    const so = predictions?.so_scores || {};
 
-    // Normalise to 100% for the donut chart (the segments need to sum to 100)
-    const sum = tech + analytical + ethics || 1;
+    const avg = (...keys) => {
+      const vals = keys.map(k => so[k]).filter(v => typeof v === 'number' && isFinite(v));
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+    };
+
+    const tech       = avg('SO1', 'SO2', 'SO3', 'SO5', 'SO11');
+    const prof       = avg('SO4', 'SO6', 'SO7', 'SO8', 'SO9', 'SO12');
+    const social     = avg('SO10', 'SO13');
+
+    const total = (tech + prof + social) / 3;
+    const sum   = tech + prof + social || 1;
+
     return {
-      techPct: Math.round((tech / sum) * 100),
-      analyticalPct: Math.round((analytical / sum) * 100),
-      ethicsPct: Math.round((ethics / sum) * 100),
-      totalMastery: Math.round(total)
+      techPct:        Math.round((tech   / sum) * 100),
+      analyticalPct:  Math.round((prof   / sum) * 100),
+      ethicsPct:      Math.round((social / sum) * 100),
+      totalMastery:   Math.round(total),
     };
   };
+
+  const globalRank = 'Top 5%';
 
   return {
     profile,

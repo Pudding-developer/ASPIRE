@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Target, Award, BarChart2, CheckCircle2, ChevronRight, Info, TrendingUp, Zap, Compass, Trophy, Star, AlertCircle, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Target, Award, BarChart2, CheckCircle2, ChevronRight, Info, TrendingUp, Zap, Compass, Trophy, Star, AlertCircle, GraduationCap, Sparkles } from 'lucide-react';
 import { studentService } from '../../../../services/studentService';
 /* ─── Shared UI Components ─── */
 const Skeleton = () => (
@@ -95,9 +95,9 @@ function CourseFallback({ courseName, kind, message, onBack }) {
 
 function getStanding(avg) {
   const val = parseFloat(avg || 0);
-  if (val < 75) return { label: 'NEEDS ATTENTION', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' };
-  if (val < 85) return { label: 'ON TRACK', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' };
-  return { label: 'EXCEEDING', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' };
+  if (val >= 90) return { label: 'EXCEPTIONAL', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' };
+  if (val >= 75) return { label: 'COMPETENT', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' };
+  return { label: 'NEEDS ATTENTION', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' };
 }
 
 const ILO_SO_MAP = {
@@ -115,6 +115,9 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
   const [errorKind, setErrorKind] = useState(null);
 
   const [assessments, setAssessments] = useState([]);
+  const [activeTab, setActiveTab] = useState('performance');
+  const [focusedSegment, setFocusedSegment] = useState(null); // { index: number, type: 'ilo' | 'so' }
+  const [activeMode, setActiveMode] = useState(null); // 'ilo' | 'so' | null
 
   useEffect(() => {
     setLoading(true);
@@ -197,188 +200,289 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
 
 
 
-      {/* Main Layout Grid */}
-      <div className="flex flex-col xl:flex-row gap-8 w-full mb-10 items-start">
+      {/* Main Two-Column Layout */}
+      <div className="flex flex-col lg:flex-row gap-8 mb-10 items-start">
 
-        {/* Left Column: Metrics & Competency Alignment */}
-        <div className="w-full xl:w-[45%] flex flex-col gap-8">
-          {/* Top: 2 KPIs */}
+        {/* LEFT COLUMN (45%): Overview & Detailed Evidence */}
+        <div className="w-full lg:max-w-[45%] flex flex-col gap-6">
+          {/* Top Stacked KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className={`${panelBase} p-6 flex flex-col justify-between`}>
-              <div className="flex justify-between items-start mb-4">
-                <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-widest">Syllabus Mastery</p>
-                <Trophy size={18} className="text-[#70170f]" />
+            <div className={`${panelBase} p-6`}>
+              <div className="flex justify-between items-start mb-3">
+                <p className="text-[12px] font-black text-gray-900 uppercase tracking-widest">Syllabus Mastery</p>
+                <Trophy size={16} className="text-[#70170f]" />
               </div>
-              <div>
-                <div className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">{data.ilo?.weighted_avg?.toFixed(1) || 0}<span className="text-xl font-medium text-gray-400 ml-1">%</span></div>
-                <p className="text-[13px] text-gray-500">Course Objective Completion</p>
-              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">{data.ilo?.weighted_avg?.toFixed(1) || 0}<span className="text-xl font-medium text-gray-400 ml-1">%</span></div>
+              <p className="text-[12px] text-gray-500 mt-1">Course Objective Completion</p>
             </div>
 
-            <div className={`${panelBase} p-6 flex flex-col justify-between`}>
-              <div className="flex justify-between items-start mb-4">
-                <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-widest">Course Standing</p>
-                <TrendingUp size={18} className={getStanding(data.ilo?.weighted_avg).color} />
+            <div className={`${panelBase} p-6`}>
+              <div className="flex justify-between items-start mb-3">
+                <p className="text-[12px] font-black text-gray-900 uppercase tracking-widest">Course Standing</p>
+                <TrendingUp size={16} className={getStanding(data.ilo?.weighted_avg).color} />
               </div>
-              <div>
-                <div className={`text-2xl font-bold mb-1 tracking-tight uppercase ${getStanding(data.ilo?.weighted_avg).color}`}>
-                  {getStanding(data.ilo?.weighted_avg).label}
-                </div>
-                <p className="text-[13px] text-gray-500">Current performance level</p>
+              <div className={`text-2xl font-bold mb-1 tracking-tight uppercase ${getStanding(data.ilo?.weighted_avg).color}`}>
+                {getStanding(data.ilo?.weighted_avg).label}
               </div>
+              <p className="text-[12px] text-gray-500 mt-1">Current performance level</p>
             </div>
           </div>
 
-          {/* Bottom: Syllabus Mastery Breakdown (Moved to Left) */}
-          <div className={`${panelBase} p-6 w-full`}>
-            <div className="mb-6">
-              <h3 className="text-[15px] font-bold text-gray-900">Syllabus Mastery Breakdown</h3>
-              <p className="text-[12px] text-gray-500 mt-0.5">Performance across individual learning outcomes</p>
-            </div>
-            <div className="flex flex-row items-center gap-8">
-              <OverallDonut value={data.ilo?.weighted_avg || 0} />
-              <div className="flex-1 grid grid-cols-1 gap-y-4">
-                {data.ilo?.percentages?.map((val, i) => (
-                  <ILOBar key={i} index={i + 1} percentage={val} raw={data.ilo.raw[i]} max={data.ilo.totals[i]} />
-                ))}
+          {/* Syllabus & Competency Alignment */}
+          <div className={`${panelBase} p-8`}>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-gray-100 pb-8">
+              <div>
+                <h3 className="text-[18px] font-bold text-gray-900 tracking-tight">Syllabus & Competency Alignment</h3>
+                <p className="text-[13px] text-gray-500 mt-1">Direct mapping of course ILOs to SOs</p>
               </div>
+
+              <div className="flex items-center gap-4 px-4 py-2 bg-gray-50 rounded-lg border border-gray-100 select-none">
+                <div
+                  onClick={() => setActiveMode(activeMode === 'ilo' ? null : 'ilo')}
+                  className={`flex items-center gap-2 cursor-pointer transition-opacity ${activeMode === 'so' ? 'opacity-30' : 'opacity-100'}`}
+                >
+                  <div className="w-3 h-3 bg-[#6d28d9] rounded-sm" />
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${activeMode === 'ilo' ? 'text-[#6d28d9]' : 'text-gray-700'}`}>ILO</span>
+                </div>
+                <div
+                  onClick={() => setActiveMode(activeMode === 'so' ? null : 'so')}
+                  className={`flex items-center gap-2 cursor-pointer transition-opacity ${activeMode === 'ilo' ? 'opacity-30' : 'opacity-100'}`}
+                >
+                  <div className="w-3 h-3 bg-[#ea580c] rounded-sm" />
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${activeMode === 'so' ? 'text-[#ea580c]' : 'text-gray-700'}`}>SO</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-12">
+              {data.ilo?.percentages?.map((val, i) => {
+                const so = ILO_SO_MAP[i + 1] || { id: `SO ${i + 1}`, name: 'General Competency' };
+                const isILOFocused = focusedSegment?.index === i && focusedSegment?.type === 'ilo';
+                const isSOFocused = focusedSegment?.index === i && focusedSegment?.type === 'so';
+                const rawScore = data.ilo?.raw?.[i] ?? 0;
+                const totalScore = data.ilo?.totals?.[i] ?? 100;
+
+                return (
+                  <div key={i} className="group">
+                    <div className="flex items-center gap-3 mb-6">
+                      <h4 className="text-[14px] font-bold text-gray-900">ILO {i + 1} — {so.id}: {so.name}</h4>
+                      <div className="h-px flex-1 bg-gray-100" />
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="relative">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-[12px] text-gray-500">Mastery</span>
+                          <span className="text-[11px] font-bold text-gray-500">{rawScore} / {totalScore}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-gray-100 cursor-pointer overflow-hidden">
+                          <div className={`h-full transition-all ${activeMode === 'so' ? 'bg-gray-300' : 'bg-[#6d28d9]'}`} style={{ width: `${val}%` }} />
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-[12px] text-gray-500">Alignment</span>
+                          <span className="text-[11px] font-bold text-gray-700">{val.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-gray-100 cursor-pointer overflow-hidden">
+                          <div className={`h-full transition-all ${activeMode === 'ilo' ? 'bg-gray-300' : 'bg-[#ea580c]'}`} style={{ width: `${val}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Right Column: Competency Alignment (Restructured) */}
-        <div className={`${panelBase} p-6 flex-1 xl:flex-none xl:w-[45%]`}>
-          <div className="mb-6">
-            <h3 className="text-[15px] font-bold text-gray-900">Competency Alignment</h3>
-            <p className="text-[12px] text-gray-500 mt-0.5">Student Outcomes (SOs) mapped to course ILOs</p>
-          </div>
-          
-          <div className="flex flex-row items-center gap-8">
-            <SODonut 
-              id="AVG"
-              name="Overall Alignment"
-              score={data.ilo?.percentages?.reduce((a, b) => a + b, 0) / (data.ilo?.percentages?.length || 1)} 
-              size={120}
-            />
-            
-            <div className="flex-1 grid grid-cols-1 gap-y-4">
-              {data.ilo?.percentages?.map((val, i) => {
-                const so = ILO_SO_MAP[i + 1] || { id: `SO ${i + 1}`, name: 'General Competency' };
+        {/* RIGHT COLUMN (55%): Action & History */}
+        <div className="w-full lg:max-w-[55%] flex flex-col gap-6">
+          {/* Focus Areas & AI Insight Twin Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Card 1: Recommended Skill Focus */}
+            <div className="rounded-xl bg-[#70170f]/95 backdrop-blur-md p-6 flex flex-col shadow-xl text-white border border-white/10 min-h-[220px]">
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-[18px] font-bold text-white tracking-tight">Focus Areas</h3>
+                <Target size={16} className="text-white/60" />
+              </div>
+              <p className="text-[13px] text-white/70 mb-6">Recommended Skill Focus</p>
+
+              <div className="space-y-2.5">
+                {Object.entries(data.so?.scores || {})
+                  .filter(([id]) => {
+                    const allowed = data.course_code === 'ENGG 403' ? ['SO 2', 'SO 4'] : ['SO 1', 'SO 2', 'SO 5'];
+                    return allowed.includes(id);
+                  })
+                  .sort(([, a], [, b]) => a - b)
+                  .slice(0, 2)
+                  .map(([id, score]) => (
+                    <div key={id} className="flex justify-between items-center text-[12px] mb-2.5">
+                      <span className="font-bold text-white/80">{id}</span>
+                      <span className="font-black text-white">{score.toFixed(1)}%</span>
+                    </div>
+                  ))}
+              </div>
+
+              {/* Technical Proficiencies Checklist */}
+              {(() => {
+                const courseData = {
+                  'ENGG 403': {
+                    skills: [
+                      { label: "CAD Layering & Organization", level: "Critical" },
+                      { label: "Engineering Design Principles", level: "Essential" },
+                      { label: "Component & Assembly Understanding", level: "Technical" }
+                    ]
+                  },
+                  'CpE 411': {
+                    skills: [
+                      { label: "Big O Complexity Analysis", level: "Critical" },
+                      { label: "Core Structure Implementation", level: "Essential" },
+                      { label: "Memory/Pointer Management", level: "Technical" }
+                    ]
+                  }
+                }[data.course_code] || {
+                  skills: [{ label: "General Course Proficiency", level: "Required" }]
+                };
+
                 return (
-                  <SkillBar 
-                    key={i} 
-                    name={`${so.id}: ${so.name}`} 
-                    score={val} 
-                  />
+                  <ul className="space-y-3 mt-1">
+                    {courseData.skills.map((skill, i) => (
+                      <li key={i} className="flex items-center justify-between">
+                        <span className="text-[14px] font-bold text-white leading-tight">{skill.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
+            </div>
+
+            {/* Card 2: Focus Insight */}
+            <div className="rounded-xl bg-red-50 p-6 flex flex-col shadow-sm border border-[#70170f] min-h-[220px]">
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-[18px] font-bold text-[#70170f] tracking-tight">Focus Insight</h3>
+                <Sparkles size={16} className="text-[#70170f]" />
+              </div>
+              <p className="text-[13px] text-[#70170f]/70 mb-6">Personalized Coaching Trace</p>
+
+              <div className="flex-1">
+                {(() => {
+                  const missing = assessments.find(a => a.ilos.reduce((s, i) => s + i.score, 0) === 0);
+                  const currentAvg = data.ilo?.weighted_avg || 0;
+
+                  // Tracing lowest ILO from history
+                  const allIloScores = assessments.flatMap(a => a.ilos);
+                  const lowestIlo = allIloScores.length > 0
+                    ? allIloScores.sort((a, b) => a.percentage - b.percentage)[0]
+                    : null;
+                  const lowSoId = lowestIlo ? (ILO_SO_MAP[lowestIlo.ilo_number]?.id || 'SO 2') : 'SO 2';
+
+                  const courseSuggestions = {
+                    'ENGG 403': {
+                      'SO 2': "parametric design logic",
+                      'SO 4': "CAD software tool usage",
+                      'SO 1': "fundamental drafting principles"
+                    },
+                    'CpE 411': {
+                      'SO 1': "data structure fundamentals",
+                      'SO 2': "algorithm implementation logic",
+                      'SO 5': "performance analysis & optimization"
+                    }
+                  }[data.course_code] || {};
+
+                  if (missing) {
+                    return (
+                      <p className="text-[14px] text-gray-800 leading-relaxed">
+                        Your standing is currently capped by a <span className="font-bold text-[#70170f] underline decoration-[#70170f]/40 underline-offset-4">Missing Assessment</span> ({missing.name}). Completing this will immediately boost your <span className="font-bold text-[#70170f]">Syllabus Mastery</span>.
+                      </p>
+                    );
+                  }
+
+                  if (currentAvg >= 90) {
+                    return (
+                      <p className="text-[14px] text-gray-800 leading-relaxed">
+                        You've achieved <span className="font-bold text-emerald-700">EXCEPTIONAL</span> status! To maintain this mastery, continue refining your <span className="font-bold text-[#70170f]">{courseSuggestions[lowSoId] || "course skills"}</span> across upcoming projects.
+                      </p>
+                    );
+                  }
+
+                  const nextTarget = currentAvg < 75 ? "COMPETENT" : "EXCEPTIONAL";
+                  return (
+                    <p className="text-[14px] text-gray-800 leading-relaxed">
+                      To reach <span className="font-bold text-[#70170f]">{nextTarget}</span> standing, focus on <span className="font-bold text-[#70170f]">ILO {lowestIlo?.ilo_number}</span> ({courseSuggestions[lowSoId] || "technical core"}). This is your primary path to proficiency.
+                    </p>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Assessments */}
+          <div className="space-y-4">
+            <div className="pl-2">
+              <h3 className="text-[18px] font-bold text-gray-900 mb-1 tracking-tight">Assessments</h3>
+              <p className="text-[13px] text-gray-500">Graded assignments and exams</p>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {assessments.map((assessment, i) => {
+                const totalScore = assessment.ilos.reduce((sum, ilo) => sum + ilo.score, 0);
+                const totalMax = assessment.ilos.reduce((sum, ilo) => sum + ilo.max_score, 0);
+                const isMissing = totalScore === 0;
+
+                return (
+                  <div key={i} className={`${panelBase} p-5 flex flex-col hover:border-gray-300 transition-all cursor-default`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className={`text-[15px] font-bold truncate ${isMissing ? 'text-[#70170f]' : 'text-gray-900'}`}>{assessment.name}</h4>
+                          <span className={`text-[15px] font-bold ${isMissing ? 'text-[#70170f]/70' : 'text-[#70170f]'}`}>
+                            {totalScore} <span className={`text-[13px] font-bold ${isMissing ? 'text-[#70170f]/50' : 'text-gray-400'}`}>/ {totalMax}</span>
+                          </span>
+                        </div>
+                        <p className={`text-[13px] mt-0.5 ${isMissing ? 'text-[#70170f]/70' : 'text-gray-500'}`}>{assessment.type}</p>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded border shrink-0 ${isMissing ? 'text-[#70170f] bg-[#70170f]/10 border-[#70170f]/20' : 'text-gray-400 bg-gray-50 border-gray-100'}`}>
+                        {new Date(assessment.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+
+                    <div className={`space-y-2.5 border-t pt-4 flex-1 flex flex-col ${isMissing ? 'border-[#70170f]/20' : 'border-gray-100'}`}>
+                      {isMissing ? (
+                        <div className="flex-1 flex flex-col items-center justify-center py-6 bg-red-50 rounded-lg border border-[#70170f] shadow-sm">
+                          <AlertCircle size={20} className="text-[#70170f] mb-2" />
+                          <p className="text-[11px] font-black text-[#70170f] uppercase tracking-wider text-center">
+                            Missing Assessment,<br />Please Comply!
+                          </p>
+                        </div>
+                      ) : (
+                        assessment.ilos.sort((a, b) => a.ilo_number - b.ilo_number).map((ilo, j) => {
+                          const isPassing = ilo.percentage > 75;
+                          const barColor = isPassing ? 'bg-emerald-500' : 'bg-rose-500';
+
+                          return (
+                            <div key={j} className="flex flex-col gap-1">
+                              <div className="flex justify-between text-[10px] font-bold">
+                                <span className="text-gray-600">ILO {ilo.ilo_number}</span>
+                                <span className={`${isPassing ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                  {ilo.score}/{ilo.max_score}
+                                </span>
+                              </div>
+                              <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                                <div className={`h-full transition-all duration-500 ${barColor}`} style={{ width: `${ilo.percentage}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
                 );
               })}
             </div>
           </div>
         </div>
       </div>
-
-
-
-      {/* Trajectory Analysis */}
-      <div className={`${panelBase} p-8 mb-10 w-full`}>
-        <div className="mb-8">
-          <h3 className="text-[16px] font-bold text-gray-900">Outcome Mastery Trajectory</h3>
-          <p className="text-[13px] text-gray-500 mt-1">Modeled projection boundaries for aligned program outcomes</p>
-        </div>
-        <TrajectoryChart
-          activeSkills={data.ilo?.percentages?.map((val, i) => {
-            const so = ILO_SO_MAP[i + 1] || { id: `SO ${i + 1}`, name: 'General Competency' };
-            return { skill: `${so.id}: ${so.name}`, predicted: val };
-          })}
-          predicted={data.skills?.predicted}
-          scenarios={data.trend}
-        />
-      </div>
-
-      {/* Assessments Section */}
-      {assessments.length > 0 && (
-        <div className="mb-10 w-full">
-          <h3 className="text-[15px] font-bold text-gray-900 mb-5 pl-2">Assessments <span className="text-gray-400 font-normal text-[13px] ml-2">Graded assignments and exams</span></h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {assessments.map((assessment, i) => {
-              const totalScore = assessment.ilos.reduce((sum, ilo) => sum + ilo.score, 0);
-              const totalMax = assessment.ilos.reduce((sum, ilo) => sum + ilo.max_score, 0);
-              const isMissing = totalScore === 0;
-
-              return (
-                <div key={i} className={`${panelBase} p-6 flex flex-col ${isMissing ? 'opacity-70' : ''}`}>
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className={`text-[14px] font-bold ${isMissing ? 'text-gray-600' : 'text-gray-900'}`}>{assessment.name}</h4>
-                        {isMissing && <span className="px-1.5 py-0.5 bg-red-50 text-red-600 border border-red-100 text-[9px] font-bold tracking-wider rounded uppercase">Missing Data</span>}
-                      </div>
-                      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mt-1">{assessment.type}</p>
-                    </div>
-                    <span className="text-[11px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                      {new Date(assessment.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-
-                  <div className={`mt-1 mb-3 flex items-center justify-between p-2.5 rounded-lg border ${isMissing ? 'bg-gray-50 border-gray-100' : 'bg-[#70170f]/5 border-[#70170f]/10'}`}>
-                    <span className={`text-[12px] font-bold ${isMissing ? 'text-gray-500' : 'text-[#70170f]'}`}>Total Score</span>
-                    <span className={`text-[14px] font-black ${isMissing ? 'text-gray-600' : 'text-gray-900'}`}>
-                      {totalScore} <span className="text-[12px] font-semibold text-gray-500">/ {totalMax}</span>
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 mt-2 border-t border-gray-100 pt-4">
-                    {assessment.ilos.sort((a, b) => a.ilo_number - b.ilo_number).map((ilo, j) => (
-                      <div key={j} className="flex flex-col gap-1.5">
-                        <div className="flex justify-between items-end">
-                          <span className="text-[11px] font-bold text-gray-700">ILO {ilo.ilo_number}</span>
-                          <span className="text-[11px] font-semibold text-gray-500"><span className="text-gray-900">{ilo.score}</span> / {ilo.max_score}</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${isMissing ? 'bg-gray-300' : 'bg-[#70170f]'}`} style={{ width: `${Math.min(ilo.percentage, 100)}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Key Insights Row */}
-      <div className="flex flex-col lg:flex-row gap-6 w-full pb-8">
-        <div className={`${panelBase} p-8 w-full lg:w-[45%]`}>
-          <h3 className="text-[14px] font-bold text-gray-900 mb-5 border-b border-gray-100 pb-3">Leading Attributes</h3>
-          <div className="space-y-4">
-            {Object.entries(data.skills?.predicted || {})
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 3)
-              .map(([name, val], i) => (
-                <div key={i} className="flex justify-between items-center text-[13px]">
-                  <span className="text-gray-600 font-medium">{name}</span>
-                  <span className="font-semibold text-emerald-600">{val.toFixed(1)}</span>
-                </div>
-              ))}
-          </div>
-        </div>
-        <div className={`${panelBase} p-8 w-full lg:w-[45%]`}>
-          <h3 className="text-[14px] font-bold text-gray-900 mb-5 border-b border-gray-100 pb-3">Focus Areas</h3>
-          <div className="space-y-4">
-            {Object.entries(data.skills?.predicted || {})
-              .sort((a, b) => a[1] - b[1])
-              .slice(0, 3)
-              .map(([name, val], i) => (
-                <div key={i} className="flex justify-between items-center text-[13px]">
-                  <span className="text-gray-600 font-medium">{name}</span>
-                  <span className="font-semibold text-[#70170f]">{val.toFixed(1)}</span>
-                </div>
-              ))}
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }
@@ -440,7 +544,7 @@ function SODonut({ id, name, score, size = 90 }) {
         <svg width={size} height={size} className="transform -rotate-90">
           {/* Base Background */}
           <circle cx={size / 2} cy={size / 2} r={rad} fill="none" stroke="#f1f5f9" strokeWidth={strokeW} />
-          
+
           {/* Segmented Track Highlights (Subtle) */}
           {/* Red Zone (0-75) */}
           <circle cx={size / 2} cy={size / 2} r={rad} fill="none" stroke="#fee2e2" strokeWidth={strokeW}
@@ -454,7 +558,7 @@ function SODonut({ id, name, score, size = 90 }) {
 
           {/* Actual Score Indicator */}
           <circle cx={size / 2} cy={size / 2} r={rad} fill="none" stroke={color} strokeWidth={strokeW}
-            strokeDasharray={circum} strokeDashoffset={circum - fillPct} strokeLinecap="round" 
+            strokeDasharray={circum} strokeDashoffset={circum - fillPct} strokeLinecap="round"
             className="transition-all duration-1000 ease-out" />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -494,67 +598,97 @@ function TrajectoryChart({ activeSkills, predicted, scenarios }) {
   if (!activeSkills || activeSkills.length === 0) return <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Not enough data to plot</div>;
 
   const w = 1000;
-  const h = 250;
+  const h = 240; // Slightly shorter for narrower width
 
-  // X coords for each skill
-  const points = activeSkills.map((s, i) => ({
-    x: (i / (activeSkills.length - 1 || 1)) * w, // internal SVG coordinate
-    pctX: (i / (activeSkills.length - 1 || 1)) * 100, // percentage for absolute positioning
-    skill: s.skill,
-    cur: predicted[s.skill] || 0,
-    low: scenarios?.scenario_low?.[s.skill] || 0,
-    high: scenarios?.scenario_high?.[s.skill] || 0
-  }));
+  // X coords for each outcome
+  const points = activeSkills.map((s, i) => {
+    const currentScore = predicted?.[s.so_id] || s.predicted || 0;
+    const lowBound = scenarios?.scenario_low?.[s.so_id] ?? (currentScore * 0.85);
+    const highBound = scenarios?.scenario_high?.[s.so_id] ?? (currentScore * 1.15);
 
-  const maxVal = Math.max(...points.map(p => Math.max(p.cur, p.low, p.high)), 100);
-  // Padding for labels
-  const scaleY = (val) => h - (val / maxVal) * (h - 40) - 20;
+    return {
+      x: (i / (activeSkills.length - 1 || 1)) * w,
+      pctX: (i / (activeSkills.length - 1 || 1)) * 100,
+      so_id: s.so_id,
+      label: s.skill,
+      cur: currentScore,
+      low: lowBound,
+      high: highBound
+    };
+  });
+
+  const maxVal = 100;
+  const scaleY = (val) => h - (val / maxVal) * (h - 80) - 40;
 
   const makePath = (key) => points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${scaleY(p[key])}`).join(' ');
 
+  // Create the Mastery Band (Ribbon) path
+  const highPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${scaleY(p.high)}`).join(' ');
+  const lowPathReverse = [...points].reverse().map((p) => `L ${p.x} ${scaleY(p.low)}`).join(' ');
+  const bandPath = `${highPath} ${lowPathReverse} Z`;
+
   return (
-    <div className="w-full relative rounded-xl overflow-hidden pb-16 pt-6 bg-white">
+    <div className="w-full relative rounded-xl overflow-hidden pb-16 pt-10 bg-white">
       <div className="w-full relative" style={{ height: h }}>
         <svg width="100%" height="100%" viewBox={`0 0 ${w} ${h}`} className="absolute top-0 left-0" preserveAspectRatio="none">
-          {/* Minimal Grid */}
-          <line x1="0" y1={h / 2} x2={w} y2={h / 2} stroke="#f1f5f9" strokeWidth="1" />
-          <line x1="0" y1={h / 4} x2={w} y2={h / 4} stroke="#f1f5f9" strokeDasharray="4" strokeWidth="1" />
-          <line x1="0" y1={(3 * h) / 4} x2={w} y2={(3 * h) / 4} stroke="#f1f5f9" strokeDasharray="4" strokeWidth="1" />
+          {/* Horizontal Grid lines */}
+          {[0, 25, 50, 75, 100].map(val => (
+            <React.Fragment key={val}>
+              <line x1="0" y1={scaleY(val)} x2={w} y2={scaleY(val)} stroke="#f1f5f9" strokeWidth="1" />
+              <text x="4" y={scaleY(val) - 4} fontSize="10" fill="#94a3b8" fontWeight="600">{val}%</text>
+            </React.Fragment>
+          ))}
 
-          {/* Flat Fill Area */}
-          <path d={`${makePath('high')} L ${w} ${scaleY(0)} L 0 ${scaleY(0)} Z`} fill="rgba(241, 245, 249, 0.4)" />
+          {/* Mastery Band (Shaded Potential Zone) */}
+          <path d={bandPath} fill="url(#bandGradient)" opacity="0.6" />
 
-          {/* Professional Lines */}
-          <path d={makePath('low')} fill="none" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4 6" />
-          <path d={makePath('cur')} fill="none" stroke="#0f172a" strokeWidth="2.5" />
-          <path d={makePath('high')} fill="none" stroke="#10b981" strokeWidth="2" strokeDasharray="4 6" />
+          <defs>
+            <linearGradient id="bandGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.05" />
+            </linearGradient>
+          </defs>
+
+          {/* Paths */}
+          <path d={makePath('high')} fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="6 4" opacity="0.4" />
+          <path d={makePath('low')} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="6 4" opacity="0.4" />
+          <path d={makePath('cur')} fill="none" stroke="#0f172a" strokeWidth="3" strokeLinecap="round" />
         </svg>
 
-        {/* Render Clean Data Dots */}
+        {/* Dynamic Data Markers */}
         {points.map((p, i) => (
           <React.Fragment key={i}>
-            {/* Main Value Indicator */}
-            <div className="absolute w-2.5 h-2.5 rounded-full bg-[#0f172a] z-20" style={{ left: `calc(${p.pctX}% - 5px)`, top: `${scaleY(p.cur) - 5}px` }} />
+            {/* Main Mastery Node */}
+            <div className="absolute w-4 h-4 rounded-full border-4 border-white bg-gray-900 shadow-md z-20"
+              style={{ left: `calc(${p.pctX}% - 8px)`, top: `${scaleY(p.cur) - 8}px` }} />
 
-            {/* Range Dots */}
-            <div className="absolute w-1.5 h-1.5 rounded-full bg-gray-300 z-10" style={{ left: `calc(${p.pctX}% - 3px)`, top: `${scaleY(p.low) - 3}px` }} />
-            <div className="absolute w-1.5 h-1.5 rounded-full bg-emerald-400 z-10" style={{ left: `calc(${p.pctX}% - 3px)`, top: `${scaleY(p.high) - 3}px` }} />
+            {/* Potential Indicators (Ghost Nodes) */}
+            <div className="absolute w-2 h-2 rounded-full bg-emerald-500/40 z-10"
+              style={{ left: `calc(${p.pctX}% - 4px)`, top: `${scaleY(p.high) - 4}px` }} />
+            <div className="absolute w-2 h-2 rounded-full bg-orange-400/40 z-10"
+              style={{ left: `calc(${p.pctX}% - 4px)`, top: `${scaleY(p.low) - 4}px` }} />
 
-            {/* Data Label */}
-            <div className="absolute z-30" style={{ left: `calc(${p.pctX}% - 20px)`, top: `${scaleY(p.cur) - 24}px`, width: '40px', textAlign: 'center' }}>
-              <span className="text-gray-800 text-[11px] font-bold">
-                {p.cur.toFixed(0)}
-              </span>
+            {/* Top Label (Score) */}
+            <div className="absolute z-30" style={{ left: `calc(${p.pctX}% - 25px)`, top: `${scaleY(p.cur) - 32}px`, width: '50px', textAlign: 'center' }}>
+              <div className="bg-gray-900 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm">
+                {p.cur.toFixed(1)}%
+              </div>
+            </div>
+
+            {/* Bottom Label (SO Code) */}
+            <div className="absolute z-30" style={{ left: `calc(${p.pctX}% - 30px)`, bottom: '-45px', width: '60px', textAlign: 'center' }}>
+              <p className="text-gray-900 text-[11px] font-black tracking-tight leading-none mb-1">{p.so_id}</p>
+              <p className="text-gray-400 text-[9px] font-bold uppercase tracking-tighter leading-none truncate">{p.label.split(': ')[1]}</p>
             </div>
           </React.Fragment>
         ))}
       </div>
 
-      {/* Structural Legend */}
-      <div className="absolute bottom-4 left-0 w-full flex justify-center gap-8 text-[12px] font-medium text-gray-600 z-10">
-        <div className="flex items-center gap-2.5"><div className="w-3 h-0 border-t-2 border-gray-300 border-dashed" /> Low Bound</div>
-        <div className="flex items-center gap-2.5"><div className="w-3 h-0.5 bg-gray-900" /> Modeled Mean</div>
-        <div className="flex items-center gap-2.5"><div className="w-3 h-0 border-t-2 border-emerald-400 border-dashed" /> High Bound</div>
+      {/* Modern Legend */}
+      <div className="absolute top-4 right-8 flex gap-6 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-100 rounded-sm border border-emerald-200" /> High Potential</div>
+        <div className="flex items-center gap-2"><div className="w-3 h-0.5 bg-gray-900" /> Current Mastery</div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-50 rounded-sm border border-orange-100" /> Baseline</div>
       </div>
     </div>
   );

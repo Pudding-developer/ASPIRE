@@ -252,7 +252,6 @@ export default function EnrolledClassesView({ user, classes, archivedClasses, pr
 
   const yearOptions = [...new Set([...classList, ...archiveList].map((c) => String(c.year_level)).filter(Boolean))].sort();
   const semesterOptions = [...new Set([...classList, ...archiveList].map((c) => String(c.semester)).filter(Boolean))].sort();
-  const currentTerm = classList[0] ? `Year ${classList[0].year_level}, Semester ${classList[0].semester}` : 'No classes yet';
   const hasActiveFilters = Boolean(search.trim()) || yearFilter !== 'all' || semesterFilter !== 'all' || sortBy !== 'recent';
 
   const filterFn = (cls) => {
@@ -300,7 +299,6 @@ export default function EnrolledClassesView({ user, classes, archivedClasses, pr
           {!loading && classList.length > 0 && activeTab === 'classes' && (
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="rounded-full border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] px-3 py-1 text-[12px] font-semibold text-gray-700 shadow-sm">{classList.length} total classes</span>
-              <span className="rounded-full border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] px-3 py-1 text-[12px] font-semibold text-gray-700 shadow-sm">Current term: {currentTerm}</span>
               <span className="rounded-full border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] px-3 py-1 text-[12px] font-semibold text-gray-700 shadow-sm">{filtered.length} shown</span>
             </div>
           )}
@@ -318,11 +316,11 @@ export default function EnrolledClassesView({ user, classes, archivedClasses, pr
         <div className="flex items-center gap-1 rounded-2xl border border-[#e8e6e0] bg-white p-1.5 shadow-sm w-fit">
           {tabs.map(({ id, label, icon: Icon, count }) => (
             <button key={id} onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${activeTab === id ? 'bg-[#430202] text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all border ${activeTab === id ? 'bg-red-50 text-[#70170f] border-[#70170f] shadow-sm' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>
               <Icon size={15} />
               {label}
               {count > 0 && (
-                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
+                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === id ? 'bg-[#70170f]/10 text-[#70170f]' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
               )}
             </button>
           ))}

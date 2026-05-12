@@ -13,8 +13,7 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
 
   return (
     <div
-      onClick={() => onSelect(index)}
-      className={`w-52 min-w-[208px] min-h-[220px] rounded-2xl p-5 cursor-pointer transition-all border shrink-0 flex flex-col h-full relative overflow-hidden
+      className={`w-52 min-w-[208px] min-h-[220px] rounded-2xl p-5 transition-all border shrink-0 flex flex-col h-full relative overflow-hidden
         ${isChosenGoal
           ? 'bg-[#fff8f8] border-2 border-[#70170f] shadow-md'
           : selected
@@ -83,7 +82,10 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
       </div>
 
       {isChosenGoal ? (
-        <div className="flex items-center gap-2.5 w-full mt-auto p-2 bg-[#70170f]/5 rounded-xl border border-[#70170f]/10">
+        <div
+          onClick={() => onSelect(index)}
+          className="flex items-center gap-2.5 w-full mt-auto p-2 bg-[#70170f]/5 rounded-xl border border-[#70170f]/10 cursor-pointer hover:bg-[#70170f]/10 transition-colors"
+        >
           <div className="relative w-8 h-8 shrink-0">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <circle cx="18" cy="18" r="16" fill="none" className="stroke-[#70170f]/10" strokeWidth="3" />
@@ -95,7 +97,7 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
           </div>
           <div className="flex-1">
             <p className="text-[10px] font-bold text-[#70170f] leading-tight">Match Score</p>
-            <p className="text-[8px] text-[#70170f]/70 leading-tight mt-0.5">Keep learning to improve</p>
+            <p className="text-[8px] text-[#70170f]/70 leading-tight mt-0.5">Click to view roadmap</p>
           </div>
         </div>
       ) : (

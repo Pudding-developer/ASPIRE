@@ -115,6 +115,7 @@ async def get_students_by_class(session: AsyncSession, class_id: int) -> list[di
             "email": user.email,
             "avatar_url": user.avatar_url,
             "enrolled_at": enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None,
+            "is_class_rep": bool(enrollment.is_class_rep),
         })
 
     return students
@@ -161,6 +162,129 @@ async def get_dashboard_stats(session: AsyncSession, instructor_id: int) -> dict
         "active_courses": active_count,
         "avg_performance": avg_performance,
     }
+
+
+async def get_student_performance_rows(
+    session: AsyncSession, instructor_id: int
+) -> list[dict]:
+    """Per (student, class) average score percentage across an instructor's active classes."""
+    active_classes = await get_classes_by_instructor(session, instructor_id)
+    active_ids = [c.id for c in active_classes]
+    if not active_ids:
+        return []
+
+    avg_pct = func.avg(StudentScore.score / AssessmentILO.max_score * 100).label("avg_pct")
+
+    result = await session.execute(
+        select(
+            User.id,
+            User.full_name,
+            User.avatar_url,
+            User.sr_code,
+            Class.id,
+            Class.course_code,
+            Class.subject_name,
+            Class.year_level,
+            Class.semester,
+            avg_pct,
+        )
+        .join(StudentScore, StudentScore.student_id == User.id)
+        .join(AssessmentILO, StudentScore.ilo_id == AssessmentILO.id)
+        .join(Assessment, StudentScore.assessment_id == Assessment.id)
+        .join(Class, Assessment.class_id == Class.id)
+        .where(
+            Assessment.class_id.in_(active_ids),
+            AssessmentILO.max_score > 0,
+        )
+        .group_by(
+            User.id, User.full_name, User.avatar_url, User.sr_code,
+            Class.id, Class.course_code, Class.subject_name,
+            Class.year_level, Class.semester,
+        )
+    )
+
+    rows = []
+    for sid, name, avatar, sr_code, cid, course_code, subject, year, sem, pct in result.all():
+        if pct is None:
+            continue
+        rows.append({
+            "student_id": sid,
+            "full_name": name,
+            "avatar_url": avatar,
+            "sr_code": sr_code,
+            "class_id": cid,
+            "course_code": course_code,
+            "subject_name": subject,
+            "year_level": year,
+            "semester": sem,
+            "avg_percentage": round(float(pct), 1),
+        })
+    return rows
+
+
+async def get_class_representatives(
+    session: AsyncSession, instructor_id: int
+) -> list[dict]:
+    """Students appointed as class representative across the instructor's active classes."""
+    active_classes = await get_classes_by_instructor(session, instructor_id)
+    active_ids = [c.id for c in active_classes]
+    if not active_ids:
+        return []
+
+    result = await session.execute(
+        select(
+            User.id,
+            User.full_name,
+            User.avatar_url,
+            User.sr_code,
+            Class.id,
+            Class.course_code,
+            Class.subject_name,
+            Class.year_level,
+            Class.semester,
+        )
+        .join(ClassEnrollment, ClassEnrollment.student_id == User.id)
+        .join(Class, ClassEnrollment.class_id == Class.id)
+        .where(
+            ClassEnrollment.class_id.in_(active_ids),
+            ClassEnrollment.is_class_rep == True,  # noqa: E712
+        )
+        .order_by(Class.course_code.asc(), User.full_name.asc())
+    )
+
+    return [
+        {
+            "student_id": sid,
+            "full_name": name,
+            "avatar_url": avatar,
+            "sr_code": sr_code,
+            "class_id": cid,
+            "course_code": course_code,
+            "subject_name": subject,
+            "year_level": year,
+            "semester": sem,
+        }
+        for sid, name, avatar, sr_code, cid, course_code, subject, year, sem in result.all()
+    ]
+
+
+async def set_class_representative(
+    session: AsyncSession, class_id: int, student_id: int, is_rep: bool
+) -> ClassEnrollment | None:
+    result = await session.execute(
+        select(ClassEnrollment).where(
+            ClassEnrollment.class_id == class_id,
+            ClassEnrollment.student_id == student_id,
+        )
+    )
+    enrollment = result.scalar_one_or_none()
+    if not enrollment:
+        return None
+    enrollment.is_class_rep = is_rep
+    session.add(enrollment)
+    await session.commit()
+    await session.refresh(enrollment)
+    return enrollment
 
 
 async def get_assessments_by_class(session: AsyncSession, class_id: int) -> list[Assessment]:

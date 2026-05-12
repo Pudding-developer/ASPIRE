@@ -4,7 +4,7 @@ import { Button } from '../../../components/ui/button';
 import SearchInput from '../../../components/ui/SearchInput';
 import { instructorApi } from '../../../services/instructorApi';
 
-export default function ClassDetailView({ classId, classData, onBack, onShowCode, onArchive, onDelete }) {
+export default function ClassDetailView({ classId, classData, onBack, onShowCode, onArchive, onDelete, onClassRepChanged }) {
   const [activeTab, setActiveTab] = useState('profiles');
   const [lastTabBeforeScores, setLastTabBeforeScores] = useState('profiles');
   const [students, setStudents] = useState([]);
@@ -140,7 +140,24 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
           </div>
 
           {/* Dynamic Panels */}
-          {activeTab === 'profiles' && <ProfilesPanel students={students} studentsLoading={studentsLoading} />}
+          {activeTab === 'profiles' && (
+            <ProfilesPanel
+              students={students}
+              studentsLoading={studentsLoading}
+              classId={resolvedClassId}
+              onToggleClassRep={async (studentId, nextValue) => {
+                try {
+                  await instructorApi.setClassRep(resolvedClassId, studentId, nextValue);
+                  setStudents(prev => prev.map(s =>
+                    s.id === studentId ? { ...s, is_class_rep: nextValue } : s
+                  ));
+                  onClassRepChanged?.();
+                } catch (err) {
+                  console.error('Failed to update class representative', err);
+                }
+              }}
+            />
+          )}
           {activeTab === 'submitted' && <SubmittedAssessmentsPanel classId={resolvedClassId} onEdit={(id) => openScoresTab(id)} />}
         </div>
       )}
@@ -673,8 +690,22 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
   );
 }
 
-function ProfilesPanel({ students = [], studentsLoading = false }) {
+function ProfilesPanel({ students = [], studentsLoading = false, onToggleClassRep }) {
   const [search, setSearch] = useState('');
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (openMenuId == null) return;
+    const handler = (e) => {
+      if (menuContainerRef.current && !menuContainerRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [openMenuId]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return students;
@@ -737,13 +768,39 @@ function ProfilesPanel({ students = [], studentsLoading = false }) {
                 </div>
               </div>
               <div className="flex items-center gap-6">
+                {student.is_class_rep && (
+                  <span className="px-[12px] py-[5px] rounded-full text-[12px] font-bold bg-[#fef3c7] text-[#92400e]">
+                    Class Rep
+                  </span>
+                )}
                 <span className="px-[14px] py-[6px] rounded-full text-[13px] font-bold mr-4 bg-[#dbeafe] text-[#1e40af]">
                   Enrolled
                 </span>
                 <span className="font-semibold text-[0.9rem] text-[#6b7280] text-right tracking-tight">
                   {student.email}
                 </span>
-                <button className="text-[#9ca3af] hover:text-gray-600 transition-colors ml-4"><MoreVertical size={24} /></button>
+                <div className="relative ml-4" ref={openMenuId === student.id ? menuContainerRef : null}>
+                  <button
+                    onClick={() => setOpenMenuId(prev => prev === student.id ? null : student.id)}
+                    className="text-[#9ca3af] hover:text-gray-600 transition-colors"
+                    aria-label="Student actions"
+                  >
+                    <MoreVertical size={24} />
+                  </button>
+                  {openMenuId === student.id && (
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
+                      <button
+                        onClick={() => {
+                          onToggleClassRep?.(student.id, !student.is_class_rep);
+                          setOpenMenuId(null);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        {student.is_class_rep ? 'Remove as Class Representative' : 'Appoint as Class Representative'}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}

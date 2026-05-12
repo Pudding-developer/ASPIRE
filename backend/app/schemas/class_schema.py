@@ -24,11 +24,38 @@ class ClassOut(BaseModel):
     created_at: datetime
 
 
+class StudentPerformanceRow(BaseModel):
+    student_id: int
+    full_name: str
+    avatar_url: Optional[str] = None
+    sr_code: Optional[str] = None
+    class_id: int
+    course_code: str
+    subject_name: str
+    year_level: int
+    semester: int
+    avg_percentage: float
+
+
+class ClassRepresentativeRow(BaseModel):
+    student_id: int
+    full_name: str
+    avatar_url: Optional[str] = None
+    sr_code: Optional[str] = None
+    class_id: int
+    course_code: str
+    subject_name: str
+    year_level: int
+    semester: int
+
+
 class DashboardStats(BaseModel):
     total_students: int
     active_courses: int
     school_year: str
     avg_performance: Optional[float]
+    student_performance: list[StudentPerformanceRow] = []
+    class_representatives: list[ClassRepresentativeRow] = []
 
 
 class AssessmentCreate(BaseModel):

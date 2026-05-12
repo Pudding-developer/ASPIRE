@@ -7,6 +7,8 @@ export const instructorApi = {
   getClasses:        ()              => request('GET',    `${BASE}/classes`),
   getArchivedClasses:()              => request('GET',    `${BASE}/classes/archived`),
   getClassStudents:  (id)            => request('GET',    `${BASE}/classes/${id}/students`),
+  setClassRep: (classId, studentId, isRep) =>
+    request('PATCH', `${BASE}/classes/${classId}/students/${studentId}/class-rep`, { is_class_rep: isRep }),
   createClass:       (data)          => request('POST',   `${BASE}/classes`, data),
   archiveClass:      (id)            => request('PATCH',  `${BASE}/classes/${id}/archive`),
   restoreClass:      (id)            => request('PATCH',  `${BASE}/classes/${id}/restore`),

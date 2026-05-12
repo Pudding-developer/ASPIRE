@@ -87,6 +87,21 @@ async def get_class_students(
     return {"data": students}
 
 
+@router.patch("/api/instructor/classes/{class_id}/students/{student_id}/class-rep")
+async def set_class_rep(
+    class_id: int,
+    student_id: int,
+    payload: dict,
+    instructor: Instructor = Depends(get_current_instructor),
+    session: AsyncSession = Depends(get_session),
+):
+    is_rep = bool(payload.get("is_class_rep", False))
+    result = await class_service.set_class_representative(
+        session, instructor.id, class_id, student_id, is_rep
+    )
+    return {"data": result, "message": "Class representative updated."}
+
+
 @router.post("/api/instructor/classes/{class_id}/assessments/submit", status_code=201)
 async def submit_assessment(
     class_id: int,

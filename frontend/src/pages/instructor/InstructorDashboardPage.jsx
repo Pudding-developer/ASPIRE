@@ -110,6 +110,7 @@ const InstructorDashboard = () => {
               classData={classObj}
               onBack={() => setActiveView('my-classes')}
               onShowCode={() => { setNewClassCode(classObj?.class_code || ''); setIsCodeOpen(true); }}
+              onClassRepChanged={refetch}
               onArchive={() => {
                 triggerConfirm('Archive Class', 'This class will be moved to archives and no longer active.', 'Archive', 'danger', async () => {
                   await archiveClass(classId);

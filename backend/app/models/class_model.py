@@ -24,6 +24,7 @@ class ClassEnrollment(SQLModel, table=True):
     class_id: int = Field(foreign_key="classes.id", index=True)
     student_id: int = Field(foreign_key="user.id", index=True)
     enrolled_at: datetime = Field(default_factory=datetime.utcnow)
+    is_class_rep: bool = Field(default=False)
 
 
 class Assessment(SQLModel, table=True):

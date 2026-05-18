@@ -33,7 +33,7 @@ SKILL_CATEGORIES = [
     "Data Science & AI/ML",
     "Engineering Design & Research",
     "Modern Engineering Tools",
-    "Technical Communication",
+    "Communication",
     "Ethics & Professionalism",
     "Critical Thinking & Problem-Solving",
     "Leadership & Teamwork",

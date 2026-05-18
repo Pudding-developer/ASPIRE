@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   TrendingUp, Github, Bell, Filter, TrendingDown, Minus, ArrowUpRight,
-  ChevronRight, BookOpen, Star, Plus, AlertCircle, X
+  ChevronRight, BookOpen, Star, Plus, AlertCircle, X, GraduationCap, Target, Rocket, Activity
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import projectBg from '../../../../assets/project_card_bg.png';
@@ -40,36 +40,47 @@ function formatActivityTime(iso) {
   return then.toLocaleDateString();
 }
 
-const panelBase = 'bg-gradient-to-br from-white via-[#fffbfb] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)]';
+const panelBase = 'bg-white border border-[#eed7d3] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.1)]';
 const primaryBtn = 'bg-[#9f0707] hover:bg-[#430202] text-white py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10';
 const subtleBtn = 'border border-[#eed8d8] rounded-xl py-2 text-[13px] font-semibold text-[#6f4a4a] hover:bg-[#fff5f5] transition-colors';
 
 /* ─── Stat Card ─── */
-export function StatCard({ label, value, sub, trend, badge, badgeTone = 'green' }) {
-  const trendColor = trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-red-400' : 'text-gray-400';
-  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+export function StatCard({ label, value, sub, trend, badge, badgeTone = 'green', icon: Icon }) {
   const badgeClass = badgeTone === 'red'
     ? 'bg-red-50 text-red-600 border-red-200'
     : badgeTone === 'amber'
-    ? 'bg-amber-50 text-amber-600 border-amber-200'
+    ? 'bg-amber-50 text-amber-700 border-amber-200'
     : 'bg-emerald-50 text-emerald-600 border-emerald-200';
+
   return (
-    <div className={`${panelBase} p-5 hover:shadow-[0_16px_36px_-20px_rgba(0,0,0,0.25)] transition-shadow`}>
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">{label}</p>
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-[2rem] font-extrabold text-gray-900 leading-none">{value}</p>
-          {sub && <p className="text-[12px] text-gray-500 mt-1">{sub}</p>}
-        </div>
-        {trend && (
-          <div className={`flex items-center gap-1 ${trendColor} text-[12px] font-semibold`}>
-            <TrendIcon size={14} />
+    <div className={`${panelBase} p-6 flex flex-col min-h-[160px] hover:shadow-[0_16px_36px_-20px_rgba(0,0,0,0.25)] transition-shadow`}>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">{label}</p>
+        {Icon && (
+          <div className="w-7 h-7 rounded-lg bg-[#fff2f2] text-[#70170f] flex items-center justify-center">
+            <Icon size={14} />
           </div>
         )}
-        {badge && (
-          <span className={`text-[11px] font-bold border px-2 py-1 rounded-full flex items-center gap-1 ${badgeClass}`}>
-            {badge} <ArrowUpRight size={10} />
-          </span>
+      </div>
+
+      <div className="flex flex-col">
+        <div className="flex items-center gap-3">
+          <p className={`${value?.length > 15 ? 'text-2xl' : 'text-3xl'} font-extrabold text-gray-900 leading-tight`}>{value}</p>
+          {badge && (
+            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${badgeClass}`}>
+              {badge}
+            </span>
+          )}
+          {trend && (
+            <div className={`flex items-center ${trend === 'up' ? 'text-emerald-500' : 'text-red-400'}`}>
+              {trend === 'up' ? <TrendingUp size={20} strokeWidth={2.5} /> : <TrendingDown size={20} strokeWidth={2.5} />}
+            </div>
+          )}
+        </div>
+        {sub && (
+          <p className="text-[11px] text-gray-400 font-medium truncate mt-1" title={sub}>
+            {sub}
+          </p>
         )}
       </div>
     </div>
@@ -90,8 +101,8 @@ export function ILOCoverage({ coverage }) {
 
   return (
     <div className={`${panelBase} p-6`}>
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Integrated ILO Coverage</p>
-      <h3 className="text-[16px] font-bold text-gray-900 mb-5">Learning Outcome Status</h3>
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Integrated ILO Coverage</p>
+      <h3 className="text-[20px] font-black text-gray-900 mb-5">Learning Outcome Status</h3>
       <div className="flex items-center gap-8">
         <div className="relative shrink-0">
           <svg width={size} height={size} className="-rotate-90">
@@ -117,7 +128,7 @@ export function ILOCoverage({ coverage }) {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-[18px] font-extrabold text-gray-900">{coverage.totalMastery}%</span>
-            <span className="text-[9px] text-gray-400 font-semibold">MASTERY</span>
+            <span className="text-[9px] text-gray-400 font-black">MASTERY</span>
           </div>
         </div>
         <div className="space-y-3 flex-1">
@@ -207,8 +218,8 @@ export function DevelopingSkills({ weakSkills, aggregatedSkills }) {
 
   return (
     <div className={`${panelBase} p-6`}>
-      <h3 className="text-[16px] font-bold text-gray-900 mb-1">Developing Skills</h3>
-      <p className="text-[12px] text-gray-400 mb-5">Ongoing competencies requiring attention</p>
+      <h3 className="text-[20px] font-black text-gray-900 mb-1">Developing Skills</h3>
+      <p className="text-[11px] text-gray-400 mb-5">Ongoing competencies requiring attention</p>
       <div className="space-y-5">
         {weakSkills.slice(0, 3).map((skillName) => {
           const current = Math.round(aggregatedSkills[skillName] || 0);
@@ -246,7 +257,7 @@ export function ExcelledSkills({ topSkills, onNavigate }) {
   if (!topSkills || !topSkills.length) {
     return (
       <div className="bg-[#fff5f5] border border-[#e8a0a0] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)] p-6 flex flex-col">
-        <h3 className="text-[16px] font-bold text-gray-900 mb-5">Excelled Skills</h3>
+        <h3 className="text-[20px] font-black text-gray-900 mb-5">Excelled Skills</h3>
         <p className="text-[12px] text-gray-400 mb-5">Not enough data to predict excelled skills yet.</p>
       </div>
     );
@@ -254,7 +265,7 @@ export function ExcelledSkills({ topSkills, onNavigate }) {
 
   return (
     <div className="bg-[#fff5f5] border border-[#e8a0a0] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)] p-6 flex flex-col">
-      <h3 className="text-[16px] font-bold text-gray-900 mb-5">Excelled Skills</h3>
+      <h3 className="text-[20px] font-black text-gray-900 mb-5">Excelled Skills</h3>
       <div className="flex flex-wrap content-start items-start gap-2 mb-5">
         {topSkills.map((s) => (
           <span key={s} className="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-500 text-[12px] font-semibold rounded-full">{s}</span>
@@ -275,8 +286,8 @@ export function TopProjects({ repos }) {
   if (!repos || !repos.length) {
     return (
       <div>
-        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Portfolio</p>
-        <h2 className="text-[22px] font-extrabold text-gray-900 mb-5">Top Academic Projects</h2>
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Portfolio</p>
+        <h2 className="text-[20px] font-black text-gray-900 mb-5">Top Academic Projects</h2>
         <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6 text-center text-gray-500 text-[13px]">
           No projects available yet. Connect your GitHub or complete assignments.
         </div>
@@ -302,8 +313,8 @@ export function TopProjects({ repos }) {
 
   return (
     <div>
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Portfolio</p>
-      <h2 className="text-[22px] font-extrabold text-gray-900 mb-5">Top Academic Projects</h2>
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Portfolio</p>
+      <h2 className="text-[20px] font-black text-gray-900 mb-5">Top Academic Projects</h2>
       <div className="grid md:grid-cols-3 gap-5">
         {topRepos.map((repo) => {
           const repoName = repo.repo_name || repo.name || repo.repo_full_name || 'Untitled Repository';
@@ -342,7 +353,7 @@ export function GitHubCard({ githubStatus, onConnect }) {
   if (!githubStatus?.connected) {
     return (
       <div className={`${panelBase} p-6`}>
-        <h3 className="text-[16px] font-bold text-gray-900 mb-2">GitHub</h3>
+        <h3 className="text-[20px] font-black text-gray-900 mb-2">GitHub</h3>
         <p className="text-[12px] text-gray-500 mb-4">Connect GitHub to track projects.</p>
         <button
           onClick={onConnect}
@@ -356,7 +367,7 @@ export function GitHubCard({ githubStatus, onConnect }) {
 
   return (
     <div className={`${panelBase} p-6`}>
-      <h3 className="text-[16px] font-bold text-gray-900 mb-5">GitHub</h3>
+      <h3 className="text-[20px] font-black text-gray-900 mb-5">GitHub</h3>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white shrink-0">
@@ -381,7 +392,7 @@ export function JoinClassCard({ onNavigate }) {
       <div className="w-12 h-12 bg-[#70170f]/10 text-[#70170f] rounded-full flex items-center justify-center mb-3">
         <Plus size={24} />
       </div>
-      <h3 className="text-[16px] font-bold text-gray-900 mb-2">Join a new Class</h3>
+      <h3 className="text-[20px] font-black text-gray-900 mb-2">Join a new Class</h3>
       <p className="text-[12px] text-gray-500 mb-5 leading-relaxed">
         Enter a class code provided by your instructor to join their roster and access your materials.
       </p>
@@ -414,7 +425,7 @@ export function TopCoursesCard({ predictions, onNavigate }) {
   if (!ranked.length) {
     return (
       <div className={`${panelBase} p-6 flex flex-col`}>
-        <h3 className="text-[16px] font-bold text-gray-900 mb-2">Top Courses</h3>
+        <h3 className="text-[20px] font-black text-gray-900 mb-2">Top Courses</h3>
         <p className="text-[12px] text-gray-400">No course performance data yet.</p>
       </div>
     );
@@ -425,8 +436,8 @@ export function TopCoursesCard({ predictions, onNavigate }) {
   return (
     <div className={`${panelBase} p-6 flex flex-col`}>
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-[16px] font-bold text-gray-900">Top Courses</h3>
-        <span className="text-[10px] font-bold text-[#70170f] uppercase tracking-widest">by Proficiency</span>
+        <h3 className="text-[20px] font-black text-gray-900">Top Courses</h3>
+        <span className="text-[10px] font-black text-[#70170f] uppercase tracking-widest">by Proficiency</span>
       </div>
 
       <div className="space-y-4 flex-1">
@@ -485,7 +496,7 @@ export function CareerChoiceCard({ report, chosenCareer }) {
   if (!targetCareer) {
     return (
       <div className={`${panelBase} p-6 flex flex-col justify-center h-full`}>
-        <h3 className="text-[16px] font-bold text-gray-900 mb-2">Career Map</h3>
+        <h3 className="text-[20px] font-black text-gray-900 mb-2">Career Map</h3>
         <p className="text-[12px] text-gray-500 mb-4">No AI career report generated yet. We analyze your performance to map out a career path.</p>
         <button className={`w-full ${subtleBtn} mt-auto`}>
           Generate map
@@ -505,7 +516,7 @@ export function CareerChoiceCard({ report, chosenCareer }) {
 
   return (
     <div className={`${panelBase} p-6 flex flex-col h-full`}>
-      <h3 className="text-[16px] font-bold text-gray-900 mb-5">{chosenCareer ? 'Your Career Goal' : 'Top Career Match'}</h3>
+      <h3 className="text-[20px] font-black text-gray-900 mb-5">{chosenCareer ? 'Your Career Goal' : 'Top Career Match'}</h3>
 
       <div className="flex items-center gap-6 mb-5 flex-1">
         <div className="relative shrink-0">
@@ -548,8 +559,8 @@ export function CareerChoiceCard({ report, chosenCareer }) {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white/95 backdrop-blur-md z-10">
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Detailed Analysis</p>
-                <h2 className="text-[20px] font-extrabold text-gray-900">{targetCareer.title} Roadmap</h2>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Detailed Analysis</p>
+                <h2 className="text-[20px] font-black text-gray-900">{targetCareer.title} Roadmap</h2>
               </div>
               <button onClick={() => setShowRoadmap(false)} className="w-10 h-10 flex items-center justify-center bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-full transition-colors">
                 <X size={20} />
@@ -570,7 +581,7 @@ export function CTABanner({ onNavigate }) {
   return (
     <div className="bg-linear-to-r from-[#2e0b0b] via-[#3d0f0f] to-[#541515] border border-[#6b2222]/40 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.4)]">
       <div>
-        <h3 className="text-[18px] font-bold text-white mb-1">Ready for your next career milestone?</h3>
+        <h3 className="text-[20px] font-black text-white mb-1">Ready for your next career milestone?</h3>
         <p className="text-[13px] text-gray-400">Our AI engine has prepared updated career paths based on your latest grades and GitHub activity.</p>
       </div>
       <div className="flex items-center gap-3 shrink-0">
@@ -651,8 +662,8 @@ export default function StudentDashboardView({ user, onNavigate }) {
             />
           )}
           <div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Student Overview</p>
-            <h1 className="text-[2.2rem] font-extrabold text-gray-900 leading-tight">Welcome back, {fullName}.</h1>
+            <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">Student Overview</p>
+            <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">Hello, {fullName}.</h1>
           </div>
         </div>
         <div className="flex items-center gap-3 mt-2">
@@ -682,19 +693,20 @@ export default function StudentDashboardView({ user, onNavigate }) {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Overall Mastery" value={`${masteryScore}%`} trend="up" />
-        <StatCard label="Computed Outcome" value={overallOutcome} sub="Model Aggregate" />
-        <StatCard label="Top Skill" value={predictions?.top_skills?.[0] || 'N/A'} sub="Strongest predicted skillset" />
+        <StatCard label="Overall Mastery" value={`${masteryScore}%`} trend="up" icon={GraduationCap} />
+        <StatCard label="Computed Outcome" value={overallOutcome} icon={Target} />
+        <StatCard label="Top Skill" value={predictions?.top_skills?.[0] || 'N/A'} sub="Strongest predicted skillset" icon={Rocket} />
         <StatCard
           label="Career Target"
           value={matchPct >= 75 ? 'On Track' : matchPct >= 60 ? 'Developing' : 'Needs Focus'}
           sub={matchPct >= 75
-            ? `Achieved ${matchPct}% match for ${targetCareer?.title || 'career'}`
+            ? `Achieved ${matchPct}% match`
             : matchPct >= 60
-            ? `${matchPct}% match — developing key competencies`
-            : `${matchPct}% match — requires significant skill growth`}
+            ? `${matchPct}% match — developing`
+            : `${matchPct}% match — requires growth`}
           badge={matchPct >= 75 ? 'On Track' : matchPct >= 60 ? 'Developing' : 'Needs Focus'}
           badgeTone={matchPct >= 75 ? 'green' : matchPct >= 60 ? 'amber' : 'red'}
+          icon={Activity}
         />
       </div>
 

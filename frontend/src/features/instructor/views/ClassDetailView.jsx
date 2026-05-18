@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, MoreVertical, Save, Copy, Archive, Trash2, Users, Code, BarChart2, ClipboardCheck, Edit2, Download, Upload } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { ArrowLeft, MoreVertical, Save, Copy, Archive, Trash2, Users, Code, BarChart2, ClipboardCheck, Edit2, Download, Upload, ClipboardList } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import SearchInput from '../../../components/ui/SearchInput';
 import { instructorApi } from '../../../services/instructorApi';
@@ -10,14 +10,8 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [editingAssessmentId, setEditingAssessmentId] = useState(null);
-
-  const openScoresTab = (assessmentId = null) => {
-    if (activeTab !== 'scores') {
-      setLastTabBeforeScores(activeTab);
-    }
-    setEditingAssessmentId(assessmentId);
-    setActiveTab('scores');
-  };
+  const [initialStudentSearch, setInitialStudentSearch] = useState('');
+  const [partialAssessments, setPartialAssessments] = useState([]);
 
   const resolvedClassId = useMemo(() => {
     if (classData?.id) return classData.id;
@@ -29,6 +23,49 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
     const parsed = Number(classId);
     return Number.isNaN(parsed) ? null : parsed;
   }, [classData?.id, classId]);
+
+  const fetchPartial = useCallback(() => {
+    if (!resolvedClassId) return;
+    instructorApi.getClassAssessments(resolvedClassId)
+      .then(res => {
+        const partial = (res?.data || []).filter(a => a.is_partial);
+        setPartialAssessments(partial);
+      })
+      .catch(err => console.error('Failed to load assessment coverage', err));
+  }, [resolvedClassId]);
+
+  useEffect(() => {
+    fetchPartial();
+  }, [fetchPartial]);
+
+  const missingByStudent = useMemo(() => {
+    const map = new Map();
+    for (const a of partialAssessments) {
+      for (const sid of (a.ungraded_student_ids || [])) {
+        if (!map.has(sid)) map.set(sid, []);
+        map.get(sid).push(a);
+      }
+    }
+    return map;
+  }, [partialAssessments]);
+
+  const missingAssessments = useMemo(() => {
+    return students
+      .map(student => {
+        const missing = missingByStudent.get(student.id);
+        return missing?.length ? { student, missing } : null;
+      })
+      .filter(Boolean);
+  }, [students, missingByStudent]);
+
+  const openScoresTab = (assessmentId = null, search = '') => {
+    if (activeTab !== 'scores') {
+      setLastTabBeforeScores(activeTab);
+    }
+    setEditingAssessmentId(assessmentId);
+    setInitialStudentSearch(search);
+    setActiveTab('scores');
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -80,7 +117,18 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
             {editingAssessmentId ? 'Edit Assessment Scores' : 'Input Assessment Scores'}
           </h1>
           
-          <ScoresInputPanel classId={resolvedClassId} classData={classData} editingAssessmentId={editingAssessmentId} students={students} studentsLoading={studentsLoading} onSuccess={() => setActiveTab('submitted')} />
+          <ScoresInputPanel 
+            classId={resolvedClassId} 
+            classData={classData} 
+            editingAssessmentId={editingAssessmentId} 
+            students={students} 
+            studentsLoading={studentsLoading} 
+            onSuccess={() => {
+              fetchPartial();
+              setActiveTab('submitted');
+            }}
+            initialSearch={initialStudentSearch}
+          />
         </div>
       ) : (
         <div className="p-8">
@@ -144,7 +192,12 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
             <ProfilesPanel
               students={students}
               studentsLoading={studentsLoading}
+              assessments={classData?.assessments || []}
+              scores={classData?.scores || []}
               classId={resolvedClassId}
+              onEditAssessment={openScoresTab}
+              missingAssessments={missingAssessments}
+              missingByStudent={missingByStudent}
               onToggleClassRep={async (studentId, nextValue) => {
                 try {
                   await instructorApi.setClassRep(resolvedClassId, studentId, nextValue);
@@ -158,7 +211,13 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
               }}
             />
           )}
-          {activeTab === 'submitted' && <SubmittedAssessmentsPanel classId={resolvedClassId} onEdit={(id) => openScoresTab(id)} />}
+          {activeTab === 'submitted' && (
+            <SubmittedAssessmentsPanel 
+              classId={resolvedClassId} 
+              onEdit={openScoresTab}
+              missingAssessments={missingAssessments}
+            />
+          )}
         </div>
       )}
     </>
@@ -179,7 +238,7 @@ function formatNameLastFirst(fullName = '') {
   return `${lastName}, ${firstNames}`;
 }
 
-function ScoresInputPanel({ classId, classData, editingAssessmentId, students = [], studentsLoading = false, onSuccess }) {
+function ScoresInputPanel({ classId, classData, editingAssessmentId, students = [], studentsLoading = false, onSuccess, initialSearch = '' }) {
   const [activeILOs, setActiveILOs] = useState([1, 2, 3, 4]);
   const iloRange = useMemo(() => [...activeILOs].sort((a, b) => a - b), [activeILOs]);
 
@@ -191,7 +250,7 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
   const [errorMsg, setErrorMsg] = useState('');
   const [importMsg, setImportMsg] = useState('');
   const [toast, setToast] = useState(null);
-  const [studentSearch, setStudentSearch] = useState('');
+  const [studentSearch, setStudentSearch] = useState(initialSearch);
   const fileInputRef = useRef(null);
 
   const filteredStudents = useMemo(() => {
@@ -199,6 +258,22 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
     if (!q) return students;
     return students.filter(s => (s.full_name || '').toLowerCase().includes(q));
   }, [students, studentSearch]);
+
+  const ungradedStudentIds = useMemo(() => {
+    if (!editingAssessmentId || !students.length) return new Set();
+    const hasAnyScore = (sid) => {
+      const scores = studentScores[sid] || {};
+      return iloRange.some(i => {
+        const v = scores[i];
+        return v !== '' && v != null && parseFloat(v) > 0;
+      });
+    };
+    const anyoneGraded = students.some(s => hasAnyScore(s.id));
+    if (!anyoneGraded) return new Set();
+    return new Set(students.filter(s => !hasAnyScore(s.id)).map(s => s.id));
+  }, [editingAssessmentId, students, studentScores, iloRange]);
+
+  const incompleteCount = ungradedStudentIds.size;
 
   useEffect(() => {
     if (!toast) return;
@@ -598,6 +673,22 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
         </div>
       </div>
       {importMsg && <p className="text-[#70170f] font-medium text-sm mb-3">{importMsg}</p>}
+      {incompleteCount > 0 && (
+        <details className="mb-3 text-sm" open>
+          <summary className="text-amber-700 cursor-pointer select-none">
+            {incompleteCount} {incompleteCount === 1 ? 'student has' : 'students have'} not received scores for this assessment yet
+          </summary>
+          <ul className="mt-2 ml-4 space-y-1 text-[13px] text-amber-800">
+            {students
+              .filter(s => ungradedStudentIds.has(s.id))
+              .map(s => (
+                <li key={s.id}>
+                  <span className="font-medium">{formatNameLastFirst(s.full_name)}</span>
+                </li>
+              ))}
+          </ul>
+        </details>
+      )}
 
       {/* Table */}
       <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
@@ -634,11 +725,26 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
                     No students match "{studentSearch}".
                   </td>
                 </tr>
-              ) : filteredStudents.map((student, idx) => (
-                <tr key={student.id || idx} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50">
-                  <td className="p-5 font-semibold text-[#1f2937] text-[16px] border-r border-[#e2e8f0] leading-snug">
-                    <span className="block wrap-break-word">{formatNameLastFirst(student.full_name)}</span>
-                  </td>
+              ) : filteredStudents.map((student, idx) => {
+                const isUngraded = ungradedStudentIds.has(student.id);
+                return (
+                  <tr key={student.id || idx} className={`border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 ${isUngraded ? 'bg-amber-50/40' : ''}`}>
+                    <td className="p-5 font-semibold text-[#1f2937] text-[16px] border-r border-[#e2e8f0] leading-snug">
+                      <div className="flex items-center gap-2">
+                        {isUngraded && (
+                          <span
+                            className="w-2 h-2 rounded-full bg-amber-500 shrink-0"
+                            title="No scores submitted for this student yet"
+                          />
+                        )}
+                        <span className="block wrap-break-word">{formatNameLastFirst(student.full_name)}</span>
+                        {isUngraded && (
+                          <span className="ml-auto text-[11px] font-semibold text-amber-800 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5 whitespace-nowrap">
+                            not graded yet
+                          </span>
+                        )}
+                      </div>
+                    </td>
                   {iloRange.map(i => {
                     const score = studentScores[student.id]?.[i] ?? '';
                     const maxScore = iloTotals[i] || 1;
@@ -650,7 +756,7 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
                             type="number"
                             value={score}
                             onChange={(e) => handleScoreChange(student.id, i, e.target.value)}
-                            className="w-16 h-9 px-2 py-1 text-[15px] border border-gray-200 rounded-lg text-center mx-auto block outline-none focus:border-[#70170f] font-medium text-[#111827] hover:border-gray-300 transition-colors shadow-sm"
+                            className="w-16 h-9 px-2 py-1 text-[15px] border border-gray-200 rounded-lg text-center mx-auto block outline-none focus:border-[#70170f] hover:border-gray-300 font-medium text-[#111827] transition-colors shadow-sm"
                           />
                         </td>
                         <td className="p-2 text-center text-[15px] font-semibold text-[#9ca3af] border-r border-[#e2e8f0] last:border-r-0 bg-[#f9fafb] align-middle">
@@ -659,8 +765,9 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
                       </React.Fragment>
                     );
                   })}
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -690,7 +797,63 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
   );
 }
 
-function ProfilesPanel({ students = [], studentsLoading = false, onToggleClassRep }) {
+function MissingAssessmentsSidebar({ missingAssessments, onEditAssessment, missingCount }) {
+  return (
+    <div className="w-full lg:w-[400px] shrink-0">
+      <div className="bg-[#fdf2f2] border border-red-100 rounded-2xl p-6 shadow-sm sticky top-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-extrabold text-[#70170f] flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#70170f] animate-pulse" />
+            Student with Missing Assessments
+          </h3>
+          <span className="bg-[#70170f] text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-sm">
+            {missingCount}
+          </span>
+        </div>
+
+        {missingCount === 0 ? (
+          <div className="bg-white/50 border border-red-50 rounded-xl p-8 text-center">
+            <ClipboardCheck className="mx-auto h-8 w-8 text-red-200 mb-3" />
+            <p className="text-red-900/60 font-bold text-sm">All students are graded!</p>
+            <p className="text-red-900/40 text-[11px] mt-1">Excellent work keeping up with submissions.</p>
+          </div>
+        ) : (
+          <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-1 custom-scrollbar">
+            {missingAssessments.map(({ student, missing }) => (
+              <div key={student.id} className="bg-white border border-red-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group">
+                <div className="mb-3">
+                  <p className="text-[15px] font-extrabold text-[#111827] truncate">{student.full_name}</p>
+                  <p className="text-[12px] font-semibold text-[#64748b]">{student.sr_code}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {missing.map(assessment => (
+                    <button 
+                      key={assessment.id}
+                      onClick={() => onEditAssessment?.(assessment.id, student.full_name)}
+                      className="bg-red-50 hover:bg-[#70170f] text-[#70170f] hover:text-white text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red-100 transition-all flex items-center gap-2 group/btn"
+                    >
+                      <BarChart2 size={12} />
+                      <span className="truncate max-w-[200px]">{assessment.name || 'Assessment'}</span>
+                      <span className="text-[9px] opacity-60 font-black ml-auto group-hover/btn:opacity-100">MISSING SCORE</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-6 pt-6 border-t border-red-200/50">
+          <p className="text-[11px] text-red-900/50 font-bold uppercase tracking-wider leading-relaxed">
+            Click on an assessment to automatically navigate and input scores for that student.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfilesPanel({ students = [], studentsLoading = false, classId, onToggleClassRep, onEditAssessment, missingAssessments = [], missingByStudent = new Map() }) {
   const [search, setSearch] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuContainerRef = useRef(null);
@@ -712,105 +875,133 @@ function ProfilesPanel({ students = [], studentsLoading = false, onToggleClassRe
     return students.filter(s => (s.full_name || '').toLowerCase().includes(q));
   }, [students, search]);
 
+  const missingCount = missingAssessments.length;
+
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-        <h2 className="text-[1.25rem] font-bold text-[#1f2937] whitespace-nowrap">
-          Enrolled Students {students.length > 0 && (
-            <span className="text-[#64748b] font-semibold">
-              {search ? `(${filtered.length} of ${students.length})` : `(${students.length})`}
-            </span>
+    <div className="flex flex-col lg:flex-row gap-8 items-start">
+      {/* Main Column: Enrolled Students */}
+      <div className="flex-1 bg-white border border-gray-200 rounded-2xl p-8 shadow-sm w-full">
+        <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
+          <h2 className="text-[1.5rem] font-extrabold text-[#111827] whitespace-nowrap">
+            Enrolled Students {students.length > 0 && (
+              <span className="text-[#64748b] font-semibold ml-2">
+                {search ? `(${filtered.length} of ${students.length})` : `(${students.length})`}
+              </span>
+            )}
+          </h2>
+          {students.length > 0 && (
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Search students by name..."
+              className="max-w-xs flex-1"
+            />
           )}
-        </h2>
-        {students.length > 0 && (
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Search students by name..."
-            className="max-w-xs flex-1"
-          />
+        </div>
+
+        {studentsLoading ? (
+          <p className="text-gray-400 text-[16px] text-center py-12">Loading enrolled students...</p>
+        ) : students.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+            <Users className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+            <p className="text-gray-500 font-medium text-[16px]">No students enrolled yet.</p>
+            <p className="text-gray-400 text-sm mt-1">Share the class code for students to join.</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="text-gray-400 text-[16px] text-center py-12">No students match "{search}".</p>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map((student, i) => {
+              const studentMissing = missingByStudent.get(student.id) || [];
+              return (
+              <div key={student.id || i} className="flex items-center justify-between p-5 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all bg-white group">
+                <div className="flex items-center gap-6">
+                  <div className="w-[52px] h-[52px] rounded-full bg-[#fef2f2] text-[#70170f] font-bold text-xl flex items-center justify-center overflow-hidden border border-[#fecaca]">
+                    {student.avatar_url ? (
+                      <img
+                        src={student.avatar_url}
+                        alt={student.full_name || 'Student'}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <span
+                      style={{ display: student.avatar_url ? 'none' : 'flex' }}
+                      className="w-full h-full items-center justify-center"
+                    >
+                      {student.full_name?.[0]?.toUpperCase() || '?'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="font-extrabold text-[#111827] text-[17px] group-hover:text-[#70170f] transition-colors">{student.full_name}</p>
+                    <p className="text-[14px] font-medium text-[#6b7280]">{student.sr_code}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  {studentMissing.length > 0 && (
+                    <span
+                      className="px-[12px] py-[5px] rounded-full text-[11px] font-bold bg-red-50 text-[#70170f] border border-red-100"
+                      title={`Missing scores for: ${studentMissing.map(a => a.name).join(', ')}`}
+                    >
+                      {studentMissing.length} {studentMissing.length === 1 ? 'missing grade' : 'missing grades'}
+                    </span>
+                  )}
+                  {student.is_class_rep && (
+                    <span className="px-[12px] py-[5px] rounded-full text-[11px] font-bold bg-[#fef3c7] text-[#92400e] border border-[#fcd34d]">
+                      Class Rep
+                    </span>
+                  )}
+                  <span className="px-[14px] py-[6px] rounded-full text-[12px] font-bold bg-[#dbeafe] text-[#1e40af] border border-[#bfdbfe]">
+                    Enrolled
+                  </span>
+                  <span className="font-semibold text-[14px] text-[#64748b] hidden md:block">
+                    {student.email}
+                  </span>
+                  <div className="relative ml-2" ref={openMenuId === student.id ? menuContainerRef : null}>
+                    <button
+                      onClick={() => setOpenMenuId(prev => prev === student.id ? null : student.id)}
+                      className="p-2 text-[#9ca3af] hover:text-[#111827] hover:bg-gray-100 rounded-lg transition-all"
+                      aria-label="Student actions"
+                    >
+                      <MoreVertical size={20} />
+                    </button>
+                    {openMenuId === student.id && (
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 z-20 animate-in fade-in zoom-in duration-200">
+                        <button
+                          onClick={() => {
+                            onToggleClassRep?.(student.id, !student.is_class_rep);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-sm font-medium text-[#475569] hover:bg-gray-50 hover:text-[#111827] transition-colors"
+                        >
+                          {student.is_class_rep ? 'Remove as Class Representative' : 'Appoint as Class Representative'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              );
+            })}
+          </div>
         )}
       </div>
-      {studentsLoading ? (
-        <p className="text-gray-400 text-[16px] text-center py-8">Loading enrolled students...</p>
-      ) : students.length === 0 ? (
-        <p className="text-gray-400 text-[16px] text-center py-8">No students enrolled yet. Share the class code for students to join.</p>
-      ) : filtered.length === 0 ? (
-        <p className="text-gray-400 text-[16px] text-center py-8">No students match "{search}".</p>
-      ) : (
-        <div className="space-y-4">
-          {filtered.map((student, i) => (
-            <div key={student.id || i} className="flex items-center justify-between p-5 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all bg-white">
-              <div className="flex items-center gap-6">
-                <div className="w-[50px] h-[50px] rounded-full bg-[#fef2f2] text-[#70170f] font-bold text-xl flex items-center justify-center overflow-hidden">
-                  {student.avatar_url ? (
-                    <img
-                      src={student.avatar_url}
-                      alt={student.full_name || 'Student'}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        const fallback = e.currentTarget.nextElementSibling;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <span
-                    style={{ display: student.avatar_url ? 'none' : 'flex' }}
-                    className="w-full h-full items-center justify-center"
-                  >
-                    {student.full_name?.[0]?.toUpperCase() || '?'}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <p className="font-bold text-[#111827] text-[17px]">{student.full_name}</p>
-                  <p className="text-[15px] text-[#6b7280]">{student.sr_code}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                {student.is_class_rep && (
-                  <span className="px-[12px] py-[5px] rounded-full text-[12px] font-bold bg-[#fef3c7] text-[#92400e]">
-                    Class Rep
-                  </span>
-                )}
-                <span className="px-[14px] py-[6px] rounded-full text-[13px] font-bold mr-4 bg-[#dbeafe] text-[#1e40af]">
-                  Enrolled
-                </span>
-                <span className="font-semibold text-[0.9rem] text-[#6b7280] text-right tracking-tight">
-                  {student.email}
-                </span>
-                <div className="relative ml-4" ref={openMenuId === student.id ? menuContainerRef : null}>
-                  <button
-                    onClick={() => setOpenMenuId(prev => prev === student.id ? null : student.id)}
-                    className="text-[#9ca3af] hover:text-gray-600 transition-colors"
-                    aria-label="Student actions"
-                  >
-                    <MoreVertical size={24} />
-                  </button>
-                  {openMenuId === student.id && (
-                    <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
-                      <button
-                        onClick={() => {
-                          onToggleClassRep?.(student.id, !student.is_class_rep);
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        {student.is_class_rep ? 'Remove as Class Representative' : 'Appoint as Class Representative'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+
+      {/* Sidebar Column: Missing Assessments */}
+      <MissingAssessmentsSidebar 
+        missingAssessments={missingAssessments} 
+        onEditAssessment={onEditAssessment} 
+        missingCount={missingCount} 
+      />
     </div>
   );
 }
 
-function SubmittedAssessmentsPanel({ classId, onEdit }) {
+function SubmittedAssessmentsPanel({ classId, onEdit, missingAssessments = [] }) {
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -843,36 +1034,63 @@ function SubmittedAssessmentsPanel({ classId, onEdit }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
-      <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center">
-        <h2 className="text-[1.25rem] font-bold text-[#1f2937]">Submitted Assessments ({assessments.length})</h2>
+    <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="flex-1 bg-white border border-gray-200 rounded-2xl shadow-sm w-full overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-white">
+          <h2 className="text-[1.5rem] font-extrabold text-[#111827]">Submitted Assessments ({assessments.length})</h2>
+        </div>
+        <div className="p-8 pt-6">
+          {loading ? (
+            <p className="text-gray-400 text-[16px] text-center py-12">Loading history...</p>
+          ) : assessments.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              <ClipboardCheck className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+              <p className="text-gray-500 font-medium text-[16px]">No assessments submitted yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {assessments.map((assessment, i) => {
+                const ungraded = assessment.ungraded_student_ids?.length || 0;
+                const total = assessment.total_enrolled || 0;
+                return (
+                  <div key={assessment.id || i} className={`flex items-center justify-between p-6 rounded-2xl border bg-white transition-all shadow-sm hover:shadow-md group ${ungraded > 0 ? 'border-amber-200 bg-amber-50/20' : 'border-gray-100 hover:border-gray-200'}`}>
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="font-extrabold text-[#1e293b] text-[18px] group-hover:text-[#70170f] transition-colors">{assessment.name}</h3>
+                        {ungraded > 0 && (
+                          <span className="text-[11px] font-black text-amber-800 bg-amber-100 border border-amber-300 rounded-full px-3 py-1 shadow-sm uppercase tracking-tight">
+                            {ungraded} {ungraded === 1 ? 'missing grade' : 'missing grades'}
+                          </span>
+                        )}
+                        {ungraded === 0 && total > 0 && (
+                          <span className="text-[11px] font-black text-emerald-800 bg-emerald-100 border border-emerald-300 rounded-full px-3 py-1 shadow-sm uppercase tracking-tight">
+                            All graded
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[14px] font-medium text-[#64748b]">Date Submitted: {new Date(assessment.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => onEdit(assessment.id)} className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-gray-200 text-[#475569] text-[14px] font-extrabold rounded-xl hover:bg-gray-50 hover:text-[#111827] transition-all shadow-sm">
+                        <Edit2 size={16} /> Edit
+                      </button>
+                      <button onClick={() => handleDelete(assessment.id)} className="flex items-center gap-2 px-[16px] py-[10px] bg-white border border-red-100 text-[#70170f] text-[14px] font-extrabold rounded-xl hover:bg-red-50 transition-all shadow-sm">
+                        <Trash2 size={16} /> Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-      <div className="p-8 pt-6">
-        {loading ? (
-          <p className="text-gray-400 text-[16px] text-center py-4">Loading history...</p>
-        ) : assessments.length === 0 ? (
-          <p className="text-gray-400 text-[16px] text-center py-4">No assessments submitted yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {assessments.map((assessment, i) => (
-              <div key={assessment.id || i} className="flex items-center justify-between p-6 rounded-2xl border border-gray-200 bg-white hover:border-gray-300 transition-colors shadow-sm">
-                <div className="flex flex-col gap-[6px]">
-                  <h3 className="font-bold text-[#1e293b] text-[17px]">{assessment.name}</h3>
-                  <p className="text-[15px] text-[#6b7280]">Date Submitted: {new Date(assessment.created_at).toLocaleDateString()}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => onEdit(assessment.id)} className="flex items-center gap-2 px-[18px] py-[8px] bg-white border border-gray-200 text-[#475569] text-[15px] font-bold rounded-[8px] hover:bg-gray-50 hover:text-[#1e293b] transition-all shadow-sm">
-                    <Edit2 size={16} className="opacity-80" /> Edit
-                  </button>
-                  <button onClick={() => handleDelete(assessment.id)} className="flex items-center gap-2 px-[14px] py-[8px] bg-white border border-red-200 text-[#70170f] text-[15px] font-bold rounded-[8px] hover:bg-red-50 transition-all shadow-sm">
-                    <Trash2 size={16} /> Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      
+      <MissingAssessmentsSidebar 
+        missingAssessments={missingAssessments} 
+        onEditAssessment={onEdit} 
+        missingCount={missingAssessments.length} 
+      />
     </div>
   );
 }

@@ -130,7 +130,7 @@ export default function RoadmapViewer({ careerTitle }) {
   }, {})
 
   return (
-    <div className="rm-viewer">
+    <div className="rm-viewer rm-viewer--boxed">
 
       <div className="rm-header">
         <div className="rm-header__top">
@@ -162,6 +162,13 @@ export default function RoadmapViewer({ careerTitle }) {
         />
       </div>
 
+      <div className="rm-legend">
+        <span className="rm-legend__item rm-legend__item--has">✓ Has skill</span>
+        <span className="rm-legend__item rm-legend__item--gap">✗ Gap skill</span>
+        <span className="rm-legend__item rm-legend__item--weak">⚡ Needs work</span>
+        <span className="rm-legend__item rm-legend__item--none">? Not assessed</span>
+      </div>
+
       {next_milestone && next_milestone.skill && (
         <div className="rm-milestone-card">
           <div className="rm-milestone-card__header">⚡ Next milestone</div>
@@ -190,12 +197,7 @@ export default function RoadmapViewer({ careerTitle }) {
         ))}
       </div>
 
-      <div className="rm-legend">
-        <span className="rm-legend__item rm-legend__item--has">✓ Has skill</span>
-        <span className="rm-legend__item rm-legend__item--gap">✗ Gap skill</span>
-        <span className="rm-legend__item rm-legend__item--weak">⚡ Needs work</span>
-        <span className="rm-legend__item rm-legend__item--none">? Not assessed</span>
-      </div>
+
 
       {motivational_insight && (
         <div className="rm-insight">

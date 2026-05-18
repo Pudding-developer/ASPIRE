@@ -41,12 +41,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
       </div>
 
 
-      {/* Menu Label */}
-      {!isMinimized && (
-        <div className="px-7 mb-2 shrink-0">
-          <span className="text-[11px] font-semibold text-[#4e5b6e] tracking-widest uppercase mb-1">Menu</span>
-        </div>
-      )}
+
 
       {/* Middle section: Navigation */}
       <div className="px-3 space-y-1.5 flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-track]:bg-transparent">
@@ -59,7 +54,7 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
             }`}
         >
           <LayoutDashboard size={20} className={`shrink-0 ${activeView === 'instructor-portal' ? 'text-white' : 'text-white/60'}`} />
-          {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap min-w-[150px] text-left">Instructor Portal</span>}
+          {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap min-w-[150px] text-left">Dashboard</span>}
         </button>
 
         <div>

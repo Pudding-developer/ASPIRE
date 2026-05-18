@@ -127,15 +127,15 @@ export default function StudentCareerView({ user }) {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)] min-h-screen">
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-2 rounded-full bg-[#70170f] animate-pulse"></div>
-            <span className="text-[10px] font-bold text-[#70170f] uppercase tracking-[0.2em]">AI CAREER COACH ACTIVE</span>
+            <span className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em]">AI CAREER COACH ACTIVE</span>
           </div>
-          <h1 className="text-[28px] font-black text-gray-900 tracking-tight leading-none">Career Strategy Engine</h1>
+          <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">Career Strategy Engine</h1>
           <p className="text-[12px] text-gray-500 mt-2 font-medium">Personalized roadmap based on your academic performance & GitHub activity</p>
         </div>
 
@@ -236,10 +236,22 @@ export default function StudentCareerView({ user }) {
                   idx: -1,
                   unanalyzed: true,
                 };
+              }).sort((a, b) => {
+                // 1. Chosen goal always first
+                if (a.match.title === chosenCareer) return -1;
+                if (b.match.title === chosenCareer) return 1;
+                // 2. Analyzed (with scores) before unanalyzed
+                if (a.unanalyzed !== b.unanalyzed) return a.unanalyzed ? 1 : -1;
+                // 3. By score descending
+                const scoreA = a.match.match_score || 0;
+                const scoreB = b.match.match_score || 0;
+                if (scoreA !== scoreB) return scoreB - scoreA;
+                // 4. Alphabetical
+                return a.match.title.localeCompare(b.match.title);
               });
 
               return (
-                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x mb-8">
+                <div className="flex items-stretch gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x mb-8">
                   {visibleEntries.map(({ match, idx, unanalyzed }) => (
                     <CareerPathCard
                       key={match.title}
@@ -286,92 +298,102 @@ export default function StudentCareerView({ user }) {
                 </div>
               </div>
             )}
-            <div className="space-y-4">
-              <CareerSectionHeading title="PRIMARY OBJECTIVE" />
-              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center gap-8">
-                <div className="flex-1 space-y-4">
-                  <h2 className="text-[20px] font-extrabold text-gray-900 leading-tight">Senior {activeTitle}</h2>
-                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
-                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block mb-1">MATCH SCORE</span>
-                    {selectedPath ? (
-                      <span className="text-[16px] font-black text-[#70170f]">
-                        {selectedPath.match_score}%
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        Not analyzed
-                      </span>
-                    )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              {/* Top Left: Chosen Path */}
+              <div className="space-y-4">
+                <CareerSectionHeading title="CHOSEN PATH" />
+                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm min-h-[210px] flex flex-col">
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="flex-1 space-y-4">
+                      <h2 className="text-[20px] font-extrabold text-gray-900 leading-tight">{activeTitle}</h2>
+                      <ul className="space-y-2 mt-3">
+                        {(selectedPath?.reasoning || 'Your currently selected focus path. All roadmap and insight data are tailored to this trajectory.').split('.').map(s => s.trim()).filter(s => s.length > 0).map((point, idx) => (
+                          <li key={idx} className="flex gap-2 text-[11px] text-gray-500 leading-relaxed">
+                            <span className="text-[#70170f] font-bold mt-1">•</span>
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="shrink-0 scale-100 pr-12">
+                      <CareerMatchDonut score={selectedPath?.match_score || 0} />
+                    </div>
                   </div>
                 </div>
-                <div className="shrink-0 scale-110"><CareerMatchDonut score={selectedPath?.match_score || 0} /></div>
+              </div>
+
+              {/* Top Right: Skill Gap Analysis */}
+              <div className="space-y-4">
+                <CareerSectionHeading title="SKILL GAP ANALYSIS" />
+                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm min-h-[210px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {gaps.map((g, i) => (
+                      <div key={i} className="bg-gray-50/50 border border-gray-100 rounded-xl p-3 flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-gray-700">{g.name}</span>
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${g.status === 'acquired' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                          {g.status.toUpperCase()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Left: Learning Roadmap */}
+              <div className="space-y-4">
+                <CareerSectionHeading title="LEARNING ROADMAP" />
+                <RoadmapViewer careerTitle={activeTitle} />
+              </div>
+
+              {/* Bottom Right: AI Recommendations */}
+              <div className="space-y-4">
+                {recommendations && recommendations.length > 0 && (() => {
+                  const gapSkillNames = selectedPath
+                    ? (selectedPath.gap_skills || []).map(s =>
+                        (typeof s === 'string' ? s : s?.name || '').toLowerCase()
+                      ).filter(Boolean)
+                    : [];
+
+                  const filtered = gapSkillNames.length > 0
+                    ? recommendations.filter(rec =>
+                        gapSkillNames.some(skill => rec.toLowerCase().includes(skill))
+                      )
+                    : recommendations;
+
+                  const hasFiltered = filtered.length > 0;
+
+                  return (
+                    <>
+                      <CareerSectionHeading title="AI RECOMMENDATIONS" />
+                      {hasFiltered ? (
+                        <div className="space-y-3">
+                          {filtered.map((rec, i) => (
+                            <div
+                              key={i}
+                              className="bg-white border border-gray-100 rounded-xl p-4 flex items-start gap-3 shadow-xs"
+                            >
+                              <div className="w-6 h-6 rounded-full bg-[#70170f]/10 flex items-center justify-center shrink-0 mt-0.5">
+                                <ArrowRight size={12} className="text-[#70170f]" />
+                              </div>
+                              <p className="text-[12px] text-gray-700 leading-relaxed">{rec}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="bg-white border border-gray-100 rounded-xl p-5 text-center shadow-sm">
+                          <p className="text-[12px] text-gray-500">
+                            The last analysis generated recommendations for a different career path.
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-2">
+                            Run the analyzer with <strong className="text-gray-600">{activeTitle}</strong> selected to get tailored recommendations.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
-            <CareerSectionHeading title="LEARNING ROADMAP" />
-            <RoadmapViewer careerTitle={activeTitle} />
-
-            <CareerSectionHeading title="SKILL GAP ANALYSIS" />
-            {/* Gaps grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {gaps.map((g, i) => (
-                <div key={i} className="bg-white border border-gray-100 rounded-xl p-4 flex items-center justify-between">
-                  <span className="text-[12px] font-bold text-gray-700">{g.name}</span>
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded ${g.status === 'acquired' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                    {g.status.toUpperCase()}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* AI Recommendations — filtered to match the active career's gap skills */}
-            {recommendations && recommendations.length > 0 && (() => {
-              // Build a set of the active career's gap skill names (lower-case for matching)
-              const gapSkillNames = selectedPath
-                ? (selectedPath.gap_skills || []).map(s =>
-                    (typeof s === 'string' ? s : s?.name || '').toLowerCase()
-                  ).filter(Boolean)
-                : [];
-
-              // Filter: keep recs that mention at least one gap skill of the active career.
-              // If there are no gap skills (unanalyzed path) fall back to showing all.
-              const filtered = gapSkillNames.length > 0
-                ? recommendations.filter(rec =>
-                    gapSkillNames.some(skill => rec.toLowerCase().includes(skill))
-                  )
-                : recommendations;
-
-              const hasFiltered = filtered.length > 0;
-
-              return (
-                <>
-                  <CareerSectionHeading title="AI RECOMMENDATIONS" />
-                  {hasFiltered ? (
-                    <div className="space-y-3">
-                      {filtered.map((rec, i) => (
-                        <div
-                          key={i}
-                          className="bg-white border border-gray-100 rounded-xl p-4 flex items-start gap-3 shadow-xs"
-                        >
-                          <div className="w-6 h-6 rounded-full bg-[#70170f]/10 flex items-center justify-center shrink-0 mt-0.5">
-                            <ArrowRight size={12} className="text-[#70170f]" />
-                          </div>
-                          <p className="text-[12px] text-gray-700 leading-relaxed">{rec}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-5 text-center">
-                      <p className="text-[12px] text-gray-500">
-                        The last analysis generated recommendations for a different career path.
-                      </p>
-                      <p className="text-[11px] text-gray-400 mt-1">
-                        Run the analyzer with <strong className="text-gray-600">{activeTitle}</strong> selected to get tailored recommendations.
-                      </p>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
           </div>
         )}
 
@@ -528,7 +550,7 @@ function InsightsTab({ insights, activeTitle, selectedPath, reportCreatedAt, run
       </div>
 
       {hasAny ? (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {grouped.map(({ type, meta, items }) => (
             <section key={type} className="space-y-3">
               <div className="flex items-center gap-2">

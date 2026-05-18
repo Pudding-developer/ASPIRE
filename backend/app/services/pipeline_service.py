@@ -377,6 +377,43 @@ async def run_pipeline_job(
                 percentage=95,
             )
 
+            # ── Enforce non-decreasing match scores ───────────────────────────
+            # A student's career match score should never go backward. If the
+            # new analysis produces a lower score for a career than what's
+            # already stored, keep the old (higher) score so progress only
+            # moves forward.
+            if previous_report and previous_report.report_json:
+                try:
+                    prev_payload = json.loads(previous_report.report_json)
+                    prev_matches = {
+                        m["title"]: m.get("match_score", 0)
+                        for m in prev_payload.get("career_matches", [])
+                        if isinstance(m, dict) and "title" in m
+                    }
+                    new_matches = pipeline_result.get("career_matches", [])
+                    for match in new_matches:
+                        if not isinstance(match, dict):
+                            continue
+                        title = match.get("title", "")
+                        prev_score = prev_matches.get(title, 0)
+                        new_score  = match.get("match_score", 0)
+                        if prev_score > new_score:
+                            match["match_score"] = prev_score
+                            print(
+                                f"[pipeline] Kept higher score for '{title}': "
+                                f"{new_score:.1f} → {prev_score:.1f}"
+                            )
+                    # Re-sort by the (possibly floored) scores
+                    pipeline_result["career_matches"] = sorted(
+                        new_matches, key=lambda c: c.get("match_score", 0), reverse=True
+                    )
+                    # Keep progress block consistent with updated top score
+                    top_score = pipeline_result["career_matches"][0].get("match_score", 0) if pipeline_result["career_matches"] else 0
+                    if pipeline_result.get("progress"):
+                        pipeline_result["progress"]["career_readiness_score"] = top_score
+                except (json.JSONDecodeError, TypeError, KeyError):
+                    pass  # No previous data — let new scores stand as-is
+
             # ── Persist the report + progression ─────────────────────────────
             progress_data = pipeline_result.get("progress", {})
             chosen = (student.chosen_career if student else None)

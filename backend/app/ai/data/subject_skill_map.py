@@ -262,7 +262,7 @@ SUBJECT_SKILL_MAP = {
     },
     "On-the-Job Training": {
         "primary_skills": ["Professional Practice", "Industry Experience", "Communication"],
-        "skillset_categories": ["Technical Communication", "Ethics & Professionalism"],
+        "skillset_categories": ["Communication", "Ethics & Professionalism"],
         "abet_sos": ["SO6", "SO7", "SO9", "SO10", "SO13"],
         "career_relevance": ["All careers"]
     },

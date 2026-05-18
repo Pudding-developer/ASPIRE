@@ -2,12 +2,26 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Filter, Bell, Lightbulb, GraduationCap, Microscope,
   ChevronRight, AlertCircle, CheckCircle2, ChevronDown, X, BookOpen, ArrowLeft, Target,
-  TrendingUp, Github, Star, ShieldAlert, Award, Rocket, Compass, Zap
+  TrendingUp, Github, Star, ShieldAlert, Award, Rocket, Compass, Zap, AlertTriangle, UserCheck, Activity, Search
 } from 'lucide-react';
 
 import useStudentData from '../../dashboard/hooks/useStudentData';
-import useActivityFeed from '../../dashboard/hooks/useActivityFeed';
 import { StudentPerformanceSkeleton } from '../../shared/StudentPageSkeletons';
+
+const GRADING_SYSTEM = [
+  { label: "Excellent", min: 98, color: "bg-purple-600", bg: "bg-purple-50/50", border: "border-purple-200", text: "text-purple-900" },
+  { label: "Superior", min: 94, color: "bg-violet-400", bg: "bg-violet-50/50", border: "border-violet-200", text: "text-violet-900" },
+  { label: "Very Good", min: 90, color: "bg-blue-600", bg: "bg-blue-50/50", border: "border-blue-200", text: "text-blue-900" },
+  { label: "Good", min: 88, color: "bg-sky-400", bg: "bg-sky-50/50", border: "border-sky-200", text: "text-sky-900" },
+  { label: "Meritorious", min: 85, color: "bg-teal-500", bg: "bg-teal-50/50", border: "border-teal-200", text: "text-teal-900" },
+  { label: "Very Satisfactory", min: 83, color: "bg-green-700", bg: "bg-green-50/50", border: "border-green-200", text: "text-green-900" },
+  { label: "Satisfactory", min: 80, color: "bg-emerald-500", bg: "bg-emerald-50/50", border: "border-emerald-200", text: "text-emerald-900" },
+  { label: "Fairly Satisfactory", min: 78, color: "bg-yellow-400", bg: "bg-yellow-50/50", border: "border-yellow-200", text: "text-yellow-900" },
+  { label: "Passing", min: 75, color: "bg-orange-500", bg: "bg-orange-50/50", border: "border-orange-200", text: "text-orange-900" },
+  { label: "Needs to Focus", min: 0, color: "bg-red-600", bg: "bg-red-50", border: "border-[#70170f]/30", text: "text-[#70170f]" },
+];
+
+import useActivityFeed from '../../dashboard/hooks/useActivityFeed';
 import StudentCourseDetailView from './StudentCourseDetailView';
 import { studentService } from '../../../../services/studentService';
 import AllActivitiesModal from '../../dashboard/components/AllActivitiesModal';
@@ -46,6 +60,30 @@ const SEMESTERS = [
   '4th Year, 1st Sem', '4th Year, 2nd Sem',
 ];
 const CATEGORIES = ['All Subjects', 'Mathematics', 'Engineering Core', 'General Education', 'Computer Science', 'Technical Electives'];
+
+const COURSE_SEMESTER_MAP = {
+  "Introduction to Engineering": 1, "Understanding the Self": 1, "Mathematics in the Modern World": 1,
+  "Readings in Philippine History": 1, "Purposive Communication": 1, "Differential Calculus": 1,
+  "General Chemistry": 1, "Computer Programming 1": 1, "Engineering Drawing": 2,
+  "Contemporary World": 2, "Art Appreciation": 2, "Science, Technology and Society": 2,
+  "Integral Calculus": 2, "Physics 1": 2, "Life and Works of Rizal": 3, "Ethics": 3,
+  "Modern Biology": 3, "Computer Engineering as a Discipline": 3, "Programming Logic and Design": 3,
+  "Discrete Mathematics": 3, "Fundamentals of Electrical Engineering": 3, "Computer-Aided Design": 3,
+  "Engineering Economics": 4, "Engineering Data Analysis": 4, "Differential Equations": 4,
+  "Object Oriented Programming": 4, "Advanced Engineering Mathematics for CpE": 4,
+  "Cognate/Elective Course 1": 4, "Electronic Circuits: Devices and Analysis": 4,
+  "Basic Occupational Health and Safety": 4, "Numerical Methods": 4, "Kontekstwalisadong Komunikasyon sa Filipino": 4,
+  "Logic Circuits and Design": 5, "Data Structures and Algorithms": 5, "Introduction to Networks, Data and Digital Communications (CISCO 1)": 5,
+  "Fundamentals of Mixed Signals and Sensors": 5, "Feedback and Control Systems": 5, "Introduction to HDL": 5,
+  "Research Methods": 5, "Filipino sa Iba't Ibang Disiplina": 5, "Microprocessors": 6,
+  "Software Design": 6, "Routing and Switching (CISCO 2)": 6, "Digital Signal Processing": 6,
+  "Emerging Technologies in CpE": 6, "CpE Practice and Design 1": 6, "Cognate/Elective Course 2": 6,
+  "Scaling Networks (CISCO 3)": 7, "Operating Systems": 7, "Computer Architecture and Organization": 7,
+  "Computer Engineering Drafting and Design": 7, "Connecting Networks and Security (CISCO 4)": 7,
+  "Embedded Systems": 7, "Seminars and Fieldtrips": 7, "Manufacturing and Quality Control": 7,
+  "Cognate/Elective Course 3 (Data Mining / AI Track)": 7, "ASEAN Literature": 7, "Technopreneurship": 8,
+  "On-the-Job Training": 8, "CpE Practice and Design 2": 8
+};
 
 /* ─── Filter Dropdown ─── */
 function FilterDropdown({ open, onClose, semester, setSemester, category, setCategory }) {
@@ -256,7 +294,7 @@ function CompetencyRadar({ soValues }) {
         <h3 className="text-[24px] font-black text-gray-900 leading-tight"> Core Competencies</h3>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-center justify-center gap-16">
+      <div className="max-w-[1000px] mx-auto flex flex-col lg:flex-row items-start justify-center gap-12">
         {/* Left: Radar Chart */}
         <div className="relative flex-shrink-0">
           <svg width={size} height={size} className="overflow-visible">
@@ -370,6 +408,7 @@ function CompetencyRadar({ soValues }) {
             })}
           </svg>
 
+
           {/* Legend */}
           <div className="flex items-center gap-6 mt-8 ml-4">
             <div className="flex items-center gap-2">
@@ -383,36 +422,26 @@ function CompetencyRadar({ soValues }) {
           </div>
         </div>
 
+
+
         {/* Right: SO List */}
         <div className="flex-1 w-full max-w-md">
-          {/* Legend for colors */}
-          <div className="flex items-center justify-between mb-4 px-2 border-b border-gray-100 pb-3">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">{"Competent (≥75%)"}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-amber-500 rounded-full" />
-              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">{"Developing (60-74%)"}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-red-500 rounded-full" />
-              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">{"At Risk (<60%)"}</span>
-            </div>
-          </div>
+
+
 
           <div className="space-y-1">
             {SO_INFO.map((so, i) => {
               const val = Math.round(soValues[i] * 100);
-              const colorClass = val >= 75 ? 'bg-emerald-500' : val >= 60 ? 'bg-amber-500' : 'bg-red-500';
-              const textClass = val >= 75 ? 'text-emerald-600' : val >= 60 ? 'text-amber-600' : 'text-red-600';
+              const level = GRADING_SYSTEM.find(l => val >= l.min) || GRADING_SYSTEM[GRADING_SYSTEM.length - 1];
+              const colorClass = level.color;
+              const textClass = level.text;
 
               return (
-                <div key={so.id} className="flex items-center gap-4 py-1.5 border-b border-gray-50 last:border-0 group hover:bg-gray-50/50 px-2 transition-colors">
+                <div key={so.id} className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0 group hover:bg-gray-50/50 px-2 transition-colors">
                   <div className="w-10 text-[9px] font-black text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded text-center shrink-0">
                     {so.id}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="w-[170px] shrink-0">
                     <p className="text-[11px] font-bold text-gray-700 truncate">{so.name}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
@@ -429,103 +458,195 @@ function CompetencyRadar({ soValues }) {
               );
             })}
           </div>
+
+          {/* Full 10-level Grading Legend - 5 top, 5 bottom */}
+          <div className="mt-8">
+            <div className="grid grid-cols-5 gap-y-4 gap-x-1">
+              {GRADING_SYSTEM.map((level) => (
+                <div key={level.label} className="flex flex-col items-center gap-1.5 text-center group">
+                  <div className={`w-2 h-2 ${level.color} rounded-full shadow-sm group-hover:scale-125 transition-transform`} />
+                  <span className="text-[8.5px] font-bold text-gray-700 leading-tight group-hover:text-gray-900 transition-colors truncate w-full px-0.5" title={level.label}>
+                    {level.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
+
     </div>
   );
 }
 
 /* ─── Integrated AI Insights Panel ─── */
-function IntegratedInsights({
-  topSkill, topVal, topCeiling, topSO, topDriver,
-  weakSkill, weakVal, weakCeiling, weakSO, weakDriver,
-}) {
+function IntegratedInsights({ tech, nonTech, latestSem }) {
   const brandRed = '#70170f';
-  const topPotentialPct = Math.max(0, Math.round((topCeiling || 0) - (topVal || 0)));
-  const weakPotentialPct = Math.max(0, Math.round((weakCeiling || 0) - (weakVal || 0)));
 
   return (
     <div
-      className={`${panelBase} p-8 flex flex-col border-none text-white shadow-[0_20px_50px_-12px_rgba(112,23,15,0.4)] relative overflow-hidden group`}
+      className={`${panelBase} p-6 flex flex-col h-full border-none text-white shadow-[0_20px_50px_-12px_rgba(112,23,15,0.4)] relative overflow-hidden group`}
       style={{ backgroundColor: brandRed }}
     >
       <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-[0.05] blur-3xl rounded-full -mr-24 -mt-24" />
 
-      <div className="flex items-center gap-3 mb-8 relative z-10">
+      <div className="flex items-center gap-3 mb-6 relative z-10">
         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm">
-          <Lightbulb className="text-white" size={20} />
+          <Activity className="text-white" size={20} />
         </div>
         <div>
-          <h3 className="text-[20px] font-black text-white leading-tight">Smart Insights</h3>
-          <p className="text-[10px] text-white/50 tracking-widest uppercase mt-0.5">From your latest ILO scores</p>
+          <h3 className="text-[20px] font-black text-white leading-tight">AI Performance Diagnostic</h3>
+          <p className="text-[10px] text-white/50 tracking-widest uppercase mt-0.5">Real-Time Insights</p>
         </div>
       </div>
 
-      <div className="space-y-8 relative z-10">
-        {/* Core Strength */}
-        <div>
-          <div className="flex justify-between items-end mb-3">
-            <div className="min-w-0 mr-3">
-              <span className="text-[9px] font-black text-white/50 uppercase tracking-widest block mb-1">CORE STRENGTH</span>
-              <h4 className="text-[14px] font-bold text-white leading-tight truncate" title={topSkill || ''}>
-                {topSkill || 'Awaiting graded scores'}
-              </h4>
-              {topSO && (
-                <p className="text-[10px] text-emerald-200/90 mt-1.5 font-semibold">
-                  Aligned to {topSO.so_id} · {topSO.so_name}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+        {/* Technical Insight (Left Column) */}
+        <div className="flex flex-col">
+          <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Technical Competency</p>
+          {tech.name ? (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-[9px] font-black text-amber-300 uppercase tracking-widest">
+                      Risk Detected
+                    </span>
+                  </div>
+                  <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={tech.name}>
+                    {tech.name}
+                  </h4>
+                  <p className="text-[12px] text-white/60 font-medium italic truncate">
+                    {tech.so?.so_id || 'ILO'}: {tech.so?.so_name || 'Alignment'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <div className="text-[24px] font-black text-white leading-none tracking-tighter tabular-nums">
+                    {Math.round(tech.val)}<span className="text-[12px] text-white/50 ml-0.5">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  {(() => {
+                    const courseName = tech.driver?.course;
+                    const getCourseSem = (name) => {
+                      if (!name) return 0;
+                      const normalized = name.trim();
+                      if (COURSE_SEMESTER_MAP[normalized]) return COURSE_SEMESTER_MAP[normalized];
+                      const key = Object.keys(COURSE_SEMESTER_MAP).find(
+                        k => k.toLowerCase() === normalized.toLowerCase()
+                      );
+                      return key ? COURSE_SEMESTER_MAP[key] : 0;
+                    };
+
+                    const courseSem = getCourseSem(courseName);
+                    const isMasteredInCourse = (tech.driver?.avg_score || 0) >= 75;
+                    const isCurrent = courseSem > 0 && courseSem === latestSem;
+                    const isPast = courseSem > 0 && courseSem < latestSem;
+                    const isFuture = courseSem > latestSem;
+
+                    if (isCurrent) {
+                      return <>Focus on improving <span className="font-bold text-white uppercase tracking-tight">{tech.name}</span> in <span className="font-bold text-white uppercase tracking-tight">{courseName}</span> since your score is currently lower here.</>;
+                    }
+                    if (isFuture) {
+                      return <>Strengthen <span className="font-bold text-white uppercase tracking-tight">{tech.name}</span> foundations to prepare for your next course: <span className="font-bold text-white uppercase tracking-tight">{courseName}</span>.</>;
+                    }
+                    if (isPast || isMasteredInCourse) {
+                      return <>Reinforce <span className="font-bold text-white uppercase tracking-tight">{tech.name}</span> concepts from <span className="font-bold text-white uppercase tracking-tight">{courseName || 'Past Courses'}</span> in your current projects.</>;
+                    }
+                    return <>Monitor performance in <span className="font-bold text-white uppercase tracking-tight">{courseName || 'Core Subjects'}</span> to reverse the trend.</>;
+                  })()}
                 </p>
-              )}
+                <div className="">
+                  <p className="text-[11px] text-white/40 font-medium italic">
+                    Course alignment: <span className="text-white/60">{tech.driver?.course || 'General Curriculum'}</span> strengthens <span className="text-white/60">{tech.name}</span> via <span className="text-white/60">{tech.so?.so_id || 'SO'}</span>.
+                  </p>
+                </div>
+
+              </div>
             </div>
-            <div className="text-right shrink-0">
-              <span className="text-[18px] font-black text-white leading-none tabular-nums">{Math.round(topVal || 0)}%</span>
-              {topCeiling > 0 && (
-                <p className="text-[9px] font-bold text-emerald-300 mt-1">
-                  ↑ ML ceiling {Math.round(topCeiling)}% (+{topPotentialPct})
-                </p>
-              )}
+          ) : (
+            <div className="flex flex-col justify-center items-center border border-dashed border-white/10 rounded-2xl p-6">
+              <CheckCircle2 className="text-emerald-400 mb-2" size={24} />
+              <p className="text-[11px] text-white/60 font-bold">Optimal Performance</p>
             </div>
-          </div>
-          <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${Math.min(topVal || 0, 100)}%` }} />
-          </div>
-          <p className="text-[11px] text-white/75 mt-3 leading-relaxed">
-            {topDriver?.course
-              ? <>You're strongest here through <span className="font-bold text-white">{topDriver.course}</span>. Keep ILO performance high there to retain mastery.</>
-              : 'Consistent ILO performance is sustaining this skill — keep it up.'}
-          </p>
+          )}
         </div>
 
-        {/* Growth Opportunity */}
-        <div>
-          <div className="flex justify-between items-end mb-3">
-            <div className="min-w-0 mr-3">
-              <span className="text-[9px] font-black text-white/50 uppercase tracking-widest block mb-1">GROWTH OPPORTUNITY</span>
-              <h4 className="text-[14px] font-bold text-white leading-tight truncate" title={weakSkill || ''}>
-                {weakSkill || 'Awaiting graded scores'}
-              </h4>
-              {weakSO && (
-                <p className="text-[10px] text-amber-200/90 mt-1.5 font-semibold">
-                  Lifts {weakSO.so_id} · {weakSO.so_name}
+        {/* Professional Insight (Right Column) */}
+        <div className="flex flex-col border-l border-white/10 pl-0 md:pl-8">
+          <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Professional Skills</p>
+          {nonTech.name ? (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-[9px] font-black text-amber-300 uppercase tracking-widest">
+                      Risk Detected
+                    </span>
+                  </div>
+                  <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={nonTech.name}>
+                    {nonTech.name}
+                  </h4>
+                  <p className="text-[12px] text-white/60 font-medium italic truncate">
+                    {nonTech.so?.so_id || 'SO'}: {nonTech.so?.so_name || 'Alignment'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <div className="text-[24px] font-black text-white leading-none tracking-tighter tabular-nums">
+                    {Math.round(nonTech.val)}<span className="text-[12px] text-white/50 ml-0.5">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  {(() => {
+                    const courseName = nonTech.driver?.course;
+                    const getCourseSem = (name) => {
+                      if (!name) return 0;
+                      const normalized = name.trim();
+                      if (COURSE_SEMESTER_MAP[normalized]) return COURSE_SEMESTER_MAP[normalized];
+                      const key = Object.keys(COURSE_SEMESTER_MAP).find(
+                        k => k.toLowerCase() === normalized.toLowerCase()
+                      );
+                      return key ? COURSE_SEMESTER_MAP[key] : 0;
+                    };
+
+                    const courseSem = getCourseSem(courseName);
+                    const isMasteredInCourse = (nonTech.driver?.avg_score || 0) >= 75;
+                    const isCurrent = courseSem > 0 && courseSem === latestSem;
+                    const isPast = courseSem > 0 && courseSem < latestSem;
+                    const isFuture = courseSem > latestSem;
+
+                    if (isCurrent) {
+                      return <>Improve your <span className="font-bold text-white uppercase tracking-tight">{nonTech.name}</span> skills in <span className="font-bold text-white uppercase tracking-tight">{courseName}</span> since your performance is lower here.</>;
+                    }
+                    if (isFuture) {
+                      return <>Build <span className="font-bold text-white uppercase tracking-tight">{nonTech.name}</span> proficiency to prepare for your next course: <span className="font-bold text-white uppercase tracking-tight">{courseName}</span>.</>;
+                    }
+                    if (isPast || isMasteredInCourse) {
+                      return <>Reinforce <span className="font-bold text-white uppercase tracking-tight">{nonTech.name}</span> concepts from <span className="font-bold text-white uppercase tracking-tight">{courseName || 'Completed Subjects'}</span> in your current projects.</>;
+                    }
+                    return <>Continue focusing on <span className="font-bold text-white uppercase tracking-tight">{nonTech.name}</span> development.</>;
+                  })()}
                 </p>
-              )}
+                <div className="">
+                  <p className="text-[11px] text-white/40 font-medium italic">
+                    Course alignment: <span className="text-white/60">{nonTech.driver?.course || 'General Curriculum'}</span> strengthens <span className="text-white/60">{nonTech.name}</span> via <span className="text-white/60">{nonTech.so?.so_id || 'SO'}</span>.
+                  </p>
+                </div>
+
+              </div>
             </div>
-            <div className="text-right shrink-0">
-              <span className="text-[18px] font-black text-white leading-none tabular-nums">{Math.round(weakVal || 0)}%</span>
-              {weakCeiling > 0 && (
-                <p className="text-[9px] font-bold text-amber-300 mt-1">
-                  Reachable {Math.round(weakCeiling)}% (+{weakPotentialPct})
-                </p>
-              )}
+          ) : (
+            <div className="flex flex-col justify-center items-center border border-dashed border-white/10 rounded-2xl p-6">
+              <CheckCircle2 className="text-emerald-400 mb-2" size={24} />
+              <p className="text-[11px] text-white/60 font-bold">Optimal Performance</p>
             </div>
-          </div>
-          <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-amber-400 rounded-full transition-all duration-1000" style={{ width: `${Math.min(weakVal || 0, 100)}%` }} />
-          </div>
-          <p className="text-[11px] text-white/75 mt-3 leading-relaxed">
-            {weakDriver?.course
-              ? <>Lifting your ILOs in <span className="font-bold text-white">{weakDriver.course}</span> gives the biggest predicted gain (+{weakPotentialPct}%) for this skill.</>
-              : 'No course-level signal yet — focus on ILOs once grades land.'}
-          </p>
+          )}
         </div>
       </div>
     </div>
@@ -534,20 +655,10 @@ function IntegratedInsights({
 
 
 
+
 /* ─── Proficiency Growth helpers ─── */
 /* ─── Proficiency Growth helpers ─── */
-const GRADING_SYSTEM = [
-  { label: "Excellent", min: 98, color: "bg-emerald-600", bg: "bg-emerald-50/50", border: "border-emerald-200", text: "text-emerald-900" },
-  { label: "Superior", min: 94, color: "bg-teal-500", bg: "bg-teal-50/50", border: "border-teal-200", text: "text-teal-900" },
-  { label: "Very Good", min: 90, color: "bg-cyan-500", bg: "bg-cyan-50/50", border: "border-cyan-200", text: "text-cyan-900" },
-  { label: "Good", min: 88, color: "bg-blue-500", bg: "bg-blue-50/50", border: "border-blue-200", text: "text-blue-900" },
-  { label: "Meritorious", min: 85, color: "bg-indigo-500", bg: "bg-indigo-50/50", border: "border-indigo-200", text: "text-indigo-900" },
-  { label: "Very Satisfactory", min: 83, color: "bg-violet-500", bg: "bg-violet-50/50", border: "border-violet-200", text: "text-violet-900" },
-  { label: "Satisfactory", min: 80, color: "bg-amber-500", bg: "bg-amber-50/50", border: "border-amber-200", text: "text-amber-900" },
-  { label: "Fairly Satisfactory", min: 78, color: "bg-orange-500", bg: "bg-orange-50/50", border: "border-orange-200", text: "text-orange-900" },
-  { label: "Passing", min: 75, color: "bg-rose-500", bg: "bg-rose-50/50", border: "border-rose-200", text: "text-rose-900" },
-  { label: "Failure", min: 0, color: "bg-red-600", bg: "bg-red-50", border: "border-[#70170f]/30", text: "text-[#70170f]" },
-];
+
 
 function RankedSkillsChart({ sortedSkills, animated }) {
   if (sortedSkills.length === 0) {
@@ -566,15 +677,24 @@ function RankedSkillsChart({ sortedSkills, animated }) {
       const isBelowNextMin = nextLevel ? val < nextLevel.min : true;
       return isAboveMin && isBelowNextMin;
     });
-    return { ...level, skills };
+
+    // Calculate range text for student clarity
+    const rangeText = nextLevel
+      ? `${level.min}-${(nextLevel.min - 0.1).toFixed(1)}%`
+      : `${level.min}-100%`;
+
+    return { ...level, skills, rangeText };
   }).filter(box => box.skills.length > 0);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
       {categorizedBoxes.map((box, idx) => (
         <div key={idx} className={`rounded-2xl border ${box.border} ${box.bg} p-5 flex flex-col shadow-sm transition-all hover:shadow-md`}>
-          <div className="flex justify-between items-center mb-5">
-            <h4 className={`text-[13px] font-black ${box.text} tracking-tight`}>{box.label}</h4>
+          <div className="flex justify-between items-start mb-5">
+            <div className="flex flex-col">
+              <h4 className={`text-[13px] font-black ${box.text} tracking-tight`}>{box.label}</h4>
+              <span className={`text-[10px] font-bold ${box.text} opacity-50 tabular-nums`}>{box.rangeText}</span>
+            </div>
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 ${box.text} border ${box.border}`}>{box.skills.length}</span>
           </div>
           <div className="flex-1 space-y-3.5">
@@ -635,37 +755,77 @@ function IloBreakdownCard({ iloScores }) {
   );
 }
 
-function topCoursesForSkill(skill, perCourse, mode) {
+function topCoursesForSkill(skill, perCourse, mode, latestSem = 0, isFiltered = false) {
   if (!skill || !Array.isArray(perCourse) || perCourse.length === 0) return [];
+
+  const getSemester = (courseName) => {
+    if (!courseName) return 0;
+    const normalized = courseName.trim();
+    if (COURSE_SEMESTER_MAP[normalized]) return COURSE_SEMESTER_MAP[normalized];
+    const key = Object.keys(COURSE_SEMESTER_MAP).find(
+      k => k.toLowerCase() === normalized.toLowerCase()
+    );
+    return key ? COURSE_SEMESTER_MAP[key] : 0;
+  };
+
   return perCourse
     .map(c => ({
       course: c.course,
       current: c.predicted_skills?.[skill] ?? 0,
       potential: c.scenario_high?.[skill] ?? 0,
+      avg_score: c.ilo_avg || 0, // Overall subject average
+      semester: getSemester(c.course)
     }))
-    .filter(r => r.current > 0.5 || r.potential > 0.5)
-    .sort((a, b) => mode === 'achieved'
-      ? b.current - a.current
-      : (b.potential - b.current) - (a.potential - a.current))
+    .filter(r => {
+      // CRITICAL: Only include courses that actually HAVE graded data.
+      if (!r.avg_score || r.avg_score <= 0) return false;
+
+      const base = r.current > 0.5 || r.potential > 0.5;
+
+      if (mode === 'achieved') {
+        // 'Achieved' mode shows courses where the student has reached the competency threshold (>= 75).
+        return base && r.avg_score >= 75;
+      }
+
+      if (mode === 'developing') {
+        // 'Developing' mode shows courses where there is room for growth.
+        // We include anything below 75%, OR courses above 75% that still have 
+        // a noticeable potential gap (> 1.0) to their predicted ceiling.
+        const growthGap = r.potential - r.current;
+        return base && (r.avg_score < 75 || growthGap > 1.0);
+      }
+      return base;
+    })
+    .sort((a, b) => {
+      const scoreA = mode === 'achieved' ? a.current : (a.potential - a.current);
+      const scoreB = mode === 'achieved' ? b.current : (b.potential - b.current);
+
+      if (Math.abs(scoreB - scoreA) > 1.0) {
+        return scoreB - scoreA;
+      }
+
+      return b.semester - a.semester;
+    })
     .slice(0, 3);
 }
 
-function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, barNode, divider }) {
-  const recs = topCoursesForSkill(skill, perCourse, mode);
+function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, barNode, divider, latestSem = 0, isFiltered = false }) {
+  const recs = topCoursesForSkill(skill, perCourse, mode, latestSem, isFiltered);
   return (
     <div className={divider ? 'border-b border-gray-100 pb-3' : ''}>
       <div className="flex justify-between items-center gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-[13px] font-semibold text-gray-800 truncate" title={skill}>{skill}</span>
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-label={`How to ${mode === 'achieved' ? 'maintain' : 'grow'} ${skill}`}
-            className={`shrink-0 transition-colors ${isOpen ? 'text-[#70170f]' : 'text-gray-400 hover:text-[#70170f]'}`}
-          >
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex items-center gap-1.5 min-w-0 group/skill"
+        >
+          <span className={`text-[13px] font-semibold truncate transition-colors ${isOpen ? 'text-[#70170f]' : 'text-gray-800 group-hover/skill:text-[#70170f]'}`} title={skill}>
+            {skill}
+          </span>
+          <div className={`shrink-0 transition-colors ${isOpen ? 'text-[#70170f]' : 'text-gray-400 group-hover/skill:text-[#70170f]'}`}>
             <AlertCircle size={13} />
-          </button>
-        </div>
+          </div>
+        </button>
         {valueNode}
       </div>
       {barNode}
@@ -681,9 +841,25 @@ function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, bar
               {recs.map(r => (
                 <div key={r.course} className="flex justify-between items-center gap-2">
                   <span className="text-[11px] text-gray-700 truncate" title={r.course}>{r.course}</span>
-                  <span className="text-[10px] text-gray-500 tabular-nums shrink-0">
-                    {r.current.toFixed(1)} → <span className="text-green-700 font-bold">{r.potential.toFixed(1)}</span>
-                  </span>
+                  <div className="flex items-center gap-2 tabular-nums shrink-0">
+                    {(() => {
+                      const level = GRADING_SYSTEM.find(l => r.current >= l.min) || GRADING_SYSTEM[GRADING_SYSTEM.length - 1];
+                      const gain = r.potential - r.current;
+
+                      return (
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-bold ${level.bg} ${level.text} px-1.5 py-0.5 rounded border ${level.border}`}>
+                            {r.current.toFixed(1)}
+                          </span>
+                          {mode === 'developing' && gain > 0 && (
+                            <span className="text-[10px] text-emerald-600 font-black">
+                              +{gain.toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               ))}
             </div>
@@ -729,7 +905,7 @@ export default function StudentPerformanceView({ user }) {
     return params;
   };
 
-  const { classes, predictions, iloCoverage, loading, refetch: refetchPredictions } = useStudentData(getFilterParams());
+  const { profile, classes, predictions, iloCoverage, loading, refetch: refetchPredictions } = useStudentData(getFilterParams());
   const { items: notifications, refetch: refetchActivity } = useActivityFeed(10);
   const unreadCount = notifications.filter(n => n.unread).length;
   const lastGradeTs = useRef(null);
@@ -807,12 +983,34 @@ export default function StudentPerformanceView({ user }) {
     return out;
   })();
 
+  // Global Latest Semester: The student's actual current standing in the program.
+  // We use this for the 'Achieved' vs 'Developing' logic, so that filtering
+  // doesn't hide signals.
+  const studentCurrentSem = (() => {
+    // We prioritize the official profile standing (e.g., Year 4, Sem 2 = Sem 8).
+    // This makes the logic immune to filters.
+    if (profile?.year_level && profile?.semester) {
+      return (profile.year_level - 1) * 2 + profile.semester;
+    }
+    // Fallback: We look at all classes (archived and active) to find the highest semester reached.
+    const all = [...(classes || [])];
+    if (!all.length) return 8; // Default to senior if no class data
+    const sems = all.map(c => c.semester || 0);
+    return Math.max(0, ...sems);
+  })();
+
+  // Latest Semester context for the filtered view (used in UI logic)
+  const latestSem = (() => {
+    const courses = predictions?.per_course || [];
+    if (!courses.length) return studentCurrentSem;
+    const sems = courses.map(c => COURSE_SEMESTER_MAP[c.course] || 0);
+    return Math.max(0, ...sems);
+  })();
+
   // ML insight values — Smart Insights leans on the trained pipeline output
   // for both ceilings (scenario_high) and outcome alignment (skill_so_map).
   const topSkillName = predictions?.top_skills?.[0];
-  const weakSkillName = predictions?.weak_skills?.[0];
   const topSkillVal = topSkillName != null ? aggSkills[topSkillName] : null;
-  const weakSkillVal = weakSkillName != null ? aggSkills[weakSkillName] : null;
 
   // Per-skill ML ceiling — mean scenario_high across courses that produce
   // a non-zero scenario for the skill. Replaces the old "+8" placeholder.
@@ -825,22 +1023,56 @@ export default function StudentPerformanceView({ user }) {
     if (!vals.length) return 0;
     return vals.reduce((a, b) => a + b, 0) / vals.length;
   };
+  // Primary SO each highlighted skill aligns to (from backend skill_so_map).
+  const skillSoMap = predictions?.skill_so_map || {};
+
+  const isTechnical = (skillName) => {
+    const techSkills = [
+      "Mathematics & Science Foundations",
+      "Programming & Software Development",
+      "Hardware & Circuit Design",
+      "Embedded & Microprocessor Systems",
+      "Networking & Communications",
+      "Operating Systems & Architecture",
+      "Signal Processing & Control Systems",
+      "Data Science & AI/ML",
+      "Engineering Design & Research",
+      "Modern Engineering Tools"
+    ];
+    return techSkills.includes(skillName);
+  };
+
+  const weakTechSkillName = Object.keys(aggSkills)
+    .filter(s => isTechnical(s) && aggSkills[s] > 0 && aggSkills[s] < 75)
+    .sort((a, b) => aggSkills[a] - aggSkills[b])[0] || null;
+
+  const weakProfessionalSkillName = Object.keys(aggSkills)
+    .filter(s => !isTechnical(s) && aggSkills[s] > 0 && aggSkills[s] < 75)
+    .sort((a, b) => aggSkills[a] - aggSkills[b])[0] || null;
+
+  const weakTechVal = weakTechSkillName != null ? aggSkills[weakTechSkillName] : null;
+  const weakProfessionalVal = weakProfessionalSkillName != null ? aggSkills[weakProfessionalSkillName] : null;
+
+  const weakSkillName = weakTechSkillName || weakProfessionalSkillName;
+  const weakSkillVal = weakTechVal || weakProfessionalVal;
+
   const topSkillCeiling = meanCeilingForSkill(topSkillName);
   const weakSkillCeiling = meanCeilingForSkill(weakSkillName);
 
-  // Primary SO each highlighted skill aligns to (from backend skill_so_map).
-  const skillSoMap = predictions?.skill_so_map || {};
-  const topSkillSO = topSkillName ? skillSoMap[topSkillName] : null;
-  const weakSkillSO = weakSkillName ? skillSoMap[weakSkillName] : null;
+  const weakTechSO = weakTechSkillName ? skillSoMap[weakTechSkillName] : null;
+  const weakProfessionalSO = weakProfessionalSkillName ? skillSoMap[weakProfessionalSkillName] : null;
 
-  // Driving course for each highlighted skill — the one to maintain (top) or
-  // focus on (weak). Reuses the same helper that powers the skill-row hints.
-  const topSkillDriver = topSkillName
-    ? topCoursesForSkill(topSkillName, predictions?.per_course || [], 'achieved')[0] || null
+  const isFiltered = semester !== 'All Semesters';
+
+  const weakTechDriver = weakTechSkillName
+    ? topCoursesForSkill(weakTechSkillName, predictions?.per_course || [], 'developing', studentCurrentSem, isFiltered)[0] || null
     : null;
-  const weakSkillDriver = weakSkillName
-    ? topCoursesForSkill(weakSkillName, predictions?.per_course || [], 'developing')[0] || null
+  const weakProfessionalDriver = weakProfessionalSkillName
+    ? topCoursesForSkill(weakProfessionalSkillName, predictions?.per_course || [], 'developing', studentCurrentSem, isFiltered)[0] || null
     : null;
+
+  const weakSkillSO = weakTechSO || weakProfessionalSO;
+  const weakSkillDriver = weakTechDriver || weakProfessionalDriver;
 
   // Predicted skillsets — biggest growth gap (current vs scenario_high) across courses
   const predictedPotential = (() => {
@@ -888,7 +1120,7 @@ export default function StudentPerformanceView({ user }) {
 
   // 1. Competencies Attained — skills at or above the competency threshold (75).
   const COMPETENT_THRESHOLD = 75;
-  const AT_RISK_THRESHOLD = 60;
+  const AT_RISK_THRESHOLD = 75; // Aligned with 'Needs to Focus' level in radar chart
   const attainedCount = activeSkills.filter(([, v]) => v >= COMPETENT_THRESHOLD).length;
   const attainedPct = totalActive ? Math.round((attainedCount / totalActive) * 100) : 0;
 
@@ -910,8 +1142,11 @@ export default function StudentPerformanceView({ user }) {
       const high = c.scenario_high || {};
       Object.keys(cur).forEach(s => {
         if (cur[s] > 1.0 && typeof high[s] === 'number') {
-          total += (high[s] - cur[s]);
-          count += 1;
+          const gap = high[s] - cur[s];
+          if (gap > 0.1) {
+            total += gap;
+            count += 1;
+          }
         }
       });
     });
@@ -928,8 +1163,15 @@ export default function StudentPerformanceView({ user }) {
       const high = c.scenario_high || {};
       const keys = Object.keys(cur).filter(k => cur[k] > 1.0 && typeof high[k] === 'number');
       if (!keys.length) return;
-      const meanGap = keys.reduce((acc, k) => acc + (high[k] - cur[k]), 0) / keys.length;
-      if (!best || meanGap > best.gap) best = { course: c.course, gap: meanGap };
+
+      const meanGap = keys.reduce((acc, k) => {
+        const g = high[k] - cur[k];
+        return acc + (g > 0 ? g : 0);
+      }, 0) / keys.length;
+
+      if (meanGap > 0 && (!best || meanGap > best.gap)) {
+        best = { course: c.course, gap: meanGap };
+      }
     });
     return best;
   })();
@@ -941,242 +1183,281 @@ export default function StudentPerformanceView({ user }) {
 
   return (
     <>
-    <div className="p-8 space-y-8 bg-white min-h-screen">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[11px] font-extrabold text-[#70170f] uppercase tracking-[0.3em] mb-1">PERFORMANCE HUB</p>
-          <h1 className="text-[2.5rem] font-black text-gray-900 leading-tight">Academic Analytics</h1>
-        </div>
-        <div className="flex items-center gap-4 mt-2">
-          {/* Filter button */}
-          <div className="relative">
-            <button
-              onClick={() => { setFilterOpen(!filterOpen); setNotifOpen(false); }}
-              className={`flex items-center gap-2 px-5 py-2.5 border rounded-xl text-[13px] font-bold transition-all ${hasActiveFilters
-                ? 'border-[#9f0707] bg-[#9f0707] text-white shadow-lg'
-                : 'border-[#ead3d3] text-[#70170f] hover:bg-[#fff5f5]'
-                }`}
-            >
-              <Filter size={16} /> Filter
-            </button>
-            <FilterDropdown
-              open={filterOpen}
-              onClose={() => setFilterOpen(false)}
-              semester={semester}
-              setSemester={setSemester}
-              category={category}
-              setCategory={setCategory}
-            />
-          </div>
-
-          <div className="relative">
-            <button
-              onClick={() => { setNotifOpen(!notifOpen); setFilterOpen(false); }}
-              className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
-            >
-              <Bell size={16} className="text-[#8b6363]" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#fffdfd]" />
-              )}
-            </button>
-            <NotificationDropdown
-              open={notifOpen}
-              onClose={() => setNotifOpen(false)}
-              notifications={notifications}
-              unreadCount={unreadCount}
-              onShowAll={() => setShowAllActivities(true)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 4 Stat Cards — ML-driven, refetched on grade_released */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          label="SKILLS MASTERED"
-          icon={Award}
-          main={`${attainedCount} of ${TOTAL_SKILLS}`}
-          sub={totalActive
-            ? `Overall score: ${overallAvg.toFixed(1)}%`
-            : 'awaiting graded scores'}
-          badge={totalActive ? `${Math.round((attainedCount / TOTAL_SKILLS) * 100)}%` : null}
-          badgeTone="green"
-        />
-        <StatCard
-          label="NEEDS ATTENTION"
-          icon={ShieldAlert}
-          main={totalActive
-            ? `${atRiskSkills.length} ${atRiskSkills.length === 1 ? 'skill' : 'skills'}`
-            : '—'}
-          sub={lowestRiskSkill
-            ? `under ${AT_RISK_THRESHOLD}% — start with ${lowestRiskSkill}`
-            : totalActive ? 'no skills below 60% — keep it up' : 'awaiting graded scores'}
-          badge={atRiskSkills.length > 0 ? `below ${AT_RISK_THRESHOLD}%` : null}
-          badgeTone="red"
-        />
-        <StatCard
-          label="GROWTH POTENTIAL"
-          icon={Rocket}
-          main={headroom > 0 ? `+${headroom.toFixed(1)}%` : '—'}
-          sub={headroom > 0
-            ? 'average skill gain if your grades reach 90%'
-            : 'no projected growth available'}
-          badge={headroom >= 5 ? 'high' : headroom > 0 ? 'moderate' : null}
-          badgeTone="indigo"
-        />
-        <StatCard
-          label="TOP COURSE TO IMPROVE"
-          icon={Compass}
-          main={topLeverage ? `+${topLeverage.gap.toFixed(1)}%` : '—'}
-          sub={topLeverage
-            ? `boost from focusing on ${topLeverage.course}`
-            : 'awaiting course-level signal'}
-          badge={topLeverage && topLeverage.gap >= 5 ? 'focus here' : null}
-          badgeTone="amber"
-        />
-      </div>
-
-      {/* Row 2: Radar | Achieved Skills */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-3">
-          <CompetencyRadar soValues={soValues} />
-        </div>
-
-        {/* Skills Lists — ML-driven */}
-        <div className={`${panelBase} p-8 flex flex-col h-full lg:col-span-2`}>
-          <div className="flex-1">
-            <p className="text-[10px] font-extrabold text-[#70170f] uppercase tracking-[0.2em] mb-6">ACHIEVED SKILLS</p>
-            <div className="space-y-5 mb-10">
-              {topThird.slice(0, 4).map(([name, val]) => {
-                const key = `a-${name}`;
-                return (
-                  <SkillHintRow
-                    key={key}
-                    skill={name}
-                    perCourse={predictions?.per_course || []}
-                    mode="achieved"
-                    isOpen={openHintSkill === key}
-                    onToggle={() => setOpenHintSkill(openHintSkill === key ? null : key)}
-                    divider
-                    valueNode={
-                      <span className="text-[11px] font-bold bg-[#70170f]/10 text-[#70170f] px-2.5 py-1 rounded-lg tabular-nums">
-                        {val.toFixed(1)}
-                      </span>
-                    }
-                  />
-                );
-              })}
-              {topThird.length === 0 && <p className="text-sm text-gray-400">None achieved yet.</p>}
-            </div>
-
-            <p className="text-[10px] font-extrabold text-[#70170f] uppercase tracking-[0.2em] mb-6">PREDICTED GROWTH</p>
-            <div className="space-y-6">
-              {predictedPotential.map(s => {
-                const key = `p-${s.name}`;
-                const fillPct = s.potential > 0 ? Math.min((s.current / s.potential) * 100, 100) : 0;
-                return (
-                  <SkillHintRow
-                    key={key}
-                    skill={s.name}
-                    perCourse={predictions?.per_course || []}
-                    mode="developing"
-                    isOpen={openHintSkill === key}
-                    onToggle={() => setOpenHintSkill(openHintSkill === key ? null : key)}
-                    valueNode={
-                      <span className="text-[11px] text-emerald-600 font-bold tabular-nums">
-                        +{s.gap.toFixed(1)}
-                      </span>
-                    }
-                    barNode={
-                      <div className="w-full h-1.5 bg-gray-100 rounded-full mt-2.5 overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${fillPct}%` }} />
-                      </div>
-                    }
-                  />
-                );
-              })}
-              {predictedPotential.length === 0 && <p className="text-sm text-gray-400">Analysis pending...</p>}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 3: Insight | Priority Recommendations */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3">
-          <IntegratedInsights
-            topSkill={topSkillName}
-            topVal={topSkillVal}
-            topCeiling={topSkillCeiling}
-            topSO={topSkillSO}
-            topDriver={topSkillDriver}
-            weakSkill={weakSkillName}
-            weakVal={weakSkillVal}
-            weakCeiling={weakSkillCeiling}
-            weakSO={weakSkillSO}
-            weakDriver={weakSkillDriver}
-          />
-
-        </div>
-
-        <div className={`${panelBase} p-8 flex flex-col justify-center lg:col-span-2`}>
+      <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)] min-h-screen">
+        {/* Header */}
+        <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-[20px] font-black text-gray-900 leading-tight mb-8">Priority Recommendations</h3>
+            <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">PERFORMANCE HUB</p>
+            <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">Academic Analytics</h1>
           </div>
-          <div className="space-y-4">
-            <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-colors cursor-pointer group">
-              <div className="w-10 h-10 rounded-full bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-colors duration-300">
-                <GraduationCap size={18} />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-[13px] font-bold text-gray-900 leading-snug">Focus on missing assignments</h4>
-                <p className="text-[11px] text-gray-500 mt-0.5">Improve grade consistency.</p>
-              </div>
-              <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-600 transition-colors" />
+          <div className="flex items-center gap-4 mt-2">
+            {/* Filter button */}
+            <div className="relative">
+              <button
+                onClick={() => { setFilterOpen(!filterOpen); setNotifOpen(false); }}
+                className={`flex items-center gap-2 px-5 py-2.5 border rounded-xl text-[13px] font-bold transition-all ${hasActiveFilters
+                  ? 'border-[#9f0707] bg-[#9f0707] text-white shadow-lg'
+                  : 'border-[#ead3d3] text-[#70170f] hover:bg-[#fff5f5]'
+                  }`}
+              >
+                <Filter size={16} /> Filter
+              </button>
+              <FilterDropdown
+                open={filterOpen}
+                onClose={() => setFilterOpen(false)}
+                semester={semester}
+                setSemester={setSemester}
+                category={category}
+                setCategory={setCategory}
+              />
             </div>
 
-            <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-colors cursor-pointer group">
-              <div className="w-10 h-10 rounded-full bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-colors duration-300">
-                <Microscope size={18} />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-[13px] font-bold text-gray-900 leading-snug">Practice weak skills</h4>
-                <p className="text-[11px] text-gray-500 mt-0.5">Review the concepts you missed in midterms.</p>
-              </div>
-              <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-600 transition-colors" />
+            <div className="relative">
+              <button
+                onClick={() => { setNotifOpen(!notifOpen); setFilterOpen(false); }}
+                className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
+              >
+                <Bell size={16} className="text-[#8b6363]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#fffdfd]" />
+                )}
+              </button>
+              <NotificationDropdown
+                open={notifOpen}
+                onClose={() => setNotifOpen(false)}
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onShowAll={() => setShowAllActivities(true)}
+              />
             </div>
+          </div>
+        </div>
 
-            <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-colors cursor-pointer group">
-              <div className="w-10 h-10 rounded-full bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-colors duration-300">
-                <Target size={18} />
+        {/* 4 Stat Cards — ML-driven, refetched on grade_released */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            label="SKILLS ATTAINED"
+            icon={Award}
+            main={`${attainedCount} of ${TOTAL_SKILLS}`}
+            sub={totalActive
+              ? `Overall score: ${overallAvg.toFixed(1)}%`
+              : 'awaiting graded scores'}
+            badge={totalActive ? `${Math.round((attainedCount / TOTAL_SKILLS) * 100)}%` : null}
+            badgeTone="green"
+          />
+          <StatCard
+            label="NEEDS ATTENTION"
+            icon={ShieldAlert}
+            main={totalActive
+              ? `${atRiskSkills.length} ${atRiskSkills.length === 1 ? 'skill' : 'skills'}`
+              : '—'}
+            sub={atRiskSkills.length > 0
+              ? `below ${AT_RISK_THRESHOLD}% — focusing on ${lowestRiskSkill}`
+              : totalActive ? 'all skills above 75% — excellent!' : 'awaiting graded scores'}
+            badge={atRiskSkills.length > 0 ? 'NEEDS TO FOCUS' : null}
+            badgeTone="red"
+          />
+          <StatCard
+            label="GROWTH POTENTIAL"
+            icon={Rocket}
+            main={headroom > 0 ? `+${headroom.toFixed(1)}%` : '—'}
+            sub={headroom > 0
+              ? 'average skill gain if your grades reach 90%'
+              : 'no projected growth available'}
+            badge={headroom >= 5 ? 'high' : headroom > 0 ? 'moderate' : null}
+            badgeTone="indigo"
+          />
+          <StatCard
+            label="TOP COURSE TO IMPROVE"
+            icon={Compass}
+            main={topLeverage ? `+${topLeverage.gap.toFixed(1)}%` : '—'}
+            sub={topLeverage
+              ? `boost from focusing on ${topLeverage.course}`
+              : 'awaiting course-level signal'}
+            badge={topLeverage && topLeverage.gap >= 5 ? 'focus here' : null}
+            badgeTone="amber"
+          />
+        </div>
+
+        {/* Row 2: Radar | Achieved Skills */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div className="lg:col-span-3">
+            <CompetencyRadar soValues={soValues} />
+          </div>
+
+          {/* Skills Lists — ML-driven */}
+          <div className={`${panelBase} p-8 flex flex-col h-full lg:col-span-2`}>
+            <div className="flex-1">
+              <p className="text-[10px] font-extrabold text-[#70170f] uppercase tracking-[0.2em] mb-6">ACHIEVED SKILLS</p>
+              <div className="space-y-5 mb-10">
+                {topThird.slice(0, 4).map(([name, val]) => {
+                  const key = `a-${name}`;
+                  return (
+                    <SkillHintRow
+                      key={key}
+                      skill={name}
+                      perCourse={predictions?.per_course || []}
+                      mode="achieved"
+                      latestSem={studentCurrentSem}
+                      isFiltered={isFiltered}
+                      isOpen={openHintSkill === key}
+                      onToggle={() => setOpenHintSkill(openHintSkill === key ? null : key)}
+                      valueNode={(() => {
+                        const level = GRADING_SYSTEM.find(l => val >= l.min) || GRADING_SYSTEM[GRADING_SYSTEM.length - 1];
+                        return (
+                          <span className={`text-[11px] font-black ${level.bg} ${level.text} px-2.5 py-1 rounded-lg tabular-nums border ${level.border}`}>
+                            {val.toFixed(1)}
+                          </span>
+                        );
+                      })()}
+                    />
+                  );
+                })}
+                {topThird.length === 0 && <p className="text-sm text-gray-400">None achieved yet.</p>}
               </div>
-              <div className="flex-1">
-                <h4 className="text-[13px] font-bold text-gray-900 leading-snug">Sync Career Goals</h4>
-                <p className="text-[11px] text-gray-500 mt-0.5">Update roadmap to match your latest scores.</p>
+
+              <p className="text-[10px] font-extrabold text-[#70170f] uppercase tracking-[0.2em] mb-6">PREDICTED GROWTH</p>
+              <div className="space-y-6">
+                {predictedPotential.map(s => {
+                  const key = `p-${s.name}`;
+                  const fillPct = s.potential > 0 ? Math.min((s.current / s.potential) * 100, 100) : 0;
+                  return (
+                    <SkillHintRow
+                      key={key}
+                      skill={s.name}
+                      perCourse={predictions?.per_course || []}
+                      mode="developing"
+                      latestSem={studentCurrentSem}
+                      isFiltered={isFiltered}
+                      isOpen={openHintSkill === key}
+                      onToggle={() => setOpenHintSkill(openHintSkill === key ? null : key)}
+                      valueNode={
+                        <span className="text-[11px] text-emerald-600 font-bold tabular-nums">
+                          +{s.gap.toFixed(1)}
+                        </span>
+                      }
+                      barNode={
+                        <div className="w-full h-1.5 bg-gray-100 rounded-full mt-2.5 overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${fillPct}%` }} />
+                        </div>
+                      }
+                    />
+                  );
+                })}
+                {predictedPotential.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-6 border border-dashed border-gray-100 rounded-xl bg-gray-50/30">
+                    <p className="text-[12px] text-gray-400 font-medium italic text-center px-4">No predicted growth yet, Semester just started.</p>
+                  </div>
+                )}
               </div>
-              <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-600 transition-colors" />
             </div>
+          </div>
+        </div>
+
+        {/* Row 3: Priority Recommendations | Smart Insights */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
+          <div className="lg:col-span-3 h-full">
+            <IntegratedInsights
+              tech={{
+                name: weakTechSkillName,
+                val: weakTechVal,
+                so: weakTechSO,
+                driver: weakTechDriver
+              }}
+              nonTech={{
+                name: weakProfessionalSkillName,
+                val: weakProfessionalVal,
+                so: weakProfessionalSO,
+                driver: weakProfessionalDriver
+              }}
+              latestSem={studentCurrentSem}
+            />
+          </div>
+
+          <div className={`${panelBase} p-8 flex flex-col h-full lg:col-span-2`}>
+            <div>
+              <h3 className="text-[20px] font-black text-gray-900 leading-tight mb-8">Priority Recommendations</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4 flex-1">
+              {weakSkillName && weakSkillVal < 75 ? (
+                <>
+                  <div className="p-4 border border-amber-100 bg-[#fffdfa] rounded-xl flex items-center gap-4 hover:border-amber-300 transition-all hover:shadow-sm cursor-pointer group ring-1 ring-amber-50">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100/50 flex items-center justify-center shrink-0 text-amber-700 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                      <GraduationCap size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] text-black leading-relaxed">Focus on {weakSkillName} in <span className="font-bold">{weakSkillDriver?.course || 'Critical Course'}</span> to resolve this proficiency risk.</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
+                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
+                      <Zap size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] text-black leading-relaxed">Analyze your recent assessment errors in <span className="font-bold">{weakSkillName}</span> and focus on the technical indicators where you scored below the 75% threshold.</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
+                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
+                      <Search size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] text-black leading-relaxed">Analyze the technical indicators for {weakSkillName} and retake the relevant formative assessments to reach the 75% threshold.</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
+                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
+                      <Target size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] text-black leading-relaxed">Align your high performance in your current courses with industry job requirements.</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
+                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
+                      <Microscope size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] text-black leading-relaxed">Engage in high-complexity projects to maintain your competitive edge.</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
+                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
+                      <Activity size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] text-black leading-relaxed">Share your technical mastery with peers to solidify your leadership skills.</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 4: Proficiency Growth Analysis */}
+        <div className={`${panelBase} p-6 flex flex-col`}>
+          <div className="flex flex-col gap-1 mb-6">
+            <h3 className="text-[18px] font-black text-gray-900 leading-tight">Proficiency Growth Analysis</h3>
+            <p className="text-[11px] text-gray-500 font-medium">
+              {skillsTotal} categories ranked by score
+            </p>
+          </div>
+
+          <div className="flex-1 pt-2">
+            <RankedSkillsChart sortedSkills={sortedSkills} animated={barsAnimated} />
           </div>
         </div>
       </div>
 
-      {/* Row 4: Proficiency Growth Analysis */}
-      <div className={`${panelBase} p-6 flex flex-col`}>
-        <div className="flex flex-col gap-1 mb-6">
-          <h3 className="text-[18px] font-black text-gray-900 leading-tight">Proficiency Growth Analysis</h3>
-          <p className="text-[11px] text-gray-500 font-medium">
-            {skillsTotal} categories ranked by score
-          </p>
-        </div>
-
-        <div className="flex-1 pt-2">
-          <RankedSkillsChart sortedSkills={sortedSkills} animated={barsAnimated} />
-        </div>
-      </div>
-    </div>
-
-      { showAllActivities && <AllActivitiesModal onClose={() => setShowAllActivities(false)} /> }
+      {showAllActivities && <AllActivitiesModal onClose={() => setShowAllActivities(false)} />}
     </>
   );
 }

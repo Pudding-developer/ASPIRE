@@ -32,60 +32,57 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
     <>
       <div>
         <div className="mb-6">
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Instructors</h1>
-          <p className="mt-1 text-sm text-gray-400">Manage activation, deactivation, and access role assignments.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Instructors</h1>
+          <p className="mt-1 text-sm text-gray-500">Manage activation, deactivation, and access role assignments.</p>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0.2)_100%)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02),0_10px_32px_rgba(0,0,0,0.25)] backdrop-blur-sm">
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
           <div className="max-h-[70vh] overflow-auto">
             <table className="w-full min-w-230">
-              <thead className="sticky top-0 z-10 border-b border-white/10 bg-[#1b0a06]/95 backdrop-blur-md">
+              <thead className="sticky top-0 z-10 bg-[#70170f]">
               <tr>
-                <th className={thClass}>Instructor</th>
-                <th className={thClass}>Email</th>
-                <th className={thClass}>Status</th>
-                <th className={thClass}>Registered</th>
-                <th className={thClass}>Actions</th>
+                <th className="text-left text-[11px] text-white font-bold uppercase tracking-wider py-3 px-4">Instructor</th>
+                <th className="text-left text-[11px] text-white font-bold uppercase tracking-wider py-3 px-4">Email</th>
+                <th className="text-left text-[11px] text-white font-bold uppercase tracking-wider py-3 px-4">Status</th>
+                <th className="text-left text-[11px] text-white font-bold uppercase tracking-wider py-3 px-4">Registered</th>
+                <th className="text-left text-[11px] text-white font-bold uppercase tracking-wider py-3 px-4">Actions</th>
               </tr>
               </thead>
               <tbody>
               {instructors.map(i => (
-                <tr key={i.id} className="border-b border-white/5 hover:bg-black/20 transition-colors">
-                  <td className={tdClass}>
+                <tr key={i.id} className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors">
+                  <td className="py-3.5 px-4 text-sm text-gray-900">
                     <div className="flex items-center gap-2.5">
                       {i.avatar_url
-                        ? <img src={i.avatar_url} className="w-7 h-7 rounded-full" alt="" />
-                        : <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-xs">{i.full_name[0]}</div>
+                        ? <img src={i.avatar_url} className="w-7 h-7 rounded-full border border-gray-100" alt="" />
+                        : <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-600">{i.full_name[0]}</div>
                       }
-                      <span className="font-medium text-white">{i.full_name}</span>
+                      <span className="font-bold text-gray-900">{i.full_name}</span>
                     </div>
                   </td>
-                  <td className={tdClass + ' text-gray-400'}>{i.email}</td>
-                  <td className={tdClass}><StatusBadge status={i.is_active ? 'active' : 'inactive'} /></td>
-                  <td className={tdClass + ' text-gray-500'}>{new Date(i.created_at).toLocaleDateString()}</td>
-                  <td className={tdClass}>
+                  <td className="py-3.5 px-4 text-sm text-gray-600">{i.email}</td>
+                  <td className="py-3.5 px-4 text-sm"><StatusBadge status={i.is_active ? 'active' : 'inactive'} /></td>
+                  <td className="py-3.5 px-4 text-sm text-gray-500 font-medium">{new Date(i.created_at).toLocaleDateString()}</td>
+                  <td className="py-3.5 px-4 text-sm">
                     <div className="flex items-center gap-2">
-                      {/* Activate — only when inactive */}
                       {!i.is_active && (
                         <button
                           onClick={() => toggleInstructor(i.id, true)}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
+                          className="text-[11px] font-bold px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
                         >
                           Activate
                         </button>
                       )}
-                      {/* Deactivate — only when active */}
                       {i.is_active && (
                         <button
                           onClick={() => toggleInstructor(i.id, false)}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-amber-500/30 text-amber-300 bg-amber-500/5 hover:bg-amber-500/10 transition-colors"
+                          className="text-[11px] font-bold px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors"
                         >
                           Deactivate
                         </button>
                       )}
-                      {/* Remove Role — always visible */}
                       <button
                         onClick={() => setConfirm({ id: i.id, full_name: i.full_name })}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-red-500/30 text-red-300 bg-red-500/5 hover:bg-red-500/10 transition-colors"
+                        className="text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
                       >
                         Remove Role
                       </button>
@@ -94,7 +91,7 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
                 </tr>
               ))}
               {instructors.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-gray-600 text-sm">No instructors yet.</td></tr>
+                <tr><td colSpan={5} className="py-12 text-center text-gray-400 text-sm font-medium">No instructors registered yet.</td></tr>
               )}
               </tbody>
             </table>
@@ -104,24 +101,24 @@ export default function InstructorsTab({ instructors, toggleInstructor, removeIn
 
       {/* ── Confirmation modal ── */}
       {confirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[linear-gradient(180deg,#1a0a00_0%,#120600_100%)] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h2 className="text-lg font-semibold text-white mb-2">Remove Instructor Role</h2>
-            <p className="text-gray-400 text-sm mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white border border-gray-100 rounded-2xl p-8 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h2 className="text-xl font-extrabold text-gray-900 mb-2">Remove Instructor Role</h2>
+            <p className="text-gray-500 text-[13px] leading-relaxed mb-8">
               Are you sure you want to remove instructor access for{' '}
-              <span className="text-white font-medium">{confirm.full_name}</span>?{' '}
-              This cannot be undone. They will lose access to the instructor dashboard immediately.
+              <strong className="text-gray-900">{confirm.full_name}</strong>?{' '}
+              This action will immediately revoke their dashboard privileges.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirm(null)}
-                className="flex-1 py-2 rounded-lg border border-white/10 text-gray-400 hover:text-white text-sm transition-colors"
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-[13px] font-bold transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRemoveConfirm}
-                className="flex-1 py-2 rounded-lg bg-[#cc0000] hover:bg-[#a80000] text-white text-sm font-medium transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-[#70170f] hover:bg-[#5a120c] text-white text-[13px] font-bold transition-all shadow-md"
               >
                 Remove Role
               </button>

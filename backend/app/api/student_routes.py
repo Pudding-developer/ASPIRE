@@ -388,13 +388,27 @@ async def get_skill_predictions(
             "overall_outcome": "No Data"
         }}
 
-    # Aggregate ILO scores per course: average percentage per ILO number
+    # Build input for ML model: per-course average ILO percentages
     from collections import defaultdict
     course_ilos = defaultdict(lambda: defaultdict(list))
 
     for score, ilo, cls in rows:
         pct = (score.score / ilo.max_score * 100) if ilo.max_score > 0 else 0.0
         course_ilos[cls.subject_name][ilo.ilo_number].append(pct)
+
+    # NEW: Fetch enrolled classes to include courses with NO scores yet (for growth projection)
+    enrolled_query = select(Class).join(ClassEnrollment, Class.id == ClassEnrollment.class_id) \
+        .where(ClassEnrollment.student_id == current_user.id)
+    if semester:
+        enrolled_query = enrolled_query.where(Class.semester == semester)
+    if year_level:
+        enrolled_query = enrolled_query.where(Class.year_level == year_level)
+    
+    enrolled_res = await db.execute(enrolled_query)
+    for cls in enrolled_res.scalars().all():
+        if cls.subject_name not in course_ilos:
+            # Initialize with empty data to ensure it's processed by the ML model
+            course_ilos[cls.subject_name] = {}
 
     # Build input for ML model: per-course average ILO percentages
     scores_by_course = []
@@ -404,6 +418,15 @@ async def get_skill_predictions(
             values = ilos.get(ilo_num, [])
             entry[f"ilo{ilo_num}"] = round(sum(values) / len(values), 2) if values else 0.0
         scores_by_course.append(entry)
+
+    if not scores_by_course:
+        return {"data": {
+            "aggregated_skills": {},
+            "top_skills": [],
+            "weak_skills": [],
+            "per_course": [],
+            "overall_outcome": "No Data"
+        }}
 
     # Cache lookup: deterministic inputs → deterministic outputs.
     # Include filters in cache key

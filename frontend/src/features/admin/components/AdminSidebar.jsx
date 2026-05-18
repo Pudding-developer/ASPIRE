@@ -14,41 +14,43 @@ export default function AdminSidebar({ tab, setTab }) {
   const navigate = useNavigate();
   
   return (
-    <aside className="w-56 bg-[linear-gradient(180deg,rgba(188,19,19,0.08)_0%,rgba(18,6,0,0.95)_28%,rgba(18,6,0,0.98)_100%)] border-r border-white/10 flex flex-col h-full shrink-0 backdrop-blur-lg">
-      <div className="p-4 border-b border-white/10">
-        <div className="rounded-xl border border-white/10 bg-black/15 p-3">
-          <img src={aspireLogo} alt="ASPIRE" className="h-16 w-auto mx-auto" />
-          <div className="text-center text-xs text-gray-400 mt-1">Admin Dashboard</div>
+    <aside className="w-[240px] h-full bg-[#430202] border-r border-white/10 flex flex-col shrink-0">
+      {/* Logo */}
+      <div className="px-4 pt-2 pb-0 flex justify-center">
+        <div className="flex flex-col items-center">
+          <img src={aspireLogo} alt="ASPIRE" className="h-[140px] w-auto drop-shadow-lg" />
+          <div className="text-white/40 text-[10px] font-bold tracking-[0.2em] uppercase -mt-4 mb-4">Admin Dashboard</div>
         </div>
       </div>
-      <nav className="flex-1 py-4 px-1.5 space-y-1">
-        <p className="px-3 pb-2 text-[10px] tracking-[0.16em] uppercase text-gray-500">Navigation</p>
+
+      {/* Nav */}
+      <nav className="px-3 flex-1 space-y-1">
         {NAV.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`group relative w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-all text-left rounded-xl border border-transparent ${
-              tab === id
-                ? 'bg-[#70170f]/20 text-white border-[#70170f]/40 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_20px_rgba(0,0,0,0.35)]'
-                : 'text-gray-400 hover:text-white hover:bg-black/20 hover:border-white/10'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-transparent transition-all text-[14px] font-medium
+              ${tab === id
+                ? 'bg-white/20 text-white border-white/20 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_8px_20px_rgba(0,0,0,0.15)]'
+                : 'text-white/70 hover:text-white hover:bg-white/5'}`}
           >
-            {tab === id && <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r bg-[#70170f]" />}
-            <Icon size={16} className={tab === id ? 'text-[#ffdada]' : 'text-gray-500 group-hover:text-gray-300'} />
-            <span className="font-medium">{label}</span>
+            <Icon size={18} className={tab === id ? 'text-white' : 'text-white/60'} />
+            {label}
           </button>
         ))}
       </nav>
       
-      <div className="mt-auto p-4 border-t border-white/10">
+      {/* Logout */}
+      <div className="border-t border-white/10 p-4">
         <button
           onClick={() => {
             logout();
             navigate('/');
           }}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-[#ff6666] border border-[#ff4444]/25 bg-black/10 hover:bg-[#ff4444]/12 rounded-lg transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition-all text-[14px] font-medium"
         >
-          <LogOut size={16} /> Logout
+          <LogOut size={18} className="text-white/60" />
+          Log Out
         </button>
       </div>
     </aside>

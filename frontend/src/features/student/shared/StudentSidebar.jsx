@@ -25,9 +25,15 @@ export default function StudentSidebar({ activeView, setActiveView, onLogout, us
 
   const nav = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'enrolled-classes', icon: BookOpen, label: 'My Classes' },
+    { 
+      id: 'enrolled-classes', 
+      icon: BookOpen, 
+      label: 'My Classes',
+      children: [
+        { id: 'github-analytics', icon: Github, label: 'Project Insights' },
+      ]
+    },
     { id: 'my-performance', icon: TrendingUp, label: 'My Performance' },
-    { id: 'github-analytics', icon: Github, label: 'GitHub Analytics' },
     { id: 'career-coach', icon: Bot, label: 'Career Coach' },
     { id: 'ai-chat', icon: AiChatLogoIcon, label: 'AI Chat' },
   ];
@@ -40,19 +46,42 @@ export default function StudentSidebar({ activeView, setActiveView, onLogout, us
       </div>
 
       {/* Nav */}
-      <div className="px-3 flex-1 space-y-1">
-        {nav.map(({ id, icon: Icon, label }) => (
-          <button
-            key={id}
-            onClick={() => setActiveView(id)}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-transparent transition-all text-[14px] font-medium
-              ${activeView === id
-                ? 'bg-white/20 text-white border-white/20 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_8px_20px_rgba(0,0,0,0.15)]'
-                : 'text-white/70 hover:text-white hover:bg-white/5'}`}
-          >
-            <Icon size={18} className={activeView === id ? 'text-white' : 'text-white/60'} />
-            {label}
-          </button>
+      <div className="px-3 flex-1 space-y-1 overflow-y-auto">
+        {nav.map(({ id, icon: Icon, label, children }) => (
+          <div key={id} className="space-y-1">
+            <button
+              onClick={() => setActiveView(id)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-transparent transition-all text-[14px] font-medium
+                ${activeView === id
+                  ? 'bg-white/20 text-white border-white/20 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_8px_20px_rgba(0,0,0,0.15)]'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+            >
+              <Icon size={18} className={activeView === id ? 'text-white' : 'text-white/60'} />
+              {label}
+            </button>
+            
+            {children && (
+              <div className="space-y-1">
+                {children.map((child) => {
+                  const ChildIcon = child.icon;
+                  const isActive = activeView === child.id;
+                  return (
+                    <button
+                      key={child.id}
+                      onClick={() => setActiveView(child.id)}
+                      className={`w-[calc(100%-2rem)] ml-8 flex items-center gap-3 px-3 py-1.5 rounded-lg border border-transparent transition-all text-[14px] font-medium
+                        ${isActive
+                          ? 'bg-white/10 text-white border-white/10'
+                          : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                    >
+                      <ChildIcon size={18} className={isActive ? 'text-white' : 'text-white/40'} />
+                      {child.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         ))}
       </div>
 

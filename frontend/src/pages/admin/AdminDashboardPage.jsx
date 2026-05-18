@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="h-screen w-full bg-[radial-gradient(circle_at_20%_-10%,rgba(188,19,19,0.2),transparent_35%),linear-gradient(180deg,#190700_0%,#140500_100%)] flex flex-row overflow-hidden text-white">
+    <div className="h-screen w-full bg-[#fdf2f2] flex flex-row overflow-hidden text-gray-900 font-inter">
       <AdminSidebar tab={tab} setTab={setTab} />
 
       <main className="flex-1 overflow-y-auto">

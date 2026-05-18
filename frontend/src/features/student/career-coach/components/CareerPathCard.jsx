@@ -13,14 +13,15 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
 
   return (
     <div
-      className={`w-52 min-w-[208px] min-h-[220px] rounded-2xl p-5 transition-all border shrink-0 flex flex-col h-full relative overflow-hidden
+      onClick={() => onSelect(index)}
+      className={`w-52 min-w-[208px] h-[280px] rounded-2xl p-5 transition-all border shrink-0 flex flex-col relative overflow-hidden cursor-pointer
         ${isChosenGoal
           ? 'bg-[#fff8f8] border-2 border-[#70170f] shadow-md'
           : selected
-            ? 'bg-[#7a0e0e] border-[#70170f] text-white shadow-xl'
+            ? 'bg-[#7a0e0e] border-[#70170f] text-white shadow-xl scale-[1.02] z-10'
             : optimal
-              ? 'bg-white border-emerald-300/60 hover:shadow-md'
-              : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md'}`}
+              ? 'bg-white border-emerald-400 shadow-sm hover:shadow-md'
+              : 'bg-white border-[#eadede] hover:border-[#d9c5c5] hover:shadow-md'}`}
     >
       {onHide && (
         <button
@@ -37,23 +38,23 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
       )}
       {isChosenGoal && (
         <div className="absolute top-0 right-0 bg-[#70170f] text-white text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-bl-lg z-10 shadow-sm">
-          Your Goal
+          Chosen Path
         </div>
       )}
 
-      <div className="flex items-start justify-between mb-3">
-        <span className={`text-[8px] font-bold tracking-widest uppercase ${selected ? 'text-white/60' : 'text-gray-400'}`}>
+      <div className="flex items-center justify-between mb-3">
+        <span className={`text-[8px] font-bold tracking-widest uppercase font-inter ${selected ? 'text-white' : 'text-gray-900'}`}>
           {cat}
         </span>
         {unanalyzed ? (
-          <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+          <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-100 text-gray-900 font-inter">
             Not analyzed
           </span>
         ) : (
-          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded
-            ${selected ? 'bg-white/20 text-white'
-              : optimal ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-red-50/80 text-[#70170f]'}`}>
+          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded font-inter
+            ${selected ? 'bg-white text-gray-900'
+              : optimal ? 'bg-emerald-100 text-gray-900 border border-emerald-200'
+              : 'bg-red-50 text-gray-900 border border-red-100'}`}>
             {match.match_score}% MATCH
           </span>
         )}
@@ -73,7 +74,7 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
         {tags.map(t => (
           <span
             key={t}
-            className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded
+            className={`text-[11px] font-medium px-2 py-1 rounded
               ${(selected && !isChosenGoal) ? 'bg-white/15 text-white/70' : isChosenGoal ? 'bg-red-50 text-[#70170f]' : 'bg-gray-100 text-gray-400'}`}
           >
             {t}
@@ -83,8 +84,7 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
 
       {isChosenGoal ? (
         <div
-          onClick={() => onSelect(index)}
-          className="flex items-center gap-2.5 w-full mt-auto p-2 bg-[#70170f]/5 rounded-xl border border-[#70170f]/10 cursor-pointer hover:bg-[#70170f]/10 transition-colors"
+          className="flex items-center gap-2.5 w-full mt-auto p-2 bg-[#70170f]/5 rounded-xl border border-[#70170f]/10"
         >
           <div className="relative w-8 h-8 shrink-0">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
@@ -104,7 +104,6 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onSelect(index);
             onSetAsGoal();
           }}
           disabled={careerLoading}

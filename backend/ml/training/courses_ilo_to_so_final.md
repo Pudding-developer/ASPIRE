@@ -1,6 +1,6 @@
 * For the "Syllabus & Competency Alignment" on the My Classes tab for the students. 
 
-* The direct mapping of ILOs to SOs for each subject should be based on the file located in "backend/Documents"file name" 
+* The direct mapping of ILOs to SOs for each subject should be based on the file located in "/home/humunculey/ASPIRE/backend/Documents/BSCpE_ILO_SO_Fully_Distributed_Final.xlsx
 
         - It is located in the tab "BSCpE_ILO_SO_Fully_Distributed_Final"
 
@@ -28,7 +28,7 @@ Intended Learning Outcomes (ILO)                           SO              SO De
 
 
 
-- For the name of the skill of a specific SO 1-13 it is on the tab "SO Legend" at the file name "     " just for reference on the displaying
+- For the name of the skill of a specific SO 1-13 it is on the tab "SO Legend" at the file name "/home/humunculey/ASPIRE/backend/Documents/BSCpE_ILO_SO_Fully_Distributed_Final.xlsx" just for reference on the displaying
 
 
 

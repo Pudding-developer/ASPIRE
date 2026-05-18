@@ -179,12 +179,28 @@ async def get_class_assessments(
 ) -> list[AssessmentSummary]:
     await _verify_ownership(session, instructor_id, class_id)
     assessments = await class_repository.get_assessments_by_class(session, class_id)
-    return [
-        AssessmentSummary(
-            id=a.id, name=a.name, type=a.type, created_at=a.created_at
+    enrolled_ids = await class_repository.get_enrolled_student_ids(session, class_id)
+    graded_map = await class_repository.get_graded_student_ids_per_assessment(session, class_id)
+    total_enrolled = len(enrolled_ids)
+
+    results = []
+    for a in assessments:
+        graded = graded_map.get(a.id, set()) & enrolled_ids
+        ungraded = enrolled_ids - graded
+        is_partial = len(ungraded) > 0
+        results.append(
+            AssessmentSummary(
+                id=a.id,
+                name=a.name,
+                type=a.type,
+                created_at=a.created_at,
+                graded_student_ids=sorted(graded),
+                ungraded_student_ids=sorted(ungraded),
+                total_enrolled=total_enrolled,
+                is_partial=is_partial,
+            )
         )
-        for a in assessments
-    ]
+    return results
 
 
 async def get_class_assessment_detail(

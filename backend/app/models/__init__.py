@@ -4,6 +4,7 @@ from app.models.instructor_invite_token import InstructorInviteToken
 from app.models.admin import Admin
 from app.models.github import GithubProfile, RepositoryCache, ContributionCache, AnalysisJob
 from app.models.github_skill_cache import GithubSkillCache
+from app.models.academic_skill_cache import AcademicSkillCache
 from app.models.class_model import Class, ClassEnrollment, Assessment, AssessmentILO, StudentScore
 from app.models.pipeline_models import PipelineJob, CareerReport
 from app.models.knowledge import KnowledgeChunk, EmbeddingCache

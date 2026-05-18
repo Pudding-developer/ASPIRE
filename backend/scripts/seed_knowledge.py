@@ -440,7 +440,7 @@ find mentors and stay updated on local industry trends."""
 PROFESSIONAL_SKILLS_MAPPING = [
     {
         "title": "Professional Communication for Engineers",
-        "content": """Competency: Technical Communication.
+        "content": """Competency: Communication.
 Aligned Subject: GEd 106 Purposive Communication.
 Description: Beyond basic speaking, this subject prepares BSCpE students
 for technical writing, client presentations, and documentation.

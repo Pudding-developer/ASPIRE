@@ -296,6 +296,32 @@ async def get_assessments_by_class(session: AsyncSession, class_id: int) -> list
     return list(result.scalars().all())
 
 
+async def get_graded_student_ids_per_assessment(
+    session: AsyncSession, class_id: int
+) -> dict[int, set[int]]:
+    """Return {assessment_id: {student_ids who have at least one score}} for a class."""
+    result = await session.execute(
+        select(StudentScore.assessment_id, StudentScore.student_id)
+        .join(Assessment, StudentScore.assessment_id == Assessment.id)
+        .where(
+            Assessment.class_id == class_id,
+            StudentScore.score > 0
+        )
+        .distinct()
+    )
+    mapping: dict[int, set[int]] = {}
+    for aid, sid in result.all():
+        mapping.setdefault(aid, set()).add(sid)
+    return mapping
+
+
+async def get_enrolled_student_ids(session: AsyncSession, class_id: int) -> set[int]:
+    result = await session.execute(
+        select(ClassEnrollment.student_id).where(ClassEnrollment.class_id == class_id)
+    )
+    return {sid for (sid,) in result.all()}
+
+
 async def get_assessment_by_id(session: AsyncSession, assessment_id: int) -> Assessment | None:
     result = await session.execute(
         select(Assessment).where(Assessment.id == assessment_id)

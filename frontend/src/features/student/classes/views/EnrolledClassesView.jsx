@@ -289,12 +289,12 @@ export default function EnrolledClassesView({ user, classes, archivedClasses, pr
   }
 
   return (
-    <div className="space-y-6 bg-[radial-gradient(circle_at_top_left,rgba(188,19,19,0.08),transparent_24%),radial-gradient(circle_at_95%_0%,rgba(91,91,232,0.08),transparent_20%)] p-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)] min-h-screen" style={{ fontFamily: 'Inter, sans-serif' }}>
       {/* Header */}
       <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <div className="space-y-2">
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#70170f]/75">Dashboard</p>
-          <h1 className="text-[2.2rem] font-extrabold text-gray-900 leading-none">My Classes</h1>
+          <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">Dashboard</p>
+          <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">My Classes</h1>
           <p className="text-[13px] text-gray-600">Track your enrolled subjects and view course analytics.</p>
           {!loading && classList.length > 0 && activeTab === 'classes' && (
             <div className="flex flex-wrap items-center gap-2 pt-1">

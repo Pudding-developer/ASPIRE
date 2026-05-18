@@ -80,6 +80,10 @@ class AssessmentSummary(BaseModel):
     name: str
     type: str
     created_at: datetime
+    graded_student_ids: list[int] = []
+    ungraded_student_ids: list[int] = []
+    total_enrolled: int = 0
+    is_partial: bool = False
 
 
 class AssessmentBatchDetail(AssessmentBatchSubmit):

@@ -127,6 +127,27 @@ def build_and_run_crew(
         except Exception as exc:
             logger.warning("[crew] Cache check failed: %s — falling back to Agent 1", exc)
 
+    # ── Academic Skill Cache check ────────────────────────────────────────────
+    # Same pattern: if academic_scores haven't changed, skip Agent 2 entirely.
+    _cached_academic_output: str | None = None
+    _academic_data_hash: str | None = None
+    _use_cached_academic = False
+
+    if student_id and sync_db is not None:
+        try:
+            from app.ai.cache.academic_skill_cache import hash_academic_data, get_cached_academic_skills
+            academic_block = student_data.get("academic_scores", [])
+            _academic_data_hash = hash_academic_data(academic_block)
+            cached_academic = get_cached_academic_skills(student_id, _academic_data_hash, sync_db)
+            if cached_academic is not None:
+                _use_cached_academic = True
+                _cached_academic_output = cached_academic
+                logger.info("[crew] Academic skill cache HIT — skipping Agent 2")
+            else:
+                logger.info("[crew] Academic skill cache MISS — running Agent 2")
+        except Exception as exc:
+            logger.warning("[crew] Academic cache check failed: %s — falling back to Agent 2", exc)
+
     # ── Create agents ─────────────────────────────────────────────────────────
     github_analyzer   = create_github_analyzer(student_data_tool)
     academic_analyzer = create_academic_analyzer(student_data_tool)
@@ -156,6 +177,11 @@ def build_and_run_crew(
     if _use_cached_github and _cached_github_output:
         github_task.output = type("TaskOutput", (), {"raw": _cached_github_output})()
         logger.info("[crew] Injected cached github_skills into github_task.output")
+
+    # ── If academic cache hit: pre-fill academic_task output so Agent 2 is skipped
+    if _use_cached_academic and _cached_academic_output:
+        academic_task.output = type("TaskOutput", (), {"raw": _cached_academic_output})()
+        logger.info("[crew] Injected cached academic_skills into academic_task.output")
 
     # ── Inject deterministic subject mappings into Agent 2 ───────────────
     academic_task.description = academic_task.description.replace(
@@ -233,6 +259,17 @@ def build_and_run_crew(
                         f.write(f"Parse error: {parse_err}\nRaw output was: {raw_github}\n")
         except Exception as exc:
             logger.warning("[crew] Cache save failed: %s — continuing without cache", exc)
+
+    # ── Save fresh Agent 2 output to cache (only on academic cache miss) ───────
+    if not _use_cached_academic and student_id and sync_db is not None and _academic_data_hash:
+        try:
+            from app.ai.cache.academic_skill_cache import save_academic_skills
+            if hasattr(result, 'tasks_output') and len(result.tasks_output) >= 2:
+                raw_academic = result.tasks_output[1].raw or ""
+                if raw_academic.strip():
+                    save_academic_skills(student_id, _academic_data_hash, raw_academic, sync_db)
+        except Exception as exc:
+            logger.warning("[crew] Academic cache save failed: %s — continuing without cache", exc)
 
     # Extract raw outputs from the result object
     report_raw = ""

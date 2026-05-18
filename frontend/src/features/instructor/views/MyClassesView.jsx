@@ -2,6 +2,31 @@ import { motion } from 'motion/react';
 import { Users, ArrowRightCircle, Plus, BookOpen } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 
+const hasMissingScores = (cls) => {
+  const assessments = cls?.assessments || [];
+  const students = cls?.students || [];
+  const scores = cls?.scores || [];
+
+  if (!assessments.length || !students.length) return false;
+
+  const scoreMap = new Map();
+  scores.forEach(score => {
+    const key = `${score.student_id}-${score.assessment_id}`;
+    if (!scoreMap.has(key)) scoreMap.set(key, []);
+    scoreMap.get(key).push(score);
+  });
+
+  for (const student of students) {
+    for (const assessment of assessments) {
+      const entries = scoreMap.get(`${student.id}-${assessment.id}`);
+      if (!entries || entries.length === 0) return true;
+      if (entries.some(entry => entry.score == null)) return true;
+    }
+  }
+
+  return false;
+};
+
 export default function MyClassesView({ classes = [], onSelectClass, onCreateClass }) {
   if (classes.length === 0) {
     return (
@@ -36,8 +61,13 @@ export default function MyClassesView({ classes = [], onSelectClass, onCreateCla
             key={cls.id}
             whileHover={{ scale: 1.02, y: -4 }}
             onClick={() => onSelectClass(`class-${cls.id}`)}
-            className="bg-white border border-gray-200 rounded-xl p-6 hover:border-[#70170f] hover:shadow-lg cursor-pointer transition-colors"
+            className="relative bg-white border border-gray-200 rounded-xl p-6 hover:border-[#70170f] hover:shadow-lg cursor-pointer transition-colors"
           >
+            {hasMissingScores(cls) && (
+              <span className="absolute top-3 right-3 bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                Missing Data
+              </span>
+            )}
             <div className="mb-8">
               <h3 className="text-xl font-bold text-gray-900 mb-1">{cls.subject_name}</h3>
               <p className="text-gray-600 text-sm">{cls.course_code} — Section {cls.section}</p>

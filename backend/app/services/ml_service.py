@@ -54,9 +54,42 @@ def predict_skills(course: str, ilo1: float, ilo2: float,
     predictor, _ = _load_model()
     result = predictor.predict(course, ilo1, ilo2, ilo3, ilo4, semester=semester)
 
-    skills        = {s: round(float(v), 2) for s, v in result.predicted_skills.items()}
-    scenario_low  = {s: round(float(v), 2) for s, v in result.scenario_low.items()}
-    scenario_high = {s: round(float(v), 2) for s, v in result.scenario_high.items()}
+    # Ground truth: The actual weighted average of the ILOs for this course.
+    # This ensures the 'Course Standing' (e.g., 75.5%) communicates correctly with the skills.
+    ilo_avg = result.ilo_avg
+    
+    # We blend the ML prediction with the raw ILO achievement to maintain ground-truth alignment.
+    # CRITICAL: We also apply the course profile mask. If a course is not designed to 
+    # develop a specific skill (profile weight = 0), we suppress the AI prediction 
+    # to 0 to prevent nonsensical alignments (e.g., Drawing driving Microprocessors).
+    profile = COURSE_PROFILES.get(course)
+    _, skill_names = _load_model()
+    
+    skills = {}
+    scenario_low = {}
+    scenario_high = {}
+
+    for i, s in enumerate(skill_names):
+        weight = profile[i] if profile else 1.0
+        
+        # Current Prediction
+        v = result.predicted_skills.get(s, 0)
+        if weight > 0:
+            skills[s] = round((ilo_avg * 0.7) + (float(v) * 0.3), 2)
+            
+            # Low scenario
+            v_low = result.scenario_low.get(s, 0)
+            scenario_low[s] = round((ilo_avg * 0.7) + (float(v_low) * 0.3), 2)
+            
+            # High scenario
+            v_high = result.scenario_high.get(s, 0)
+            high_val = (ilo_avg * 0.7) + (float(v_high) * 0.3)
+            scenario_high[s] = round(max(high_val, skills[s]), 2)
+        else:
+            skills[s] = 0.0
+            scenario_low[s] = 0.0
+            scenario_high[s] = 0.0
+
 
     # Only echo back the ILOs this course actually uses (2, 3, or 4).
     ilo_count = get_course_ilo_count(course)
@@ -68,7 +101,7 @@ def predict_skills(course: str, ilo1: float, ilo2: float,
     return {
         "course":           course,
         "ilo_scores":       ilo_scores,
-        "ilo_avg":          round(result.ilo_avg, 2),
+        "ilo_avg":          round(ilo_avg, 2),
         "outcome_label":    result.outcome_label,
         "predicted_skills": skills,
         "strongest_skill":  result.strongest_skill,
@@ -108,11 +141,11 @@ def predict_student_aggregate(scores_by_course: list[dict]) -> dict:
 
     for entry in scores_by_course:
         course = entry["course"]
+        
+        # Robust case-insensitive matching for curriculum subjects
+        profile_key = next((k for k in COURSE_PROFILES if k.lower() == course.lower()), None)
 
-        # Non-CpE courses (PE, NSTP, etc.) aren't in the ML model's training
-        # set, so running predict() on them produces meaningless outputs.
-        # Emit a stub record showing the actual grade but no skill prediction.
-        if course not in COURSE_PROFILES:
+        if not profile_key:
             raw_ilos = [entry.get(f"ilo{i + 1}", 0.0) for i in range(4)]
             active = [v for v in raw_ilos if v > 0]
             ilo_avg = round(sum(active) / len(active), 2) if active else 0.0
@@ -129,10 +162,10 @@ def predict_student_aggregate(scores_by_course: list[dict]) -> dict:
                 "scenario_low": {},
                 "scenario_high": {},
             })
-            continue  # skip skill aggregation for non-CpE courses
+            continue
 
         result = predict_skills(
-            course=course,
+            course=profile_key,
             ilo1=entry["ilo1"],
             ilo2=entry["ilo2"],
             ilo3=entry["ilo3"],

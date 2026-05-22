@@ -81,13 +81,16 @@ def create_report_generation_task(
             "Generate 3–5 recommendation strings. Each MUST be tied to a specific entry\n"
             "in Agent 5's gap_analysis — no general advice, no skills not in gap_analysis.\n\n"
             "Format per recommendation: an action verb + the gap skill + a concrete next\n"
-            "step + the estimated time from gap_analysis.\n\n"
+            "step + the estimated time from gap_analysis + the specific BSU CpE subject(s)\n"
+            "from the curriculum (e.g., 'CpE 418 Software Design' or 'Operating Systems')\n"
+            "that can help the student review or learn this skill (cross-reference with academic_skills\n"
+            "or the BSU CpE subject mappings in the career path information).\n\n"
             "  Bad:  'Improve your DevOps skills.'                 (vague)\n"
             "  Bad:  'Take an online course in cloud computing.'   (skill not in gaps)\n"
-            "  Good: 'Complete the docker/getting-started tutorial — focuses on the\n"
+            "  Good: 'Complete the docker/getting-started tutorial (related subject: CpE 418 Software Design or Operating Systems) — focuses on the\n"
             "         Docker gap — estimated 3 weeks.'\n"
             "  Good: 'Build a CI/CD pipeline with GitHub Actions on one of your existing\n"
-            "         repos — closes the CI/CD gap — estimated 2 weeks.'\n\n"
+            "         repos (related subject: CpE 418 Software Design or Emerging Technologies in CpE) — closes the CI/CD gap — estimated 2 weeks.'\n\n"
             "Order recommendations by gap_analysis priority: high entries first, then\n"
             "medium, then low. If gap_analysis has fewer than 3 entries, return that\n"
             "many recommendations only — DO NOT pad.\n"
@@ -110,6 +113,7 @@ def create_report_generation_task(
             "    • Note 1–2 alternative careers from career_matches[1:] for context.\n\n"
             "  Paragraph 3 — Action plan (2–3 sentences):\n"
             "    • Name the top 2 gap_analysis skills and the total estimated_total_weeks.\n"
+            "    • Suggest which specific BSU CpE subject(s) (drawn from the recommended career path's 'BSU CpE subjects most relevant' list) can help the student strengthen their foundation for this path.\n"
             "    • End with one sentence of grounded encouragement — NOT generic\n"
             "      ('you can do it!'), but tied to the student's actual progress\n"
             "      ('your foundation in Python and a working REST API repo means the\n"
@@ -126,10 +130,10 @@ def create_report_generation_task(
             "{\n"
             '  "career_matches": [...],          // verbatim from Agent 4\n'
             '  "recommendations": [\n'
-            '    "Complete docker/getting-started — closes the Docker gap — estimated 3 weeks.",\n'
-            '    "Build a CI/CD pipeline with GitHub Actions on an existing repo — closes the CI/CD gap — estimated 2 weeks."\n'
+            '    "Complete docker/getting-started (related subject: CpE 418 Software Design or Operating Systems) — closes the Docker gap — estimated 3 weeks.",\n'
+            '    "Build a CI/CD pipeline with GitHub Actions on an existing repo (related subject: CpE 418 Software Design or Emerging Technologies in CpE) — closes the CI/CD gap — estimated 2 weeks."\n'
             "  ],\n"
-            '  "summary": "Three-paragraph plain-English career readiness summary citing specific skills, scores, and gaps.",\n'
+            '  "summary": "Three-paragraph plain-English career readiness summary citing specific skills, scores, gaps, and BSU CpE subjects.",\n'
             '  "skill_profile": {                 // verbatim from Agent 3\n'
             '    "unified_skills": [...],\n'
             '    "skill_summary": {...},\n'

@@ -36,7 +36,7 @@ def create_gap_analyst(rag_career_tool, github_search_tool) -> Agent:
             "'start with this Docker beginner repo and complete these 3 steps'."
         ),
         llm=_get_llm(),
-        tools=[rag_career_tool, github_search_tool],
+        tools=[github_search_tool],
         verbose=True,
         allow_delegation=False,
     )
@@ -64,9 +64,7 @@ def create_gap_analysis_task(agent: Agent, career_task) -> Task:
             "STEP 2 — GATHER EVIDENCE PER GAP\n"
             "═══════════════════════════════════════════════════════\n"
             "For each gap skill in your final list:\n\n"
-            "  (a) Call rag_career_knowledge with query='[skill] learning resources for "
-            "BSU CpE' and category='resources' (then 'gap_closer' if no hits).\n"
-            "      Save any concrete project descriptions or curricula found.\n\n"
+            "  (a) Use your own internal knowledge to describe the learning steps/reason for the gap.\n\n"
             "  (b) Call github_search with skill_name='[skill]' to find the top 2\n"
             "      most-starred learning repositories.\n"
             "      • If github_search returns NO results: omit the github_repo from\n"

@@ -6,59 +6,7 @@ export const CIRC = 2 * Math.PI * 48; // SVG donut circumference
 
 export const PROFICIENCY_PCT = { advanced: 90, intermediate: 65, beginner: 30 };
 
-/* All careers a student can choose as their goal — kept in sync with backend
-   VALID_CAREERS in app/api/student_routes.py. Each entry feeds the freeform
-   career picker that appears before the AI report is generated. */
-export const CAREER_OPTIONS = [
-  {
-    title: 'Full Stack Developer',
-    blurb: 'Build complete web products end-to-end — frontend, backend, and database.',
-    skills: ['React', 'Node.js / Python', 'PostgreSQL', 'REST APIs'],
-    roadmap: 'https://roadmap.sh/full-stack',
-  },
-  {
-    title: 'Backend Developer',
-    blurb: 'Design APIs, services, and the data layer that powers modern apps.',
-    skills: ['Python / JS', 'PostgreSQL', 'Docker', 'CI/CD'],
-    roadmap: 'https://roadmap.sh/backend',
-  },
-  {
-    title: 'Frontend Developer',
-    blurb: 'Craft the interfaces users actually touch — fast, accessible, beautiful.',
-    skills: ['React', 'TypeScript', 'CSS', 'Accessibility'],
-    roadmap: 'https://roadmap.sh/frontend',
-  },
-  {
-    title: 'DevOps Engineer',
-    blurb: 'Automate deployments, run reliable infra, and keep production healthy.',
-    skills: ['Linux', 'Docker', 'Kubernetes', 'AWS / GCP'],
-    roadmap: 'https://roadmap.sh/devops',
-  },
-  {
-    title: 'Data Scientist',
-    blurb: 'Turn raw data into models, insights, and decisions that move the business.',
-    skills: ['Python', 'pandas', 'SQL', 'Statistics'],
-    roadmap: 'https://roadmap.sh/ai-data-scientist',
-  },
-  {
-    title: 'AI Engineer',
-    blurb: 'Ship LLM-powered products — RAG, agents, prompt design, and evals.',
-    skills: ['Python', 'LLMs', 'Vector DBs', 'MLOps'],
-    roadmap: 'https://roadmap.sh/ai-engineer',
-  },
-  {
-    title: 'Machine Learning',
-    blurb: 'Build and deploy ML systems that learn from data at production scale.',
-    skills: ['Python', 'PyTorch / TF', 'Feature Eng.', 'MLOps'],
-    roadmap: 'https://roadmap.sh/machine-learning',
-  },
-  {
-    title: 'Software Architect',
-    blurb: 'Design the large-scale shape of systems — services, data, and tradeoffs.',
-    skills: ['System Design', 'Distributed Systems', 'Cloud', 'Security'],
-    roadmap: 'https://roadmap.sh/software-architect',
-  },
-];
+
 
 export const TABS = [
   { id: 'roadmap',  label: 'Roadmap' },

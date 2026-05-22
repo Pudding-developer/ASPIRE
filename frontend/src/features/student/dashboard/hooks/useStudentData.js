@@ -61,12 +61,11 @@ export default function useStudentData(filters = {}) {
     const social     = avg('SO10', 'SO13');
 
     const total = (tech + prof + social) / 3;
-    const sum   = tech + prof + social || 1;
 
     return {
-      techPct:        Math.round((tech   / sum) * 100),
-      analyticalPct:  Math.round((prof   / sum) * 100),
-      ethicsPct:      Math.round((social / sum) * 100),
+      techPct:        Math.round(tech),
+      analyticalPct:  Math.round(prof),
+      ethicsPct:      Math.round(social),
       totalMastery:   Math.round(total),
     };
   };

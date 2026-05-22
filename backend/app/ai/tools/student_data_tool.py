@@ -2,7 +2,12 @@
 student_data_tool.py — CrewAI tool that provides pre-loaded student data to agents.
 
 Data is fetched async by pipeline_service and set on the tool instance
-before crew.kickoff() is called.
+before crew.kickoff() is called. As of the system-wide pseudonymization
+work, `set_data` is always called with the output of
+`pseudonymize_student_data(...)` from app.core.pseudonymizer, so no
+cleartext sr_code, full_name, email, or GitHub username ever reaches the
+agents through this tool. The data-minimization filter below remains as
+defense-in-depth.
 """
 import json
 
@@ -49,11 +54,44 @@ class StudentDataTool(BaseTool):
                         "note": "No academic data available yet"
                     }
                 }, indent=2, default=str)
+            
+            # Aggregate scores in Python to avoid LLM reasoning/token overhead on large grade records
+            from collections import defaultdict
+            grouped = defaultdict(lambda: defaultdict(list))
+            subject_course = {}
+            for row in scores:
+                sub = row.get("subject_name")
+                course = row.get("course_code")
+                if sub:
+                    subject_course[sub] = course or ""
+                    ilo = row.get("ilo_number")
+                    pct = row.get("percentage", 0.0)
+                    if ilo is not None:
+                        grouped[sub][ilo].append(pct)
+            
+            summaries = []
+            for sub, ilos in grouped.items():
+                ilo_scores = {}
+                ilo_pcounts = []
+                for ilo in sorted(ilos.keys()):
+                    pcts = ilos[ilo]
+                    avg_ilo_pct = sum(pcts) / len(pcts) if pcts else 0.0
+                    ilo_key = f"ILO{ilo}"
+                    ilo_scores[ilo_key] = int(round(avg_ilo_pct))
+                    ilo_pcounts.append(avg_ilo_pct)
+                
+                avg_score = round(sum(ilo_pcounts) / len(ilo_pcounts), 1) if ilo_pcounts else 0.0
+                summaries.append({
+                    "subject_name": sub,
+                    "course_code": subject_course.get(sub, ""),
+                    "ilo_scores": ilo_scores,
+                    "avg_score": avg_score
+                })
+                
             subset = {
-                # Omit sr_code and full_name — these are direct PII and the
-                # LLM has no analytical need for them (RA 10173 data minimization).
+                # Omit sr_code and full_name (RA 10173 data minimization)
                 "student_id": self._data.get("student_id"),
-                "academic_scores": scores,
+                "academic_subject_summaries": summaries,
             }
         elif query == "github":
             subset = {

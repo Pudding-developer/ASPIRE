@@ -41,7 +41,7 @@ const ANALYSIS_TIPS = [
  * the career analyzer. Used both standalone (first run) and inside a modal
  * overlay (refresh analysis with existing report).
  */
-export default function AnalysisLoadingCard({ isRunning, pipelineStatus }) {
+export default function AnalysisLoadingCard({ isRunning, pipelineStatus, onCancel }) {
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
   const [displayPct, setDisplayPct] = useState(0);
   const lastBackendPct = useRef(0);
@@ -187,6 +187,14 @@ export default function AnalysisLoadingCard({ isRunning, pipelineStatus }) {
           </p>
         </div>
       </div>
+      {onCancel && (
+        <button
+          onClick={onCancel}
+          className="mt-6 px-4 py-2.5 border border-gray-200 text-gray-500 rounded-xl text-[11px] font-bold hover:bg-gray-50 hover:text-[#70170f] hover:border-[#70170f]/30 transition-all w-full uppercase tracking-wider flex items-center justify-center gap-1.5"
+        >
+          Cancel Analysis
+        </button>
+      )}
     </div>
   );
 }

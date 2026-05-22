@@ -11,6 +11,7 @@ import StudentFAQView from '../../features/student/faq/views/StudentFAQView';
 import EnrolledClassesView from '../../features/student/classes/views/EnrolledClassesView';
 import useStudentData from '../../features/student/dashboard/hooks/useStudentData';
 import AIChatBubble from '../../features/student/ai-chat/components/AIChatBubble';
+import { pipelineApi } from '../../services/pipelineApi';
 
 /* ─── Page Root ─── */
 export default function StudentDashboardPage() {
@@ -19,7 +20,15 @@ export default function StudentDashboardPage() {
   const [activeView, setActiveView] = useState('dashboard');
   const { classes, archivedClasses, loading: classesLoading, refetch, predictions } = useStudentData();
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = async () => {
+    try {
+      await pipelineApi.cancel(user.id);
+    } catch (e) {
+      console.warn("Failed to cancel running pipeline on logout:", e);
+    }
+    logout();
+    navigate('/');
+  };
 
   if (!user) return <div className="h-screen flex items-center justify-center bg-[#f8f9fb]">Loading session...</div>;
 

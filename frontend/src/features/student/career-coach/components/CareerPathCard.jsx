@@ -1,12 +1,12 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { inferCategory, CAREER_OPTIONS } from '../../../../data/careerConstants';
+import { inferCategory } from '../../../../data/careerConstants';
 
-export default function CareerPathCard({ match, index, selected, optimal, onSelect, isChosenGoal, onSetAsGoal, onHide, unanalyzed, careerLoading }) {
+export default function CareerPathCard({ match, index, selected, optimal, onSelect, isChosenGoal, onSetAsGoal, onHide, unanalyzed, careerLoading, careerOptions = [] }) {
   const cat  = inferCategory(match.title);
-  // Fall back to the static CAREER_OPTIONS skill list when the AI hasn't
+  // Fall back to the dynamic careerOptions skill list when the AI hasn't
   // produced match data for this title yet.
-  const fallback = unanalyzed ? CAREER_OPTIONS.find(o => o.title === match.title) : null;
+  const fallback = unanalyzed ? (careerOptions || []).find(o => o.title === match.title) : null;
   const tags = unanalyzed
     ? (fallback?.skills || []).slice(0, 2)
     : (match.matched_skills || []).slice(0, 2);

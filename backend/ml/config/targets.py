@@ -428,7 +428,7 @@ COURSE_ILO_COUNT: Dict[str, int] = {
     "Manufacturing and Quality Control": 3,
     "Seminars and Fieldtrips": 3,
     # Year 4, Sem 2
-    "CpE Practice and Design 2": 4,
+    "CpE Practice and Design 2": 3,
     "On-the-Job Training": 3,
     "Technopreneurship": 3,
 }
@@ -449,7 +449,7 @@ def map_avg_to_outcome(avg: float) -> str:
     if x >= 80:   return "Satisfactory"
     if x >= 78:   return "Fairly Satisfactory"
     if x >= 75:   return "Passing"
-    return "Failure"
+    return "Needs to Focus"
 
 
 # ── Student Outcomes (CMO-aligned) ────────────────────────────────────────────

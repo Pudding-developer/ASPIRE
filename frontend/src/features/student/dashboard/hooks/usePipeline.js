@@ -109,6 +109,21 @@ export default function usePipeline(studentId) {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
+  const cancelPipeline = useCallback(async () => {
+    if (!studentId) return;
+    try {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      setJobId(null);
+      setPipelineStatus(null);
+      await pipelineApi.cancel(studentId);
+    } catch (e) {
+      console.error("Error cancelling pipeline:", e);
+    }
+  }, [studentId]);
+
   return {
     report,
     allReports,
@@ -120,5 +135,6 @@ export default function usePipeline(studentId) {
     refetch: fetchReports,
     pipelineResult,
     clearPipelineResult,
+    cancelPipeline,
   };
 }

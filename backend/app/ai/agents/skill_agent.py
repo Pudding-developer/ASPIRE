@@ -2,9 +2,13 @@
 skill_agent.py — Agent 3: Skill Profile Synthesizer.
 
 Merges GitHub skills (Agent 1) and academic skills (Agent 2) into
-a single unified profile using domain-aware weighted scoring:
-  Default (software skills):  Academic 60% / GitHub 40%
-  Hardware/Embedded skills:   Academic 70% / GitHub 30%
+a single unified profile using a uniform weighted scoring rule:
+  All domains:  Academic 60% / GitHub 40%
+
+Exception: hardware/embedded skills whose name doesn't surface in any
+analyzed GitHub repository fall back to 100% academic — there's no
+practical signal to weight against, and applying GitHub=40 with score=0
+would unfairly punish the skill.
 """
 from crewai import Agent, LLM
 from crewai import Task
@@ -31,12 +35,12 @@ def create_skill_synthesizer() -> Agent:
         backstory=(
             "You are a senior technical recruiter who evaluates both "
             "academic credentials and real-world coding portfolios. "
-            "You apply domain-aware weighting when scoring skills: "
-            "for software, web, and cloud skills, GitHub work carries 40% weight "
-            "and academic performance carries 60%. "
-            "However, for hardware, embedded, circuit, signal processing, and microprocessor skills, "
-            "academic performance carries 70% weight and GitHub carries only 30%, because "
-            "hardware engineering work is rarely reflected in public GitHub repositories. "
+            "You apply a uniform weighting when scoring skills: "
+            "academic performance carries 60% weight and GitHub work carries 40%. "
+            "For hardware, embedded, circuit, signal processing, and microprocessor skills "
+            "that have NO presence in any analyzed GitHub repository, you fall back to "
+            "100% academic weight — there is no GitHub signal to fairly weigh against, "
+            "and hardware engineering work is rarely reflected in public repositories. "
             "You reconcile conflicts between the two sources and always report both honestly."
         ),
         llm=_get_llm(),
@@ -63,17 +67,21 @@ def create_skill_synthesis_task(
             "the GitHub Analyst was instructed to drop these but enforce again here.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
-            "STEP 2 — DOMAIN-AWARE WEIGHTING\n"
+            "STEP 2 — UNIFIED WEIGHTING WITH HARDWARE FALLBACK\n"
             "═══════════════════════════════════════════════════════\n"
-            "Determine each skill's domain by matching keywords in its name or category:\n\n"
-            "  HARDWARE/EMBEDDED domain — any of these keywords (case-insensitive):\n"
+            "Default rule for every skill: Academic 60% weight, GitHub 40% weight.\n\n"
+            "  HARDWARE/EMBEDDED FALLBACK — if a skill matches any of these\n"
+            "  keywords (case-insensitive) AND has NO entry in github_skills\n"
+            "  (i.e., no analyzed repository demonstrated it), use Academic 100%,\n"
+            "  GitHub 0% instead of the default 60/40:\n"
             "    Hardware, Embedded, Circuit, Signal, Microprocessor, VLSI, FPGA,\n"
             "    IoT, HDL, Verilog, VHDL, SystemVerilog, Firmware, PCB, RTOS,\n"
             "    Microcontroller, STM32, ESP32, ARM, RISC-V, ASIC, Sensor, Analog,\n"
             "    Digital Logic, CMOS, Oscilloscope.\n"
-            "    → Academic 70% weight, GitHub 30% weight\n\n"
-            "  ALL OTHER domains (software, web, cloud, data, networking, ML, etc.)\n"
-            "    → Academic 60% weight, GitHub 40% weight\n\n"
+            "  If the hardware skill DOES appear in github_skills (e.g., student\n"
+            "  has an Arduino or Verilog repo), apply the default 60/40 rule.\n\n"
+            "  All other skills (software, web, cloud, data, networking, ML, etc.)\n"
+            "    → always Academic 60% / GitHub 40%.\n\n"
 
             "═══════════════════════════════════════════════════════\n"
             "STEP 3 — SKILL MATCHING (when do two entries merge into one?)\n"
@@ -153,12 +161,22 @@ def create_skill_synthesis_task(
             "    {\n"
             '      "skill": "Embedded C",\n'
             '      "category": "Embedded & Microprocessor Systems",\n'
-            '      "final_score": 77.0,\n'
+            '      "final_score": 72.8,\n'
             '      "github_score": 50,\n'
             '      "academic_score": 88,\n'
             '      "status": "ON TRACK",\n'
             '      "source": "both",\n'
-            '      "fusion_weights": {"academic": 0.7, "github": 0.3}\n'
+            '      "fusion_weights": {"academic": 0.6, "github": 0.4}\n'
+            "    },\n"
+            "    {\n"
+            '      "skill": "Digital Signal Processing",\n'
+            '      "category": "Signal Processing & Control Systems",\n'
+            '      "final_score": 85.0,\n'
+            '      "github_score": null,\n'
+            '      "academic_score": 85,\n'
+            '      "status": "EXCEEDING EXPECTATIONS",\n'
+            '      "source": "academic",\n'
+            '      "fusion_weights": {"academic": 1.0, "github": 0.0}\n'
             "    }\n"
             "  ],\n"
             '  "skill_summary": {\n'

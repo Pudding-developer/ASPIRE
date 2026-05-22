@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 from app.core.database import get_session
 from app.core.config import FRONTEND_URL
 from app.api.deps import security_scheme
-from app.schemas.user import TokenResponse, UserRead, RoleSelectionRequest
+from app.schemas.user import TokenResponse, UserRead, RoleSelectionRequest, LocalRegisterRequest, LocalLoginRequest
 from app.services.token_service import build_jwt, verify_access_token
 from app.services.oauth_service import (
     build_google_auth_url,
@@ -28,6 +28,8 @@ from app.services.auth_service import (
     register_instructor_google,
     resolve_role_entity,
     InstructorRegisterError,
+    local_register_student,
+    local_login_flow,
 )
 
 router = APIRouter()
@@ -43,6 +45,26 @@ async def google_login(flow: str = "login", token: str | None = None):
         flow = "login"
     google_url, _ = build_google_auth_url(flow=flow, token=token)
     return RedirectResponse(url=google_url)
+
+
+@router.post("/register")
+async def register_local(
+    request: LocalRegisterRequest,
+    session: AsyncSession = Depends(get_session)
+):
+    """Local registration endpoint for students."""
+    jwt_token = await local_register_student(session, request)
+    return {"access_token": jwt_token, "redirect": "/student/dashboard"}
+
+
+@router.post("/login")
+async def login_local(
+    request: LocalLoginRequest,
+    session: AsyncSession = Depends(get_session)
+):
+    """Local login endpoint for students."""
+    jwt_token, redirect_path = await local_login_flow(session, request)
+    return {"access_token": jwt_token, "redirect": redirect_path}
 
 
 @router.post("/login/select-role")

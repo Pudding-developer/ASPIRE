@@ -35,29 +35,10 @@ from app.models.class_model import (
 router = APIRouter()
 
 
-# ── Career constants ──────────────────────────────────────────────────────────
-
-VALID_CAREERS = [
-    "Full Stack Developer",
-    "Backend Developer",
-    "Frontend Developer",
-    "DevOps Engineer",
-    "Data Scientist",
-    "AI Engineer",
-    "Machine Learning",
-    "Software Architect",
-]
-
-ROADMAP_LINKS = {
-    "Full Stack Developer": "https://roadmap.sh/full-stack",
-    "Backend Developer":    "https://roadmap.sh/backend",
-    "Frontend Developer":   "https://roadmap.sh/frontend",
-    "DevOps Engineer":      "https://roadmap.sh/devops",
-    "Data Scientist":       "https://roadmap.sh/ai-data-scientist",
-    "AI Engineer":          "https://roadmap.sh/ai-engineer",
-    "Machine Learning":     "https://roadmap.sh/machine-learning",
-    "Software Architect":   "https://roadmap.sh/software-architect",
-}
+# ── Career constants removed ─────────────────────────────────────────────────
+# VALID_CAREERS and ROADMAP_LINKS are no longer hardcoded here.
+# Career data is loaded from the knowledge_chunks table via career_catalog.
+# To add a new career, update the knowledge base — nothing here changes.
 
 # ── Profile ──────────────────────────────────────────────────────────────────
 
@@ -298,11 +279,11 @@ async def get_course_dashboard(
             raw_totals[ilo.ilo_number] += score.score
             max_totals[ilo.ilo_number] += ilo.max_score
 
-    missing = [n for n in range(1, ilo_count + 1) if max_totals[n] <= 0]
-    if missing:
+    # Only fail if there are absolutely no assessments graded for the entire course.
+    if all(max_totals[n] <= 0 for n in range(1, ilo_count + 1)):
         raise HTTPException(
             status_code=404,
-            detail=f"No scores recorded for ILO {', '.join(map(str, missing))} of {course}",
+            detail=f"No scores recorded for {course}",
         )
 
     ilo_raw    = [raw_totals[i] for i in range(1, ilo_count + 1)]
@@ -458,12 +439,17 @@ async def set_chosen_career(
 ):
     """
     Set or update the student's chosen career goal.
-    Validates against VALID_CAREERS — returns 400 if unknown.
+    Validates against the knowledge-base career list — returns 400 if unknown.
     """
-    if payload.career not in VALID_CAREERS:
+    from app.services.career_catalog import load_careers
+    catalog = await load_careers(db)
+    valid_titles = {c["title"] for c in catalog}
+    roadmap_map  = {c["title"]: c["roadmap"] for c in catalog}
+
+    if payload.career not in valid_titles:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid career. Must be one of: {', '.join(VALID_CAREERS)}",
+            detail=f"Invalid career. Must be one of: {', '.join(sorted(valid_titles))}",
         )
 
     result = await db.execute(select(User).where(User.id == current_user.id))
@@ -480,7 +466,7 @@ async def set_chosen_career(
     return {
         "chosen_career": user.chosen_career,
         "career_chosen_at": (user.career_chosen_at.isoformat() + "Z") if user.career_chosen_at else None,
-        "roadmap_url": ROADMAP_LINKS.get(user.chosen_career),
+        "roadmap_url": roadmap_map.get(user.chosen_career),
     }
 
 
@@ -493,6 +479,10 @@ async def get_chosen_career(
     Return the student's currently chosen career goal.
     Returns null values if no career has been chosen yet.
     """
+    from app.services.career_catalog import load_careers
+    catalog = await load_careers(db)
+    roadmap_map = {c["title"]: c["roadmap"] for c in catalog}
+
     result = await db.execute(select(User).where(User.id == current_user.id))
     user = result.scalar_one_or_none()
 
@@ -502,8 +492,31 @@ async def get_chosen_career(
             user.career_chosen_at.isoformat() + "Z"
             if user and user.career_chosen_at else None
         ),
-        "roadmap_url": ROADMAP_LINKS.get(user.chosen_career) if user and user.chosen_career else None,
+        "roadmap_url": roadmap_map.get(user.chosen_career) if user and user.chosen_career else None,
     }
+
+
+@router.get("/careers")
+async def list_careers(
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_student),
+):
+    """
+    Return the full list of career paths from the knowledge base.
+    The frontend uses this to build the career picker — no hardcoded list needed.
+    """
+    from app.services.career_catalog import load_careers
+    catalog = await load_careers(db)
+    return {"data": [
+        {
+            "title":           c["title"],
+            "blurb":           c["blurb"],
+            "skills":          c["skills"],
+            "roadmap":         c["roadmap"],
+            "slug":            c["slug"],
+        }
+        for c in catalog
+    ]}
 
 
 # ── Activity Feed ────────────────────────────────────────────────────────────

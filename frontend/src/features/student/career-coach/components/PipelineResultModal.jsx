@@ -43,8 +43,9 @@ const RESULT_CONFIG = {
  * Props:
  *   result  — { outcome: 'success'|'no_change'|'error', message?: string } | null
  *   onClose — called when the user dismisses the modal
+ *   onForceRun — called when the user clicks 'Run Anyway'
  */
-export default function PipelineResultModal({ result, onClose }) {
+export default function PipelineResultModal({ result, onClose, onForceRun }) {
   if (!result) return null;
 
   const cfg = RESULT_CONFIG[result.outcome] || RESULT_CONFIG.error;
@@ -86,19 +87,32 @@ export default function PipelineResultModal({ result, onClose }) {
           {result.outcome === 'error' && result.message ? result.message : cfg.body}
         </p>
 
-        {/* CTA */}
-        <button
-          onClick={onClose}
-          className={`px-6 py-2.5 rounded-xl text-[12px] font-bold transition-all ${
-            result.outcome === 'success'
-              ? 'bg-[#70170f] text-white hover:bg-[#4a0e09]'
-              : result.outcome === 'no_change'
-              ? 'bg-amber-500 text-white hover:bg-amber-600'
-              : 'bg-red-600 text-white hover:bg-red-700'
-          }`}
-        >
-          {cfg.cta}
-        </button>
+        {/* CTA Group */}
+        <div className="flex gap-3 items-center">
+          {result.outcome === 'no_change' && onForceRun && (
+            <button
+              onClick={() => {
+                onClose();
+                onForceRun();
+              }}
+              className="px-5 py-2.5 rounded-xl text-[12px] font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+            >
+              Run Anyway
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className={`px-6 py-2.5 rounded-xl text-[12px] font-bold transition-all ${
+              result.outcome === 'success'
+                ? 'bg-[#70170f] text-white hover:bg-[#4a0e09]'
+                : result.outcome === 'no_change'
+                ? 'bg-amber-500 text-white hover:bg-amber-600'
+                : 'bg-red-600 text-white hover:bg-red-700'
+            }`}
+          >
+            {cfg.cta}
+          </button>
+        </div>
       </div>
 
       <style>{`

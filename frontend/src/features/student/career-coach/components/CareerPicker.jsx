@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Bot, Check, Loader2, AlertCircle, Star, ChevronRight, X, Sparkles } from 'lucide-react';
-import { CAREER_OPTIONS, inferCategory } from '../../../../data/careerConstants';
+import { inferCategory } from '../../../../data/careerConstants';
 import SearchInput from '../../../../components/ui/SearchInput';
 
 
@@ -20,6 +20,7 @@ export default function CareerPicker({
   onGenerateReport,
   isRunning,
   pipelineError,
+  careerOptions = [],
 }) {
   const [confirmCareer, setConfirmCareer] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -27,9 +28,9 @@ export default function CareerPicker({
 
   const filteredCareers = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return CAREER_OPTIONS;
-    return CAREER_OPTIONS.filter(c => (c.title || '').toLowerCase().includes(q));
-  }, [search]);
+    if (!q) return careerOptions;
+    return careerOptions.filter(c => (c.title || '').toLowerCase().includes(q));
+  }, [search, careerOptions]);
 
   // If the pipeline starts (parent flips isRunning), tear down the modal.
   useEffect(() => {
@@ -65,7 +66,7 @@ export default function CareerPicker({
     onGenerateReport();
   };
 
-  const confirmCareerData = CAREER_OPTIONS.find((c) => c.title === confirmCareer);
+  const confirmCareerData = careerOptions.find((c) => c.title === confirmCareer);
 
   return (
     <div className="p-8">
@@ -99,7 +100,7 @@ export default function CareerPicker({
         />
         {search && (
           <p className="text-[12px] text-gray-500 mt-2 text-center">
-            {filteredCareers.length} of {CAREER_OPTIONS.length} careers match
+            {filteredCareers.length} of {careerOptions.length} careers match
           </p>
         )}
       </div>

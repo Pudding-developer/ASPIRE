@@ -13,6 +13,9 @@ export const pipelineApi = {
 
   /** Poll pipeline job status (percentage, current_step, etc.) */
   getStatus:     (jobId)     => request('GET',  `${BASE}/status/${jobId}`),
+  
+  /** Cancel any running pipeline job for a student */
+  cancel:        (studentId) => request('POST', `${BASE}/cancel/${studentId}`),
 
   /** Get the latest career report for a student */
   getReport:     (studentId) => request('GET',  `${BASE}/report/${studentId}`),

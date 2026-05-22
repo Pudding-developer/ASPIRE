@@ -12,17 +12,46 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.pipeline_repository import get_latest_report
 
 
-ROADMAP_SLUGS = {
-    "Backend Developer": "backend",
-    "Frontend Developer": "frontend",
-    "Full Stack Developer": "full-stack",
-    "DevOps Engineer": "devops",
-    "Cybersecurity Analyst": "cyber-security",
-    "Data Scientist": "ai-data-scientist",
-    "AI Engineer": "ai-engineer",
-    "Machine Learning Engineer": "machine-learning",
-    "Software Architect": "software-architect",
-}
+class DynamicRoadmapSlugs(dict):
+    def _get_dict(self):
+        try:
+            from app.services.career_catalog import get_sync_catalog
+            catalog = get_sync_catalog()
+            return {c["title"]: c["slug"] for c in catalog}
+        except Exception as e:
+            print(f"[roadmap_service] Error loading dynamic slugs: {e}")
+            return {}
+
+    def __getitem__(self, key):
+        return self._get_dict()[key]
+
+    def __contains__(self, key):
+        return key in self._get_dict()
+
+    def get(self, key, default=None):
+        return self._get_dict().get(key, default)
+
+    def keys(self):
+        return self._get_dict().keys()
+
+    def values(self):
+        return self._get_dict().values()
+
+    def items(self):
+        return self._get_dict().items()
+
+    def __iter__(self):
+        return iter(self._get_dict())
+
+    def __len__(self):
+        return len(self._get_dict())
+
+    def __repr__(self):
+        return repr(self._get_dict())
+
+
+ROADMAP_SLUGS = DynamicRoadmapSlugs()
+
 
 ROADMAP_NODES = {
     "backend": [

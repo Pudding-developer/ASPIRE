@@ -129,13 +129,13 @@ export function deriveInsights(match, isOptimal) {
     ins.push({ type: 'pos', text: `This is your <strong>optimal path</strong>. Your skills align directly with ${match.title} requirements.` });
   }
   if (match.matched_skills?.length) {
-    const top = match.matched_skills.slice(0, 2).map(s => `<strong>${s}</strong>`).join(' and ');
+    const top = match.matched_skills.slice(0, 2).map(s => `<strong>${skillName(s)}</strong>`).join(' and ');
     ins.push({ type: 'pos', text: `Your ${top} skills are strong matches for this career path.` });
   }
   if (match.gap_skills?.length) {
     ins.push({
       type: 'tip',
-      text: `Focus on <strong>${match.gap_skills[0]}</strong> to significantly increase your readiness for this role.`,
+      text: `Focus on <strong>${skillName(match.gap_skills[0])}</strong> to significantly increase your readiness for this role.`,
       badge: 'High impact',
     });
   }

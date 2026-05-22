@@ -11,7 +11,7 @@ import time
 
 DOCUMENTS_DIR = Path(__file__).parent.parent / "Documents"
 ML_DIR = Path(__file__).parent.parent / "ml" / "artifacts"
-EXCEL_PATH = DOCUMENTS_DIR / "BSCpE_ILO_Skillset_Alignment.xlsx"
+EXCEL_PATH = DOCUMENTS_DIR / "BSCpE_ILO_SO_Fully_Distributed_Final.xlsx"
 
 from app.ai.embeddings import embed_text as real_embed_text
 
@@ -56,7 +56,7 @@ def parse_student_outcomes(wb) -> list[dict]:
     for row in ws.iter_rows(min_row=2, values_only=True):
         if not row[0] or row[0] == "SO Code":
             continue
-        so_code, so_name, full_definition = row
+        so_code, so_name, full_definition = row[0], row[1], row[2]
         chunks.append({
             "title": f"{so_code}: {so_name}",
             "content": f"""ABET Student Outcome {so_code}: {so_name}.
@@ -70,69 +70,68 @@ requiring {so_name.lower()} abilities in the Philippine tech industry."""
     return chunks
 
 def parse_curriculum(wb) -> list[dict]:
-    ws = wb["ILO–Skillset Alignment"]
+    ws = wb["BSCpE_ILO_SO_Fully_Distributed_"]
     chunks = []
     current_subject = None
-    current_so = None
+    current_so_list = []
     current_ilos = []
 
     def flush_subject():
         if current_subject and current_ilos:
             ilo_text = "\n".join([
-                f"  {i['ilo']}: {i['statement']}\n"
-                f"    Technical skills: {i['tech']}\n"
-                f"    Professional skills: {i['prof']}"
+                f"  ILO: {i['statement']}\n"
+                f"    Mapped to SO {i['so']} ({i['pi_level']}): {i['pi_desc']}"
                 for i in current_ilos
             ])
+            so_text = ", ".join(current_so_list)
             chunks.append({
                 "title": current_subject.strip(),
                 "content": f"""BSU CpE Subject: {current_subject.strip()}.
-Mapped Student Outcomes: {current_so or 'See ILO details'}.
-Intended Learning Outcomes and Skills Developed:
+Mapped Student Outcomes with Performance Levels: {so_text or 'See ILO details'}.
+Intended Learning Outcomes (ILOs) and Performance Indicators:
 {ilo_text}
-Assessment context: Student scores in ILO1 through ILO{len(current_ilos)} of this subject
-reflect their mastery of the technical and professional skills listed above.
-High ILO scores in this subject predict competency in the mapped skill categories,
-which in turn align with specific tech career paths."""
+Assessment context: Student scores in these ILOs reflect their mastery of the mapped Student Outcomes at the specified Performance Level (I=Introduced, R=Reinforced, D=Demonstrated).
+High ILO scores in this subject predict competency in the mapped skill categories, which in turn align with specific tech career paths."""
             })
 
     for row in ws.iter_rows(values_only=True):
         r0 = str(row[0]).strip() if row[0] else ''
-        r2 = str(row[2]).strip() if row[2] else ''
-        r3 = str(row[3]).strip() if row[3] else ''
-        r4 = str(row[4]).strip() if row[4] else ''
-        r5 = str(row[5]).strip() if row[5] else ''
-        r6 = str(row[6]).strip() if row[6] else ''
-
-        # Detect subject header
-        is_subject = (
-            row[1] is None and row[2] is None and row[0]
-            and 'ILO' not in r0
-            and 'BATANGAS' not in r0
-            and 'Bachelor' not in r0
-            and 'LEGEND' not in r0
-            and 'Each ILO' not in r0
-            and not r0.startswith('SO')
-            and len(r0) > 3
-            and '·' in r0
-        )
-
-        if is_subject:
+        
+        # Detect subject header: e.g. "Course: GEd 101 - Understanding the Self SOs: SO7(R), SO9(R)"
+        if r0.startswith("Course:"):
             flush_subject()
-            current_subject = r0
-            current_so = None
+            # Extract subject name
+            parts = r0.split("SOs:", 1)
+            course_part = parts[0].replace("Course:", "").strip()
+            # Handle "Code - Name" format if present
+            if "-" in course_part:
+                current_subject = course_part.split("-", 1)[1].strip()
+            else:
+                current_subject = course_part
+            
+            if len(parts) > 1:
+                current_so_list = [so.strip() for so in parts[1].split(",")]
+            else:
+                current_so_list = []
             current_ilos = []
-
-        elif r0.startswith('SO') and current_subject:
-            current_so = r0.strip()
-
-        elif r2.startswith('ILO') and current_subject and r3:
-            current_ilos.append({
-                'ilo': r2,
-                'statement': r3,
-                'tech': r5 if r5 and r5 != '—' else 'General engineering competency',
-                'prof': r6 if r6 and r6 != '—' else 'Professional development'
-            })
+            
+        elif r0 and "Intended Learning Outcomes" not in r0 and current_subject:
+            # It's an ILO row
+            ilo_statement = r0
+            so_num = str(row[1]).strip() if row[1] else ''
+            if so_num.endswith(".0"): so_num = so_num[:-2] # "9.0" -> "9"
+            
+            so_desc = str(row[2]).strip() if row[2] else ''
+            pi_level = str(row[3]).strip() if row[3] else ''
+            pi_desc = str(row[4]).strip() if row[4] else ''
+            
+            if so_num and pi_level:
+                current_ilos.append({
+                    'statement': ilo_statement,
+                    'so': so_num,
+                    'pi_level': pi_level,
+                    'pi_desc': pi_desc
+                })
 
     flush_subject()
     return chunks
@@ -679,12 +678,13 @@ async def main():
     print("ASPIRE Knowledge Base Seeder")
     print("=" * 40)
 
-    wb = openpyxl.load_workbook(EXCEL_PATH)
+    wb_old = openpyxl.load_workbook(DOCUMENTS_DIR / "BSCpE_ILO_Skillset_Alignment (1).xlsx")
+    wb_new = openpyxl.load_workbook(EXCEL_PATH)
 
     print("\nParsing documents...")
-    skillsets = parse_skillsets(wb)
-    outcomes = parse_student_outcomes(wb)
-    curriculum = parse_curriculum(wb)
+    skillsets = parse_skillsets(wb_old)
+    outcomes = parse_student_outcomes(wb_new)
+    curriculum = parse_curriculum(wb_new)
     ml_skills = parse_ml_meta()
 
     total = (

@@ -141,7 +141,25 @@ def predict_student_aggregate(scores_by_course: list[dict]) -> dict:
 
     for entry in scores_by_course:
         course = entry["course"]
-        
+
+        # Skip baseline prediction when no scores have been submitted yet.
+        # Otherwise the regression intercept reports phantom proficiency for
+        # enrolled-but-unscored courses.
+        raw_ilos_all = [entry.get(f"ilo{i + 1}", 0.0) for i in range(4)]
+        if not any(v > 0 for v in raw_ilos_all):
+            per_course.append({
+                "course": course,
+                "ilo_scores": {},
+                "ilo_avg": 0.0,
+                "outcome_label": "No Scores Yet",
+                "predicted_skills": {},
+                "strongest_skill": None,
+                "weakest_skill": None,
+                "scenario_low": {},
+                "scenario_high": {},
+            })
+            continue
+
         # Robust case-insensitive matching for curriculum subjects
         profile_key = next((k for k in COURSE_PROFILES if k.lower() == course.lower()), None)
 
@@ -202,7 +220,11 @@ def predict_student_aggregate(scores_by_course: list[dict]) -> dict:
     so_scores = compute_so_scores(aggregated)
 
     top_names = [s for s, _ in active_skills[:5]]
-    weak_names = [s for s, _ in active_skills[-5:]]
+    # "Developing" = active skills still below the 80% target. If a skill is
+    # already at/above target it isn't developing, so excluding it prevents the
+    # dashboard from labeling mastered skills as "Needs Attention".
+    DEVELOPING_TARGET = 80
+    weak_names = [s for s, v in active_skills if v < DEVELOPING_TARGET][-5:]
 
     # Map each highlighted skill to its primary SO so Smart Insights can show
     # the accreditation outcome a strong/weak skill aligns to.

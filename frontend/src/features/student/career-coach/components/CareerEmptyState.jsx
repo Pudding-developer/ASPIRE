@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, Bot, Sparkles, Star } from 'lucide-react';
 import AnalysisLoadingCard from './AnalysisLoadingCard';
 
-export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus, error }) {
+export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus, error, onCancel }) {
   const [buttonClicked, setButtonClicked] = useState(false);
 
   useEffect(() => {
@@ -12,7 +12,7 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
   if (isRunning) {
     return (
       <div className="p-8 flex items-center justify-center h-full">
-        <AnalysisLoadingCard isRunning={isRunning} pipelineStatus={pipelineStatus} />
+        <AnalysisLoadingCard isRunning={isRunning} pipelineStatus={pipelineStatus} onCancel={onCancel} />
       </div>
     );
   }

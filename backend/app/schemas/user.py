@@ -13,6 +13,19 @@ class RoleSelectionRequest(BaseModel):
     """Schema for selecting a role when multiple roles are available."""
     role: str
 
+class LocalRegisterRequest(BaseModel):
+    """Schema for local registration."""
+    first_name: str
+    last_name: str
+    sr_code: str
+    email: str
+    password: str
+
+class LocalLoginRequest(BaseModel):
+    """Schema for local login."""
+    email: str
+    password: str
+
 
 # ---------------------------------------------------------------------------
 # Response schemas

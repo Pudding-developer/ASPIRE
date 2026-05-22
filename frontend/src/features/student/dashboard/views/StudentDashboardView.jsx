@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  TrendingUp, Github, Bell, Filter, TrendingDown, Minus, ArrowUpRight,
+  TrendingUp, Github, Bell, TrendingDown, Minus, ArrowUpRight,
   ChevronRight, BookOpen, Star, Plus, AlertCircle, X, GraduationCap, Target, Rocket, Activity
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -87,65 +87,6 @@ export function StatCard({ label, value, sub, trend, badge, badgeTone = 'green',
   );
 }
 
-/* ─── ILO Donut ─── */
-export function ILOCoverage({ coverage }) {
-  const segments = [
-    { label: 'Technical Competency', pct: coverage.techPct || 0, color: '#70170f' },
-    { label: 'Professional Practice', pct: coverage.analyticalPct || 0, color: '#e97b7b' },
-    { label: 'Social Responsibility', pct: coverage.ethicsPct || 0, color: '#fcd5d5' },
-  ];
-
-  const size = 120, stroke = 16, r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  let offset = 0;
-
-  return (
-    <div className={`${panelBase} p-6`}>
-      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Integrated ILO Coverage</p>
-      <h3 className="text-[20px] font-black text-gray-900 mb-5">Learning Outcome Status</h3>
-      <div className="flex items-center gap-8">
-        <div className="relative shrink-0">
-          <svg width={size} height={size} className="-rotate-90">
-            {segments.map((s, i) => {
-              if (!s.pct) return null;
-              const dash = (s.pct / 100) * circ;
-              const gap = circ - dash;
-              const el = (
-                <circle
-                  key={i}
-                  cx={size / 2} cy={size / 2} r={r}
-                  fill="none"
-                  stroke={s.color}
-                  strokeWidth={stroke}
-                  strokeDasharray={`${dash} ${gap}`}
-                  strokeDashoffset={-offset}
-                  strokeLinecap="round"
-                />
-              );
-              offset += dash;
-              return el;
-            })}
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[18px] font-extrabold text-gray-900">{coverage.totalMastery}%</span>
-            <span className="text-[9px] text-gray-400 font-black">MASTERY</span>
-          </div>
-        </div>
-        <div className="space-y-3 flex-1">
-          {segments.map((s) => (
-            <div key={s.label} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} />
-                <span className="text-[13px] text-gray-600">{s.label}</span>
-              </div>
-              <span className="text-[13px] font-bold text-gray-800">{s.pct}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ─── Notification Dropdown ─── */
 export function NotificationDropdown({ open, onClose, notifications, unreadCount, onShowAll }) {
@@ -207,23 +148,60 @@ export function NotificationDropdown({ open, onClose, notifications, unreadCount
 
 /* ─── Developing Skills ─── */
 export function DevelopingSkills({ weakSkills, aggregatedSkills }) {
-  if (!weakSkills || !weakSkills.length) {
+  const DEVELOPING_TARGET = 80;
+  const hasAnySkillData = Object.values(aggregatedSkills || {}).some(
+    v => typeof v === 'number'
+  );
+  const belowTarget = (weakSkills || []).filter(
+    name => (aggregatedSkills?.[name] || 0) < DEVELOPING_TARGET
+  );
+
+  if (!belowTarget.length) {
+    const allDeveloped = hasAnySkillData;
     return (
-      <div className={`${panelBase} p-6`}>
-        <h3 className="text-[16px] font-bold text-gray-900 mb-1">Developing Skills</h3>
-        <p className="text-[12px] text-gray-400 mb-5">Not enough data to predict developing skills yet.</p>
+      <div className={`${panelBase} p-6 flex flex-col h-full`}>
+        <h3 className="text-[20px] font-black text-gray-900 mb-1">Developing Skills</h3>
+        <p className="text-[11px] text-gray-400 mb-5">Ongoing competencies requiring attention</p>
+        <div className="flex-1 flex items-center justify-center">
+          {allDeveloped ? (
+            <div className="flex flex-col items-center text-center max-w-[320px] px-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-[13px] font-bold text-emerald-700 mb-1">
+                All skills at target proficiency
+              </p>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                Every tracked skill has reached the {DEVELOPING_TARGET}% target. Keep up the consistent performance.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center text-center max-w-[300px] px-4">
+              <div className="w-12 h-12 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center mb-3">
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-[12px] text-gray-400">
+                Not enough data to predict developing skills yet.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={`${panelBase} p-6`}>
+    <div className={`${panelBase} p-6 flex flex-col h-full`}>
       <h3 className="text-[20px] font-black text-gray-900 mb-1">Developing Skills</h3>
       <p className="text-[11px] text-gray-400 mb-5">Ongoing competencies requiring attention</p>
-      <div className="space-y-5">
-        {weakSkills.slice(0, 3).map((skillName) => {
+      <div className="space-y-5 flex-1">
+        {belowTarget.slice(0, 3).map((skillName) => {
           const current = Math.round(aggregatedSkills[skillName] || 0);
-          const target = 80;
+          const target = DEVELOPING_TARGET;
           return (
             <div key={skillName}>
               <div className="flex items-center justify-between mb-1">
@@ -256,17 +234,17 @@ export function DevelopingSkills({ weakSkills, aggregatedSkills }) {
 export function ExcelledSkills({ topSkills, onNavigate }) {
   if (!topSkills || !topSkills.length) {
     return (
-      <div className="bg-[#fff5f5] border border-[#e8a0a0] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)] p-6 flex flex-col">
+      <div className="bg-[#fff5f5] border border-[#e8a0a0] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)] p-6 flex flex-col h-full justify-center">
         <h3 className="text-[20px] font-black text-gray-900 mb-5">Excelled Skills</h3>
-        <p className="text-[12px] text-gray-400 mb-5">Not enough data to predict excelled skills yet.</p>
+        <p className="text-[12px] text-gray-400">Not enough data to predict excelled skills yet.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#fff5f5] border border-[#e8a0a0] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)] p-6 flex flex-col">
+    <div className="bg-[#fff5f5] border border-[#e8a0a0] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.2)] p-6 flex flex-col h-full">
       <h3 className="text-[20px] font-black text-gray-900 mb-5">Excelled Skills</h3>
-      <div className="flex flex-wrap content-start items-start gap-2 mb-5">
+      <div className="flex flex-wrap content-start items-start gap-2 mb-5 flex-1">
         {topSkills.map((s) => (
           <span key={s} className="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-500 text-[12px] font-semibold rounded-full">{s}</span>
         ))}
@@ -479,7 +457,7 @@ export function TopCoursesCard({ predictions, onNavigate }) {
 }
 
 /* ─── Career Choice Card ─── */
-export function CareerChoiceCard({ report, chosenCareer }) {
+export function CareerChoiceCard({ report, chosenCareer, onNavigate }) {
   const [showRoadmap, setShowRoadmap] = useState(false);
   let careerMatches = [];
   try {
@@ -495,10 +473,15 @@ export function CareerChoiceCard({ report, chosenCareer }) {
 
   if (!targetCareer) {
     return (
-      <div className={`${panelBase} p-6 flex flex-col justify-center h-full`}>
-        <h3 className="text-[20px] font-black text-gray-900 mb-2">Career Map</h3>
-        <p className="text-[12px] text-gray-500 mb-4">No AI career report generated yet. We analyze your performance to map out a career path.</p>
-        <button className={`w-full ${subtleBtn} mt-auto`}>
+      <div className={`${panelBase} p-6 flex flex-col md:flex-row md:items-center justify-between gap-6`}>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-[18px] font-black text-gray-900 mb-1">Career Map</h3>
+          <p className="text-[12px] text-gray-500">No AI career report generated yet. We analyze your performance to map out a career path.</p>
+        </div>
+        <button 
+          onClick={() => onNavigate('career-coach')}
+          className={`shrink-0 px-6 py-3 ${subtleBtn}`}
+        >
           Generate map
         </button>
       </div>
@@ -509,50 +492,52 @@ export function CareerChoiceCard({ report, chosenCareer }) {
   const description = targetCareer.reasoning
     ? targetCareer.reasoning.split('.')[0] + '.'
     : 'Run the AI analyzer to get detailed insights.';
-  const size = 90, stroke = 8, r = (size - stroke) / 2;
+  const size = 80, stroke = 8, r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
   const gap = circ - dash;
 
   return (
-    <div className={`${panelBase} p-6 flex flex-col h-full`}>
-      <h3 className="text-[20px] font-black text-gray-900 mb-5">{chosenCareer ? 'Your Career Goal' : 'Top Career Match'}</h3>
-
-      <div className="flex items-center gap-6 mb-5 flex-1">
-        <div className="relative shrink-0">
-          <svg width={size} height={size} className="-rotate-90">
-            <circle
-              cx={size / 2} cy={size / 2} r={r}
-              fill="none"
-              stroke="#fcd5d5"
-              strokeWidth={stroke}
-            />
-            <circle
-              cx={size / 2} cy={size / 2} r={r}
-              fill="none"
-              stroke="#70170f"
-              strokeWidth={stroke}
-              strokeDasharray={`${dash} ${gap}`}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[16px] font-extrabold text-gray-900">{pct}%</span>
+    <div className={`${panelBase} p-6 flex flex-col md:flex-row md:items-center justify-between gap-6`}>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-[18px] font-black text-gray-900 mb-4">{chosenCareer ? 'Your Career Goal' : 'Top Career Match'}</h3>
+        <div className="flex items-center gap-5">
+          <div className="relative shrink-0">
+            <svg width={size} height={size} className="-rotate-90">
+              <circle
+                cx={size / 2} cy={size / 2} r={r}
+                fill="none"
+                stroke="#fcd5d5"
+                strokeWidth={stroke}
+              />
+              <circle
+                cx={size / 2} cy={size / 2} r={r}
+                fill="none"
+                stroke="#70170f"
+                strokeWidth={stroke}
+                strokeDasharray={`${dash} ${gap}`}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-[14px] font-extrabold text-gray-900">{pct}%</span>
+            </div>
           </div>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <h4 className="text-[15px] font-bold text-gray-900 leading-tight">{targetCareer.title}</h4>
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed line-clamp-3">{pct > 0 ? description : 'Not analyzed yet'}</p>
+          <div className="min-w-0">
+            <h4 className="text-[15px] font-bold text-gray-900 leading-tight">{targetCareer.title}</h4>
+            <p className="text-[12px] text-gray-500 mt-1 leading-relaxed line-clamp-2">{pct > 0 ? description : 'Not analyzed yet'}</p>
+          </div>
         </div>
       </div>
 
-      <button
-        onClick={() => setShowRoadmap(true)}
-        className="w-full bg-[#9f0707] hover:bg-[#430202] text-white py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10 mt-auto"
-      >
-        View Career Roadmap
-      </button>
+      <div className="shrink-0">
+        <button
+          onClick={() => setShowRoadmap(true)}
+          className="w-full md:w-auto bg-[#9f0707] hover:bg-[#430202] text-white px-6 py-3 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10"
+        >
+          View Career Roadmap
+        </button>
+      </div>
 
       {showRoadmap && targetCareer && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowRoadmap(false)}>
@@ -579,19 +564,17 @@ export function CareerChoiceCard({ report, chosenCareer }) {
 /* ─── CTA Banner ─── */
 export function CTABanner({ onNavigate }) {
   return (
-    <div className="bg-linear-to-r from-[#2e0b0b] via-[#3d0f0f] to-[#541515] border border-[#6b2222]/40 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.4)]">
+    <div className="bg-linear-to-br from-[#2e0b0b] via-[#3d0f0f] to-[#541515] border border-[#6b2222]/40 rounded-2xl p-6 flex flex-col gap-4 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.4)]">
       <div>
-        <h3 className="text-[20px] font-black text-white mb-1">Ready for your next career milestone?</h3>
-        <p className="text-[13px] text-gray-400">Our AI engine has prepared updated career paths based on your latest grades and GitHub activity.</p>
+        <h3 className="text-[18px] font-black text-white mb-1 leading-snug">Ready for your next career milestone?</h3>
+        <p className="text-[12px] text-gray-400 leading-relaxed">Our AI engine has prepared updated career paths based on your latest grades and GitHub activity.</p>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <button
-          onClick={() => onNavigate('career-coach')}
-          className="px-5 py-2.5 bg-[#9f0707] hover:bg-[#430202] text-white text-[13px] font-bold rounded-xl transition-all duration-300 shadow-lg shadow-[#9f0707]/20 flex items-center gap-2"
-        >
-          VIEW ROADMAP <ChevronRight size={14} />
-        </button>
-      </div>
+      <button
+        onClick={() => onNavigate('career-coach')}
+        className="w-full px-5 py-2.5 bg-[#9f0707] hover:bg-[#430202] text-white text-[13px] font-bold rounded-xl transition-all duration-300 shadow-lg shadow-[#9f0707]/20 flex items-center justify-center gap-2"
+      >
+        VIEW ROADMAP <ChevronRight size={14} />
+      </button>
     </div>
   );
 }
@@ -667,9 +650,6 @@ export default function StudentDashboardView({ user, onNavigate }) {
           </div>
         </div>
         <div className="flex items-center gap-3 mt-2">
-          <button className="flex items-center gap-2 px-4 py-2 border border-[#ead3d3] rounded-xl text-[13px] font-semibold text-[#7a5454] hover:bg-[#fff5f5] transition-colors">
-            <Filter size={14} /> Filter
-          </button>
           <div className="relative">
             <button
               onClick={() => setNotifOpen(true)}
@@ -711,15 +691,12 @@ export default function StudentDashboardView({ user, onNavigate }) {
       </div>
 
       {/* Body: Main Left Column & Sidebar Right Column */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 
         {/* Left Column (Main Content) */}
         <div className="lg:col-span-2 space-y-8">
-          {/* ILO + Career Goal row */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <ILOCoverage coverage={iloCoverage} />
-            <CareerChoiceCard report={report} chosenCareer={chosenCareer} />
-          </div>
+          {/* Career Goal row */}
+          <CareerChoiceCard report={report} chosenCareer={chosenCareer} onNavigate={onNavigate} />
 
           {/* Skills row */}
           <div className="grid md:grid-cols-2 gap-6">

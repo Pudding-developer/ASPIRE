@@ -1,17 +1,17 @@
 import React from 'react';
 import { X, Star, Pin } from 'lucide-react';
-import { CAREER_OPTIONS, inferCategory, matchColor } from '../../../../data/careerConstants';
+import { inferCategory, matchColor } from '../../../../data/careerConstants';
 
-export default function CareerAllPathsModal({ matches, optimalIndex, visibleTitles, onSelect, onPin, onUnpin, onClose }) {
+export default function CareerAllPathsModal({ matches, optimalIndex, visibleTitles, onSelect, onPin, onUnpin, onClose, careerOptions = [] }) {
   const pinned = visibleTitles instanceof Set ? visibleTitles : new Set(visibleTitles || []);
-  /* Merge the fixed list of supported careers with whatever the AI pipeline
+  /* Merge the list of supported careers with whatever the AI pipeline
      scored. Analyzed paths show their match %; the rest are listed but muted
      and unclickable so the student can see every option this app supports. */
   const matchByTitle = new Map(
     (matches || []).map((m, i) => [m.title, { ...m, origIdx: i }])
   );
 
-  const rows = CAREER_OPTIONS.map((opt) => {
+  const rows = (careerOptions || []).map((opt) => {
     const m = matchByTitle.get(opt.title);
     const base = m
       ? { title: opt.title, score: m.match_score, origIdx: m.origIdx, analyzed: true }

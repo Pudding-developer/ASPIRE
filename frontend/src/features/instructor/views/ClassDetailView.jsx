@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Save, Copy, Archive, Trash2, Users, Code, BarChart2, ClipboardCheck, Edit2, Download, Upload, ClipboardList } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Save, Copy, Archive, Trash2, Users, Code, BarChart2, ClipboardCheck, Edit2, Download, Upload, ClipboardList, FileUp, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import SearchInput from '../../../components/ui/SearchInput';
 import { instructorApi } from '../../../services/instructorApi';
@@ -12,6 +12,10 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
   const [editingAssessmentId, setEditingAssessmentId] = useState(null);
   const [initialStudentSearch, setInitialStudentSearch] = useState('');
   const [partialAssessments, setPartialAssessments] = useState([]);
+  const [csvModal, setCsvModal] = useState(null); // null | { assessments, unmatched, matched, total }
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvToast, setCsvToast] = useState(null);
+  const csvFileRef = useRef(null);
 
   const resolvedClassId = useMemo(() => {
     if (classData?.id) return classData.id;
@@ -128,6 +132,7 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
               setActiveTab('submitted');
             }}
             initialSearch={initialStudentSearch}
+            onImportCsvClick={() => csvFileRef.current?.click()}
           />
         </div>
       ) : (
@@ -220,10 +225,366 @@ export default function ClassDetailView({ classId, classData, onBack, onShowCode
           )}
         </div>
       )}
+
+      {/* Hidden CSV file input */}
+      <input
+        ref={csvFileRef}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (!file) return;
+          if (file.size > CSV_MAX_BYTES) {
+            setCsvToast({ type: 'error', message: `File is too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum allowed is ${CSV_MAX_BYTES / 1024 / 1024} MB.` });
+            return;
+          }
+          const nameCheck = validateCsvFilename(file.name, classData);
+          if (nameCheck.error) {
+            setCsvToast({ type: 'error', message: nameCheck.error });
+            return;
+          }
+          try {
+            const text = await file.text();
+            const result = parseBatchCSV(text, students);
+            if (result.error) {
+              setCsvToast({ type: 'error', message: result.error });
+              return;
+            }
+            if (result.assessments.length === 0) {
+              setCsvToast({ type: 'error', message: 'No valid assessments found in this CSV.' });
+              return;
+            }
+            setCsvModal(result);
+          } catch (err) {
+            setCsvToast({ type: 'error', message: `Failed to read file: ${err.message}` });
+          }
+        }}
+      />
+
+      {/* CSV toast */}
+      {csvToast && (
+        <div className={`fixed top-6 right-6 z-50 max-w-sm border rounded-xl shadow-lg px-4 py-3 text-sm font-medium flex items-start justify-between gap-3
+          ${csvToast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}
+          style={{ animation: 'fadeIn .2s ease' }}
+        >
+          <span>{csvToast.message}</span>
+          <button onClick={() => setCsvToast(null)} className="opacity-60 hover:opacity-100 leading-none">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* CSV import modal */}
+      {csvModal && (
+        <CSVImportModal
+          result={csvModal}
+          classId={resolvedClassId}
+          importing={csvImporting}
+          onClose={() => setCsvModal(null)}
+          onConfirm={async () => {
+            setCsvImporting(true);
+            try {
+              await instructorApi.csvImportAssessments(resolvedClassId, {
+                assessments: csvModal.assessments,
+              });
+              setCsvModal(null);
+              setCsvToast({ type: 'success', message: `${csvModal.assessments.length} assessment(s) imported successfully.` });
+              fetchPartial();
+              setActiveTab('submitted');
+            } catch (err) {
+              setCsvToast({ type: 'error', message: err.message || 'Import failed.' });
+            } finally {
+              setCsvImporting(false);
+            }
+          }}
+        />
+      )}
     </>
   );
 }
 
+// ── CSV helpers ────────────────────────────────────────────────────────────────
+
+const CSV_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+
+function normalizeAlnum(s) {
+  return (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function validateCsvFilename(filename, classData) {
+  if (!classData) return { error: 'Class info not loaded yet — please try again.' };
+  const base = filename.replace(/\.[^.]+$/, '');
+  const norm = normalizeAlnum(base);
+  const courseCode = normalizeAlnum(classData.course_code);
+  const subjectName = normalizeAlnum(classData.subject_name);
+
+  const matchesCourseCode = courseCode && norm.includes(courseCode);
+  const matchesSubjectName = subjectName && norm.includes(subjectName);
+
+  if (matchesCourseCode || matchesSubjectName) return { ok: true };
+  return {
+    error: `Filename "${filename}" does not match this class. Expected the filename to contain the course code "${classData.course_code}" or the course title "${classData.subject_name}".`,
+  };
+}
+
+function parseRawCSV(text) {
+  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  return lines.map(line => {
+    const out = [];
+    let cur = '';
+    let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQ) {
+        if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+        else if (c === '"') inQ = false;
+        else cur += c;
+      } else {
+        if (c === '"') inQ = true;
+        else if (c === ',') { out.push(cur); cur = ''; }
+        else cur += c;
+      }
+    }
+    out.push(cur);
+    return out.map(s => s.trim());
+  });
+}
+
+function parseBatchCSV(text, students) {
+  const allRows = parseRawCSV(text);
+
+  // Find SR-CODE header row (Col A, case-insensitive, ignores spaces/dashes)
+  const srRowIdx = allRows.findIndex(
+    row => (row[0] || '').replace(/[\s\-_]/g, '').toUpperCase() === 'SRCODE'
+  );
+  if (srRowIdx === -1) {
+    return { error: 'Could not find an "SR-CODE" header row in this file. Make sure Col A of the header row says "SR-CODE".' };
+  }
+
+  // Row 1 — assessment names, forward-fill across blank (merged) cells
+  const nameRow = allRows[srRowIdx];
+  const assessmentNames = [];
+  let lastName = '';
+  for (let c = 1; c < nameRow.length; c++) {
+    const cell = (nameRow[c] || '').trim();
+    if (cell) lastName = cell;
+    assessmentNames.push(lastName);
+  }
+
+  // Row 2 — ILO labels e.g. "ILO 1", "ILO 2"
+  const iloLabelRow = allRows[srRowIdx + 1] || [];
+  const iloNumbers = [];
+  for (let c = 1; c < iloLabelRow.length; c++) {
+    const m = (iloLabelRow[c] || '').match(/ILO\s*(\d+)/i);
+    iloNumbers.push(m ? parseInt(m[1], 10) : null);
+  }
+
+  // Row 3 — Total ILO (max scores)
+  const maxScoreRow = allRows[srRowIdx + 2] || [];
+  const maxScores = [];
+  for (let c = 1; c < maxScoreRow.length; c++) {
+    const v = parseFloat((maxScoreRow[c] || '').trim());
+    maxScores.push(isNaN(v) ? null : v);
+  }
+
+  // Build per-column map
+  const colCount = Math.max(assessmentNames.length, iloNumbers.length, maxScores.length);
+  const colMap = [];
+  for (let c = 0; c < colCount; c++) {
+    const hasAll = assessmentNames[c] && iloNumbers[c] != null && maxScores[c] != null;
+    colMap.push(hasAll ? { assessment: assessmentNames[c], ilo: iloNumbers[c], max: maxScores[c] } : null);
+  }
+
+  // Reject max_score <= 0
+  for (let c = 0; c < colMap.length; c++) {
+    const col = colMap[c];
+    if (col && !(col.max > 0)) {
+      return { error: `Max score for "${col.assessment}" ILO ${col.ilo} must be greater than 0 (got ${col.max}).` };
+    }
+  }
+
+  // Reject duplicate ILO numbers within the same assessment
+  const seenIlosByAssessment = new Map();
+  for (const col of colMap) {
+    if (!col) continue;
+    if (!seenIlosByAssessment.has(col.assessment)) seenIlosByAssessment.set(col.assessment, new Set());
+    const set = seenIlosByAssessment.get(col.assessment);
+    if (set.has(col.ilo)) {
+      return { error: `Duplicate ILO ${col.ilo} found in assessment "${col.assessment}". Each ILO number must appear only once per assessment.` };
+    }
+    set.add(col.ilo);
+  }
+
+  // Student lookup by sr_code
+  const bySrCode = new Map(students.map(s => [(s.sr_code || '').trim().toLowerCase(), s]));
+
+  const assessmentMap = new Map(); // name -> { ilos:{}, scores:{} }
+  const unmatched = [];
+  let matched = 0;
+
+  for (let r = srRowIdx + 3; r < allRows.length; r++) {
+    const row = allRows[r];
+    if (!row || !row.some(c => c !== '')) continue;
+    const rawCode = (row[0] || '').trim();
+    if (!rawCode) continue;
+
+    const student = bySrCode.get(rawCode.toLowerCase());
+    if (!student) { unmatched.push(rawCode); continue; }
+    matched++;
+
+    for (let c = 0; c < colMap.length; c++) {
+      const col = colMap[c];
+      if (!col) continue;
+      const raw = (row[c + 1] || '').trim();
+      if (raw === '') continue;
+      const score = parseFloat(raw);
+      if (isNaN(score)) {
+        return { error: `Invalid score for ${rawCode} on "${col.assessment}" ILO ${col.ilo} (row ${r + 1}): "${raw}" is not a number.` };
+      }
+      if (score < 0) {
+        return { error: `Negative score for ${rawCode} on "${col.assessment}" ILO ${col.ilo} (row ${r + 1}): ${score}. Scores must be ≥ 0.` };
+      }
+      if (score > col.max) {
+        return { error: `Score for ${rawCode} on "${col.assessment}" ILO ${col.ilo} (row ${r + 1}) is ${score}, which exceeds the max of ${col.max}.` };
+      }
+      if (!assessmentMap.has(col.assessment)) assessmentMap.set(col.assessment, { ilos: {}, scores: {} });
+      const a = assessmentMap.get(col.assessment);
+      a.ilos[col.ilo] = col.max;
+      if (!a.scores[student.id]) a.scores[student.id] = {};
+      a.scores[student.id][col.ilo] = score;
+    }
+  }
+
+  const assessments = Array.from(assessmentMap.entries()).map(([name, d]) => ({
+    name,
+    type: 'Summative',
+    ilos: d.ilos,
+    scores: d.scores,
+  }));
+
+  return { assessments, unmatched, matched, total: students.length };
+}
+
+// ── CSV Import Modal ───────────────────────────────────────────────────────────
+
+function CSVImportModal({ result, importing, onClose, onConfirm }) {
+  const { assessments, unmatched, matched, total } = result;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <FileUp size={22} className="text-[#1e3a5f]" />
+            <h2 className="text-xl font-extrabold text-[#111827]">CSV Import Preview</h2>
+          </div>
+          <button onClick={onClose} disabled={importing} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 px-8 py-6 space-y-6">
+          {/* Match summary */}
+          <div className={`flex items-center gap-3 rounded-xl px-5 py-4 border text-sm font-semibold
+            ${matched === total ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+            {matched === total
+              ? <CheckCircle2 size={18} />
+              : <AlertTriangle size={18} />}
+            <span>
+              {matched} of {total} enrolled students matched by SR-Code.
+              {unmatched.length > 0 && ` ${unmatched.length} unmatched — their rows will be skipped.`}
+            </span>
+          </div>
+
+          {/* Unmatched list */}
+          {unmatched.length > 0 && (
+            <details className="text-sm">
+              <summary className="cursor-pointer text-amber-700 font-semibold mb-2">
+                Unmatched SR-Codes ({unmatched.length})
+              </summary>
+              <ul className="ml-4 mt-2 space-y-1 text-amber-800 text-xs">
+                {unmatched.slice(0, 20).map((code, i) => <li key={i}>• {code}</li>)}
+                {unmatched.length > 20 && <li className="opacity-60">…and {unmatched.length - 20} more</li>}
+              </ul>
+            </details>
+          )}
+
+          {/* Assessments table */}
+          <div>
+            <h3 className="text-[15px] font-extrabold text-[#1e293b] mb-3">
+              Assessments to Import ({assessments.length})
+            </h3>
+            <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 font-bold text-[#374151]">Assessment Name</th>
+                    <th className="px-4 py-3 font-bold text-[#374151]">ILOs</th>
+                    <th className="px-4 py-3 font-bold text-[#374151]">Max Scores</th>
+                    <th className="px-4 py-3 font-bold text-[#374151] text-right">Students Scored</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assessments.map((a, i) => {
+                    const iloEntries = Object.entries(a.ilos).sort((x, y) => x[0] - y[0]);
+                    const scoredCount = Object.keys(a.scores).length;
+                    return (
+                      <tr key={i} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/50">
+                        <td className="px-4 py-3 font-semibold text-[#111827]">{a.name}</td>
+                        <td className="px-4 py-3 text-[#475569]">
+                          {iloEntries.map(([n]) => `ILO ${n}`).join(', ')}
+                        </td>
+                        <td className="px-4 py-3 text-[#475569]">
+                          {iloEntries.map(([, v]) => v).join(', ')}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-[#1e3a5f]">{scoredCount}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-400 leading-relaxed">
+            Assessments with the same name already in this class will be <strong>updated</strong> (scores overwritten). New assessments will be created. All defaults to <strong>Summative</strong>.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-8 py-5 border-t border-gray-100 bg-gray-50/50">
+          <button
+            onClick={onClose}
+            disabled={importing}
+            className="px-6 py-[10px] rounded-xl border border-gray-200 text-[#374151] font-semibold text-sm hover:bg-gray-100 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={importing || assessments.length === 0}
+            className="px-6 py-[10px] rounded-xl bg-[#1e3a5f] hover:bg-[#152d4a] text-white font-semibold text-sm transition-colors disabled:bg-gray-400 flex items-center gap-2"
+          >
+            {importing ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Importing…
+              </>
+            ) : (
+              <>
+                <FileUp size={16} /> Import {assessments.length} Assessment{assessments.length !== 1 ? 's' : ''}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
 function formatNameLastFirst(fullName = '') {
@@ -238,7 +599,7 @@ function formatNameLastFirst(fullName = '') {
   return `${lastName}, ${firstNames}`;
 }
 
-function ScoresInputPanel({ classId, classData, editingAssessmentId, students = [], studentsLoading = false, onSuccess, initialSearch = '' }) {
+function ScoresInputPanel({ classId, classData, editingAssessmentId, students = [], studentsLoading = false, onSuccess, initialSearch = '', onImportCsvClick }) {
   const [activeILOs, setActiveILOs] = useState([1, 2, 3, 4]);
   const iloRange = useMemo(() => [...activeILOs].sort((a, b) => a - b), [activeILOs]);
 
@@ -248,10 +609,8 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
   const [studentScores, setStudentScores] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [importMsg, setImportMsg] = useState('');
   const [toast, setToast] = useState(null);
   const [studentSearch, setStudentSearch] = useState(initialSearch);
-  const fileInputRef = useRef(null);
 
   const filteredStudents = useMemo(() => {
     const q = studentSearch.trim().toLowerCase();
@@ -328,177 +687,6 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
       ...prev,
       [ilo]: val === '' ? '' : Number(val)
     }));
-  };
-
-  const csvEscape = (v) => {
-    const s = v == null ? '' : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-
-  const handleDownloadTemplate = () => {
-    const meta = [
-      ['Course Code', classData?.course_code || ''],
-      ['Course Name', classData?.subject_name || ''],
-      ['Section', classData?.section || ''],
-      [''], // blank separator
-    ];
-    const headers = ['Student ID', 'Name', ...iloRange.map(i => `ILO ${i}`)];
-    const rows = students.map(s => [
-      s.id,
-      s.full_name || '',
-      ...iloRange.map(i => studentScores[s.id]?.[i] ?? ''),
-    ]);
-    const all = [...meta, headers, ...rows].map(r => r.map(csvEscape).join(','));
-    const csv = all.join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const safeName = (assessmentName.trim() || 'assessment').replace(/[^a-z0-9-_]+/gi, '_');
-    a.href = url;
-    a.download = `${safeName}_template.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const parseCSV = (text) => {
-    const lines = text.replace(/\r\n/g, '\n').split('\n');
-    return lines.map(line => {
-      const out = [];
-      let cur = '';
-      let inQuotes = false;
-      for (let i = 0; i < line.length; i++) {
-        const c = line[i];
-        if (inQuotes) {
-          if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-          else if (c === '"') inQuotes = false;
-          else cur += c;
-        } else {
-          if (c === '"') inQuotes = true;
-          else if (c === ',') { out.push(cur); cur = ''; }
-          else cur += c;
-        }
-      }
-      out.push(cur);
-      return out.map(s => s.trim());
-    });
-  };
-
-  const normalizeName = (s) => (s || '').toLowerCase().replace(/[,.\s]+/g, ' ').trim();
-
-  const handleUploadClick = () => {
-    setImportMsg('');
-    fileInputRef.current?.click();
-  };
-
-  const isHeaderRow = (row) => {
-    const lc = row.map(c => (c || '').trim().toLowerCase());
-    return lc.includes('student id') || (lc.includes('name') && lc.some(c => c.startsWith('ilo')));
-  };
-
-  const normalizeMeta = (s) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const allRows = parseCSV(text);
-
-      const headerIdx = allRows.findIndex(isHeaderRow);
-      if (headerIdx === -1) {
-        setImportMsg('');
-        setToast({ type: 'error', message: 'Could not find a "Student ID" / ILO header row in this CSV.' });
-        return;
-      }
-
-      // Metadata = rows before the header that look like key,value
-      const meta = {};
-      for (let i = 0; i < headerIdx; i++) {
-        const r = allRows[i];
-        if (!r || r.every(c => !c || !c.trim())) continue;
-        const key = normalizeMeta(r[0]);
-        const val = (r[1] || '').trim();
-        if (key) meta[key] = val;
-      }
-
-      // Validate against current class
-      const expectedCode = (classData?.course_code || '').trim();
-      const expectedName = (classData?.subject_name || '').trim();
-      const expectedSection = (classData?.section || '').trim();
-      const fileCode = meta['course code'] || '';
-      const fileName = meta['course name'] || '';
-      const fileSection = meta['section'] || '';
-
-      const hasAnyMeta = !!(fileCode || fileName || fileSection);
-      if (hasAnyMeta) {
-        const codeMismatch = expectedCode && fileCode && normalizeMeta(fileCode) !== normalizeMeta(expectedCode);
-        const nameMismatch = expectedName && fileName && normalizeMeta(fileName) !== normalizeMeta(expectedName);
-        const sectionMismatch = expectedSection && fileSection && normalizeMeta(fileSection) !== normalizeMeta(expectedSection);
-        if (codeMismatch || nameMismatch || sectionMismatch) {
-          const expectedLabel = `${expectedCode}${expectedSection ? ' - ' + expectedSection : ''} (${expectedName})`;
-          const fileLabel = `${fileCode || '?'}${fileSection ? ' - ' + fileSection : ''} (${fileName || '?'})`;
-          setImportMsg('');
-          setToast({
-            type: 'error',
-            message: `This CSV is for a different class. Expected ${expectedLabel}, got ${fileLabel}. No scores were imported.`,
-          });
-          return;
-        }
-      }
-
-      const header = allRows[headerIdx].map(h => (h || '').toLowerCase());
-      const idIdx = header.findIndex(h => h === 'student id' || h === 'id');
-      const nameIdx = header.findIndex(h => h === 'name' || h === 'full name' || h === 'student name');
-      const iloCols = iloRange.map(i => header.findIndex(h => h === `ilo ${i}` || h === `ilo${i}`));
-
-      if (iloCols.some(idx => idx === -1)) {
-        setImportMsg('');
-        setToast({ type: 'error', message: `Missing ILO columns. Expected: ${iloRange.map(i => `"ILO ${i}"`).join(', ')}.` });
-        return;
-      }
-
-      const byId = new Map(students.map(s => [String(s.id), s]));
-      const byName = new Map(students.map(s => [normalizeName(s.full_name), s]));
-
-      const next = { ...studentScores };
-      let matched = 0;
-      const unmatched = [];
-
-      for (let r = headerIdx + 1; r < allRows.length; r++) {
-        const row = allRows[r];
-        if (!row || !row.some(c => c !== '')) continue;
-        let student = idIdx !== -1 ? byId.get(String(row[idIdx])) : null;
-        if (!student && nameIdx !== -1) student = byName.get(normalizeName(row[nameIdx]));
-        if (!student) {
-          const label = (nameIdx !== -1 && row[nameIdx]) || (idIdx !== -1 && row[idIdx]) || `row ${r + 1}`;
-          unmatched.push(label);
-          continue;
-        }
-        const scores = {};
-        iloRange.forEach((i, k) => {
-          const raw = row[iloCols[k]];
-          if (raw !== '' && raw != null && !isNaN(Number(raw))) scores[i] = Number(raw);
-        });
-        next[student.id] = { ...(next[student.id] || {}), ...scores };
-        matched++;
-      }
-
-      setStudentScores(next);
-      const summary = `Imported ${matched}/${students.length} students.`;
-      setImportMsg(unmatched.length ? `${summary} Unmatched: ${unmatched.slice(0, 5).join('; ')}${unmatched.length > 5 ? `; +${unmatched.length - 5} more` : ''}` : summary);
-
-      if (!hasAnyMeta) {
-        setToast({ type: 'warn', message: 'No class metadata found in CSV — could not verify it matches this class. Imported anyway.' });
-      } else {
-        setToast({ type: 'success', message: summary });
-      }
-    } catch (err) {
-      setImportMsg('');
-      setToast({ type: 'error', message: `Failed to read CSV: ${err.message || err}` });
-    }
   };
 
   const handleSubmit = async () => {
@@ -654,25 +842,16 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
           />
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
-            onClick={handleDownloadTemplate}
+            onClick={onImportCsvClick}
             disabled={students.length === 0}
-            className="inline-flex items-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 text-[#374151] font-semibold py-[10px] px-5 rounded-lg shadow-sm transition-colors text-sm"
+            className="bg-[#1e3a5f] hover:bg-[#152d4a] disabled:bg-gray-400 text-white px-5 py-[10px] font-bold text-[15px] shadow-sm rounded-lg flex items-center justify-center h-auto transition-colors"
           >
-            <Download size={16} /> Download Template
-          </button>
-          <button
-            type="button"
-            onClick={handleUploadClick}
-            disabled={students.length === 0}
-            className="inline-flex items-center gap-2 bg-[#70170f] hover:bg-[#4a0e09] disabled:bg-gray-400 text-white font-semibold py-[10px] px-5 rounded-lg shadow-sm transition-colors text-sm"
-          >
-            <Upload size={16} /> Upload CSV
-          </button>
+            <FileUp size={18} className="mr-2" /> Import CSV
+          </Button>
         </div>
       </div>
-      {importMsg && <p className="text-[#70170f] font-medium text-sm mb-3">{importMsg}</p>}
       {incompleteCount > 0 && (
         <details className="mb-3 text-sm" open>
           <summary className="text-amber-700 cursor-pointer select-none">
@@ -775,14 +954,6 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
 
       {errorMsg && <p className="text-red-500 font-medium text-sm mt-4 text-right">{errorMsg}</p>}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv,text/csv"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
       {/* Action Button */}
       <div className="mt-8 flex justify-end">
         <button
@@ -797,7 +968,7 @@ function ScoresInputPanel({ classId, classData, editingAssessmentId, students = 
   );
 }
 
-function MissingAssessmentsSidebar({ missingAssessments, onEditAssessment, missingCount }) {
+function MissingAssessmentsSidebar({ missingAssessments, onEditAssessment, missingCount, highlightedStudentId }) {
   return (
     <div className="w-full lg:w-[400px] shrink-0">
       <div className="bg-[#fdf2f2] border border-red-100 rounded-2xl p-6 shadow-sm sticky top-8">
@@ -819,27 +990,38 @@ function MissingAssessmentsSidebar({ missingAssessments, onEditAssessment, missi
           </div>
         ) : (
           <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-1 custom-scrollbar">
-            {missingAssessments.map(({ student, missing }) => (
-              <div key={student.id} className="bg-white border border-red-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group">
-                <div className="mb-3">
-                  <p className="text-[15px] font-extrabold text-[#111827] truncate">{student.full_name}</p>
-                  <p className="text-[12px] font-semibold text-[#64748b]">{student.sr_code}</p>
+            {missingAssessments.map(({ student, missing }) => {
+              const isHighlighted = highlightedStudentId === student.id;
+              return (
+                <div 
+                  key={student.id} 
+                  id={`sidebar-student-${student.id}`}
+                  className={`border rounded-xl p-4 shadow-sm hover:shadow-md transition-all group duration-500 ${
+                    isHighlighted 
+                      ? 'bg-red-50 border-red-400 ring-2 ring-red-400 ring-offset-2 scale-[1.02]' 
+                      : 'bg-white border-red-100'
+                  }`}
+                >
+                  <div className="mb-3">
+                    <p className="text-[15px] font-extrabold text-[#111827] truncate">{student.full_name}</p>
+                    <p className="text-[12px] font-semibold text-[#64748b]">{student.sr_code}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {missing.map(assessment => (
+                      <button 
+                        key={assessment.id}
+                        onClick={() => onEditAssessment?.(assessment.id, student.full_name)}
+                        className="bg-red-50 hover:bg-[#70170f] text-[#70170f] hover:text-white text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red-100 transition-all flex items-center gap-2 group/btn"
+                      >
+                        <BarChart2 size={12} />
+                        <span className="truncate max-w-[200px]">{assessment.name || 'Assessment'}</span>
+                        <span className="text-[9px] opacity-60 font-black ml-auto group-hover/btn:opacity-100">MISSING SCORE</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {missing.map(assessment => (
-                    <button 
-                      key={assessment.id}
-                      onClick={() => onEditAssessment?.(assessment.id, student.full_name)}
-                      className="bg-red-50 hover:bg-[#70170f] text-[#70170f] hover:text-white text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red-100 transition-all flex items-center gap-2 group/btn"
-                    >
-                      <BarChart2 size={12} />
-                      <span className="truncate max-w-[200px]">{assessment.name || 'Assessment'}</span>
-                      <span className="text-[9px] opacity-60 font-black ml-auto group-hover/btn:opacity-100">MISSING SCORE</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -855,8 +1037,36 @@ function MissingAssessmentsSidebar({ missingAssessments, onEditAssessment, missi
 
 function ProfilesPanel({ students = [], studentsLoading = false, classId, onToggleClassRep, onEditAssessment, missingAssessments = [], missingByStudent = new Map() }) {
   const [search, setSearch] = useState('');
+  const [filterOption, setFilterOption] = useState('all'); // 'all' | 'completed' | 'missing'
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuContainerRef = useRef(null);
+  const [highlightedStudentId, setHighlightedStudentId] = useState(null);
+  const highlightTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleStudentClick = (studentId) => {
+    setHighlightedStudentId(studentId);
+    setTimeout(() => {
+      const el = document.getElementById(`sidebar-student-${studentId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 50);
+
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = setTimeout(() => {
+      setHighlightedStudentId(null);
+    }, 3000);
+  };
 
   useEffect(() => {
     if (openMenuId == null) return;
@@ -869,11 +1079,40 @@ function ProfilesPanel({ students = [], studentsLoading = false, classId, onTogg
     return () => document.removeEventListener('mousedown', handler);
   }, [openMenuId]);
 
+  const { completedCount, missingCountUnique } = useMemo(() => {
+    let completed = 0;
+    let missing = 0;
+    students.forEach(s => {
+      const studentMissing = missingByStudent.get(s.id) || [];
+      if (studentMissing.length > 0) {
+        missing++;
+      } else {
+        completed++;
+      }
+    });
+    return { completedCount: completed, missingCountUnique: missing };
+  }, [students, missingByStudent]);
+
   const filtered = useMemo(() => {
+    let result = students;
+
+    // Filter by grade status
+    if (filterOption === 'completed') {
+      result = result.filter(s => {
+        const studentMissing = missingByStudent.get(s.id) || [];
+        return studentMissing.length === 0;
+      });
+    } else if (filterOption === 'missing') {
+      result = result.filter(s => {
+        const studentMissing = missingByStudent.get(s.id) || [];
+        return studentMissing.length > 0;
+      });
+    }
+
     const q = search.trim().toLowerCase();
-    if (!q) return students;
-    return students.filter(s => (s.full_name || '').toLowerCase().includes(q));
-  }, [students, search]);
+    if (!q) return result;
+    return result.filter(s => (s.full_name || '').toLowerCase().includes(q));
+  }, [students, search, filterOption, missingByStudent]);
 
   const missingCount = missingAssessments.length;
 
@@ -882,13 +1121,52 @@ function ProfilesPanel({ students = [], studentsLoading = false, classId, onTogg
       {/* Main Column: Enrolled Students */}
       <div className="flex-1 bg-white border border-gray-200 rounded-2xl p-8 shadow-sm w-full">
         <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
-          <h2 className="text-[1.5rem] font-extrabold text-[#111827] whitespace-nowrap">
-            Enrolled Students {students.length > 0 && (
-              <span className="text-[#64748b] font-semibold ml-2">
-                {search ? `(${filtered.length} of ${students.length})` : `(${students.length})`}
-              </span>
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <h2 className="text-[1.5rem] font-extrabold text-[#111827] whitespace-nowrap">
+              Enrolled Students {students.length > 0 && (
+                <span className="text-[#64748b] font-semibold ml-2">
+                  {search || filterOption !== 'all' ? `(${filtered.length} of ${students.length})` : `(${students.length})`}
+                </span>
+              )}
+            </h2>
+            {students.length > 0 && (
+              <div className="flex bg-gray-50 border border-gray-200/80 p-1 rounded-xl gap-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setFilterOption('all')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    filterOption === 'all'
+                      ? 'bg-white text-[#70170f] shadow-sm border border-gray-100'
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
+                  }`}
+                >
+                  All ({students.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterOption('completed')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    filterOption === 'completed'
+                      ? 'bg-white text-emerald-700 shadow-sm border border-gray-100'
+                      : 'text-gray-500 hover:text-emerald-600 hover:bg-white/50'
+                  }`}
+                >
+                  Completed ({completedCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterOption('missing')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    filterOption === 'missing'
+                      ? 'bg-white text-[#70170f] shadow-sm border border-gray-100'
+                      : 'text-gray-500 hover:text-red-600 hover:bg-white/50'
+                  }`}
+                >
+                  Missing ({missingCountUnique})
+                </button>
+              </div>
             )}
-          </h2>
+          </div>
           {students.length > 0 && (
             <SearchInput
               value={search}
@@ -914,7 +1192,19 @@ function ProfilesPanel({ students = [], studentsLoading = false, classId, onTogg
             {filtered.map((student, i) => {
               const studentMissing = missingByStudent.get(student.id) || [];
               return (
-              <div key={student.id || i} className="flex items-center justify-between p-5 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all bg-white group">
+              <div 
+                key={student.id || i} 
+                onClick={() => {
+                  if (studentMissing.length > 0) {
+                    handleStudentClick(student.id);
+                  }
+                }}
+                className={`flex items-center justify-between p-5 rounded-2xl border transition-all bg-white group ${
+                  studentMissing.length > 0 
+                    ? 'cursor-pointer hover:border-red-200 hover:shadow-sm' 
+                    : 'border-gray-100 hover:border-gray-200'
+                }`}
+              >
                 <div className="flex items-center gap-6">
                   <div className="w-[52px] h-[52px] rounded-full bg-[#fef2f2] text-[#70170f] font-bold text-xl flex items-center justify-center overflow-hidden border border-[#fecaca]">
                     {student.avatar_url ? (
@@ -996,6 +1286,7 @@ function ProfilesPanel({ students = [], studentsLoading = false, classId, onTogg
         missingAssessments={missingAssessments} 
         onEditAssessment={onEditAssessment} 
         missingCount={missingCount} 
+        highlightedStudentId={highlightedStudentId}
       />
     </div>
   );
@@ -1068,7 +1359,7 @@ function SubmittedAssessmentsPanel({ classId, onEdit, missingAssessments = [] })
                           </span>
                         )}
                       </div>
-                      <p className="text-[14px] font-medium text-[#64748b]">Date Submitted: {new Date(assessment.created_at).toLocaleDateString()}</p>
+                      <p className="text-[14px] font-medium text-[#64748b]">Date Submitted: {new Date(assessment.created_at).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <button onClick={() => onEdit(assessment.id)} className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-gray-200 text-[#475569] text-[14px] font-extrabold rounded-xl hover:bg-gray-50 hover:text-[#111827] transition-all shadow-sm">

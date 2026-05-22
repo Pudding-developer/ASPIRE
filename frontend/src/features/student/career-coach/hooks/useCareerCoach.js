@@ -6,7 +6,7 @@ import usePipeline from '../../dashboard/hooks/usePipeline';
 import useStudentData from '../../dashboard/hooks/useStudentData';
 import {
   PROFICIENCY_PCT, inferCategory,
-  MILESTONES_BY_CAT, CAREER_OPTIONS,
+  MILESTONES_BY_CAT,
 } from '../../../../data/careerConstants';
 import { studentService } from '../../../../services/studentService';
 
@@ -24,6 +24,16 @@ function skillName(entry) {
 function lookupProficiency(name, profile) {
   const lower = String(name || '').toLowerCase();
   if (!lower) return 0;
+
+  if (profile?.unified_skills) {
+    const found = profile.unified_skills.find(s => {
+      const sn = String(s?.skill || '').toLowerCase();
+      if (!sn) return false;
+      return sn.includes(lower) || lower.includes(sn);
+    });
+    return found ? (found.final_score ?? 0) : 0;
+  }
+
   const all = [...(profile?.technical_skills || []), ...(profile?.programming_languages || [])];
   const found = all.find(s => {
     const sn = String(s?.name || '').toLowerCase();
@@ -61,11 +71,11 @@ export function buildSkills(match, profile, aggregated) {
 }
 
 /* ── Build static gap analysis for a career not scored by the AI.
-   Uses CAREER_OPTIONS.skills as the required-skills list and grades
+   Uses the career's skills as the required-skills list and grades
    each against the student's current skill profile. */
 
-export function buildStaticGaps(title, profile, aggregated) {
-  const opt = CAREER_OPTIONS.find(o => o.title === title);
+export function buildStaticGaps(title, profile, aggregated, careerOptions) {
+  const opt = (careerOptions || []).find(o => o.title === title);
   if (!opt) return [];
   const seen = new Set();
   const rows = [];
@@ -135,18 +145,31 @@ export function deriveInsights(match, isOptimal) {
   return ins;
 }
 
-
-
 /* ── Main hook ── */
 
 export default function useCareerCoach(userId) {
-  const { report, loading: apiLoading, error, runPipeline, pipelineStatus, isRunning, pipelineResult, clearPipelineResult } = usePipeline(userId);
+  const { report, loading: apiLoading, error, runPipeline, pipelineStatus, isRunning, pipelineResult, clearPipelineResult, cancelPipeline } = usePipeline(userId);
   const { predictions } = useStudentData();
 
   /* Selection is driven by career *title* (not array index) so the active
      selection survives across re-renders, pipeline refreshes, and pinned
      careers that the AI hasn't scored. selectedIndex is derived from it. */
   const [selectedCareerTitle, setSelectedCareerTitle] = useState(null);
+
+  // ── Career catalog state ───────────────────────────────────────────────────
+  const [careerOptions, setCareerOptions] = useState([]);
+  const [careersLoading, setCareersLoading] = useState(true);
+
+  useEffect(() => {
+    studentService.getCareers()
+      .then(res => {
+        if (res?.data) {
+          setCareerOptions(res.data);
+        }
+      })
+      .catch(err => console.error('Failed to load career catalog:', err))
+      .finally(() => setCareersLoading(false));
+  }, []);
 
   // ── Career goal state ──────────────────────────────────────────────────────
   const [chosenCareer, setChosenCareerState] = useState(null);
@@ -187,6 +210,18 @@ export default function useCareerCoach(userId) {
     return new Set();
   });
 
+  // Purge any stale career titles that no longer exist in the dynamic career list
+  // once the catalog is loaded (e.g. old "Machine Learning" renamed).
+  useEffect(() => {
+    if (!careerOptions || careerOptions.length === 0) return;
+    setVisibleCareerTitles(prev => {
+      const validTitles = new Set(careerOptions.map(o => o.title));
+      const filtered = [...prev].filter(t => validTitles.has(t));
+      if (filtered.length === prev.size) return prev;
+      return new Set(filtered);
+    });
+  }, [careerOptions]);
+
   useEffect(() => {
     if (!visibleStorageKey) return;
     try {
@@ -218,28 +253,18 @@ export default function useCareerCoach(userId) {
   const pipelineData = report?.report;
   
   const careerMatches = useMemo(() => {
-    const validTitles = new Set(CAREER_OPTIONS.map(o => o.title));
+    const validTitles = new Set(careerOptions.map(o => o.title));
     return (pipelineData?.career_matches || []).filter(m => validTitles.has(m.title));
-  }, [pipelineData]);
+  }, [pipelineData, careerOptions]);
   const skillProfile    = pipelineData?.skill_profile || {};
   const recommendations = pipelineData?.recommendations || [];
   const summary         = pipelineData?.summary || report?.summary || '';
   const aggregatedSkills = predictions?.aggregated_skills || {};
 
-
-
   const optimalIndex = useMemo(() => {
     if (!careerMatches.length) return 0;
-    let best = -1;
-    for (let i = 0; i < careerMatches.length; i++) {
-      if (!visibleCareerTitles.has(careerMatches[i].title)) continue;
-      if (best === -1 || careerMatches[i].match_score > careerMatches[best].match_score) {
-        best = i;
-      }
-    }
-    if (best !== -1) return best;
     return careerMatches.reduce((b, m, i) => m.match_score > careerMatches[b].match_score ? i : b, 0);
-  }, [careerMatches, visibleCareerTitles]);
+  }, [careerMatches]);
 
   /* Resolve the active title — falls back according to user's "unpinning" logic:
      1. If a manual selection exists AND it is still pinned, use it.
@@ -248,7 +273,7 @@ export default function useCareerCoach(userId) {
         - Otherwise (first run/zero progress), pick the "left-most" pinned career.
      3. Fallback to chosenCareer (if pinned), then optimal, then the first pinned entry. */
   const activeTitle = useMemo(() => {
-    const validTitles = new Set(CAREER_OPTIONS.map(o => o.title));
+    const validTitles = new Set(careerOptions.map(o => o.title));
     const visibleArr = [...visibleCareerTitles].filter(t => validTitles.has(t));
     if (visibleArr.length === 0) return null;
 
@@ -282,19 +307,19 @@ export default function useCareerCoach(userId) {
 
   /* Gaps/skills/insights work for any title:
      - If the AI scored the title, use that match data (rich reasoning + skills).
-     - Otherwise fall back to the static CAREER_OPTIONS skill list so the
+     - Otherwise fall back to the dynamic careerOptions skill list so the
        student still sees gap analysis for unanalyzed pinned careers. */
   const gaps = useMemo(() => {
     if (selectedPath) return buildGaps(selectedPath, skillProfile, aggregatedSkills);
-    if (activeTitle) return buildStaticGaps(activeTitle, skillProfile, aggregatedSkills);
+    if (activeTitle) return buildStaticGaps(activeTitle, skillProfile, aggregatedSkills, careerOptions);
     return [];
-  }, [selectedPath, activeTitle, skillProfile, aggregatedSkills]);
+  }, [selectedPath, activeTitle, skillProfile, aggregatedSkills, careerOptions]);
 
   const skills = useMemo(() => {
     if (selectedPath) return buildSkills(selectedPath, skillProfile, aggregatedSkills);
-    if (activeTitle) return buildStaticGaps(activeTitle, skillProfile, aggregatedSkills);
+    if (activeTitle) return buildStaticGaps(activeTitle, skillProfile, aggregatedSkills, careerOptions);
     return [];
-  }, [selectedPath, activeTitle, skillProfile, aggregatedSkills]);
+  }, [selectedPath, activeTitle, skillProfile, aggregatedSkills, careerOptions]);
 
   const insights = useMemo(
     () => selectedPath ? deriveInsights(selectedPath, selectedIndex === optimalIndex) : [],
@@ -311,7 +336,7 @@ export default function useCareerCoach(userId) {
 
   return {
     // Data
-    loading: apiLoading,
+    loading: apiLoading || careersLoading,
     error,
     pipelineData,
     reportCreatedAt: report?.created_at || null,
@@ -329,6 +354,7 @@ export default function useCareerCoach(userId) {
     gaps,
     skills,
     insights,
+    careerOptions,
 
     // Career goal
     chosenCareer,
@@ -344,6 +370,7 @@ export default function useCareerCoach(userId) {
     isRunning,
     pipelineResult,
     clearPipelineResult,
+    cancelPipeline,
   };
 }
 

@@ -10,7 +10,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import ALLOWED_EMAIL_DOMAIN
+from app.core.security import get_password_hash, verify_password
 from app.repositories import user_repository, instructor_repository, admin_repository, token_repository
+from app.schemas.user import LocalRegisterRequest, LocalLoginRequest
 from app.services.token_service import build_jwt, create_temp_token
 from app.services.email_service import send_student_welcome, send_instructor_welcome
 
@@ -114,7 +116,7 @@ async def google_login_flow(
 
     # Register new student
     if not found_roles and flow == "register":
-        validate_email_domain(email)
+        # Removed validate_email_domain(email) to allow any email for students
         sr_code = extract_sr_code(email)
         new_user = await user_repository.create(
             session,
@@ -159,6 +161,69 @@ async def check_register_conflict(session: AsyncSession, email: str) -> bool:
     if await user_repository.get_by_email(session, email):
         return True
     return False
+
+
+# ---------------------------------------------------------------------------
+# Local Auth (Email/Password)
+# ---------------------------------------------------------------------------
+
+async def local_register_student(session: AsyncSession, data: LocalRegisterRequest) -> str:
+    """Registers a student locally and returns a JWT token."""
+    email = data.email.lower()
+    
+    if await check_register_conflict(session, email):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail="Account with this email already registered."
+        )
+        
+    if await user_repository.get_by_sr_code(session, data.sr_code):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Account with this SR Code already registered."
+        )
+        
+    full_name = f"{data.first_name} {data.last_name}".strip()
+    hashed_pw = get_password_hash(data.password)
+    
+    new_user = await user_repository.create(
+        session,
+        email=email,
+        sr_code=data.sr_code,
+        full_name=full_name,
+        role="student",
+        auth_provider="local",
+        hashed_password=hashed_pw,
+    )
+    
+    asyncio.create_task(send_student_welcome(email, full_name))
+    
+    return build_jwt(new_user, "user")
+
+
+async def local_login_flow(session: AsyncSession, data: LocalLoginRequest) -> tuple[str, str]:
+    """Authenticates a local user and returns (jwt_token, redirect_path)."""
+    email = data.email.lower()
+    
+    # Only checking User (students) for local auth right now
+    # If instructors/admins ever get local auth, this will need expansion
+    user = await user_repository.get_by_email(session, email)
+    
+    if not user or user.auth_provider != "local" or not user.hashed_password:
+        # Prevent logging into Google-only accounts with password
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials or account uses a different login method."
+        )
+        
+    if not verify_password(data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials."
+        )
+        
+    token = build_jwt(user, "user")
+    return token, "/student/dashboard"
 
 
 # ---------------------------------------------------------------------------

@@ -84,6 +84,35 @@ async def delete_class(session: AsyncSession, class_id: int) -> None:
     cls = result.scalar_one_or_none()
     if not cls:
         raise ValueError(f"Class {class_id} not found")
+    
+    from sqlalchemy import delete
+    from app.models.class_model import ClassEnrollment, Assessment, AssessmentILO, StudentScore
+
+    # Fetch assessment IDs for this class
+    assessments_res = await session.execute(
+        select(Assessment.id).where(Assessment.class_id == class_id)
+    )
+    assessment_ids = assessments_res.scalars().all()
+
+    if assessment_ids:
+        # Delete dependent scores and ILOs
+        await session.execute(
+            delete(StudentScore).where(StudentScore.assessment_id.in_(assessment_ids))
+        )
+        await session.execute(
+            delete(AssessmentILO).where(AssessmentILO.assessment_id.in_(assessment_ids))
+        )
+        # Delete assessments
+        await session.execute(
+            delete(Assessment).where(Assessment.class_id == class_id)
+        )
+
+    # Delete enrollments
+    await session.execute(
+        delete(ClassEnrollment).where(ClassEnrollment.class_id == class_id)
+    )
+
+    # Delete class
     await session.delete(cls)
     await session.commit()
 

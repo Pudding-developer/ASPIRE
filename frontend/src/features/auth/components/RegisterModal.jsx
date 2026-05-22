@@ -1,13 +1,28 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import useAuth from '../hooks/useAuth';
 import aspireLogo from '../../../assets/aspire-logo.png';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const GOOGLE_AUTH_URL = `${API_BASE}/auth/login/google?flow=register`;
 
 export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
+  const { localRegister } = useAuth();
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    sr_code: '',
+    email: '',
+    password: ''
+  });
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -21,16 +36,36 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
     window.location.href = GOOGLE_AUTH_URL;
   };
 
+  const handleChange = (e) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const redirectPath = await localRegister(formData);
+      onClose();
+      navigate(redirectPath || '/student/dashboard', { replace: true });
+    } catch (err) {
+      setError(err.message || 'Registration failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md overflow-y-auto">
           {/* Backdrop click to close */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0"
+            className="fixed inset-0"
             onClick={onClose}
           ></motion.div>
 
@@ -39,7 +74,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative z-10 w-full max-w-125 overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_35%,rgba(10,1,1,0.72)_100%)] p-8 shadow-[0_0_42px_rgba(255,255,255,0.5),0_20px_60px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-2xl"
+            className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_35%,rgba(10,1,1,0.72)_100%)] p-8 shadow-[0_0_42px_rgba(255,255,255,0.5),0_20px_60px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-2xl my-8"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full bg-[#70170f]/20 blur-3xl" />
@@ -52,14 +87,100 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
               <X size={20} />
             </button>
 
-            <div className="relative mb-8 flex flex-col items-center">
-              <img src={aspireLogo} alt="ASPIRE" className="h-36.25 w-auto -mt-6 -mb-3" />
+            <div className="relative mb-6 flex flex-col items-center">
+              <img src={aspireLogo} alt="ASPIRE" className="h-28 w-auto -mt-4 -mb-2" />
               <h2 className="text-xl font-medium text-white">Create your account</h2>
             </div>
 
+            <form onSubmit={handleSubmit} className="space-y-4 relative z-20">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-300">First Name</label>
+                  <input
+                    required
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-[#70170f] focus:outline-none focus:ring-1 focus:ring-[#70170f] transition-colors"
+                    placeholder="John"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-300">Last Name</label>
+                  <input
+                    required
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-[#70170f] focus:outline-none focus:ring-1 focus:ring-[#70170f] transition-colors"
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-300">SR Code</label>
+                <input
+                  required
+                  name="sr_code"
+                  value={formData.sr_code}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-[#70170f] focus:outline-none focus:ring-1 focus:ring-[#70170f] transition-colors"
+                  placeholder="22-12345"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-300">Email Address</label>
+                <input
+                  required
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-[#70170f] focus:outline-none focus:ring-1 focus:ring-[#70170f] transition-colors"
+                  placeholder="john.doe@example.com"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-300">Password</label>
+                <input
+                  required
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-[#70170f] focus:outline-none focus:ring-1 focus:ring-[#70170f] transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {error && (
+                <div className="text-sm text-red-400 text-center bg-red-400/10 py-2 rounded border border-red-400/20">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full rounded-lg bg-[#70170f] py-6 text-sm font-medium text-white transition-colors hover:bg-[#8a1c12] disabled:opacity-50 mt-2"
+              >
+                {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Sign Up"}
+              </Button>
+            </form>
+
+            <div className="relative my-6 flex items-center">
+              <div className="flex-grow border-t border-white/10"></div>
+              <span className="mx-4 text-xs text-gray-400">or</span>
+              <div className="flex-grow border-t border-white/10"></div>
+            </div>
+
             <Button
+              type="button"
               onClick={handleGoogleSignUp}
-              className="relative w-full rounded-lg border border-white/15 bg-black/25 py-6 text-base text-gray-100 backdrop-blur-md transition-all hover:border-white/25 hover:bg-black/35 flex items-center justify-center"
+              className="relative w-full rounded-lg border border-white/15 bg-black/25 py-6 text-sm text-gray-200 backdrop-blur-md transition-all hover:border-white/25 hover:bg-black/35 flex items-center justify-center"
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -70,9 +191,10 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
               Continue with Google
             </Button>
 
-            <div className="mt-8 text-center text-sm text-gray-300">
+            <div className="mt-8 text-center text-sm text-gray-300 relative z-20">
               Already have an account?{' '}
               <button
+                type="button"
                 onClick={onSwitchToLogin}
                 className="font-medium text-white transition-colors hover:text-[#f06a6a]"
               >

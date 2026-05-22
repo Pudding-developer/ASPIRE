@@ -18,7 +18,8 @@ const GRADING_SYSTEM = [
   { label: "Satisfactory", min: 80, color: "bg-emerald-500", bg: "bg-emerald-50/50", border: "border-emerald-200", text: "text-emerald-900" },
   { label: "Fairly Satisfactory", min: 78, color: "bg-yellow-400", bg: "bg-yellow-50/50", border: "border-yellow-200", text: "text-yellow-900" },
   { label: "Passing", min: 75, color: "bg-orange-500", bg: "bg-orange-50/50", border: "border-orange-200", text: "text-orange-900" },
-  { label: "Needs to Focus", min: 0, color: "bg-red-600", bg: "bg-red-50", border: "border-[#70170f]/30", text: "text-[#70170f]" },
+  { label: "Needs to Focus", min: 70, color: "bg-red-600", bg: "bg-red-50", border: "border-[#70170f]/30", text: "text-[#70170f]" },
+  { label: "Poor Performance", min: 0, color: "bg-red-900", bg: "bg-red-100/60", border: "border-red-900/40", text: "text-red-950" },
 ];
 
 import useActivityFeed from '../../dashboard/hooks/useActivityFeed';
@@ -86,7 +87,7 @@ const COURSE_SEMESTER_MAP = {
 };
 
 /* ─── Filter Dropdown ─── */
-function FilterDropdown({ open, onClose, semester, setSemester, category, setCategory }) {
+function FilterDropdown({ open, onClose, semester, setSemester, category, setCategory, classes }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -94,6 +95,37 @@ function FilterDropdown({ open, onClose, semester, setSemester, category, setCat
     if (open) document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open, onClose]);
+
+  const enrolledSemesters = React.useMemo(() => {
+    if (!classes || classes.length === 0) return [];
+    const semestersSet = new Set();
+    classes.forEach(c => {
+      if (c.year_level && c.semester) {
+        const suffix = (num) => {
+          if (num === 1) return '1st';
+          if (num === 2) return '2nd';
+          if (num === 3) return '3rd';
+          return `${num}th`;
+        };
+        const semStr = `${suffix(c.year_level)} Year, ${suffix(c.semester)} Sem`;
+        semestersSet.add(semStr);
+      }
+    });
+    return Array.from(semestersSet).sort((a, b) => {
+      const aMatch = a.match(/(\d)(?:st|nd|rd|th)\sYear,\s(\d)(?:st|nd|rd|th)\sSem/);
+      const bMatch = b.match(/(\d)(?:st|nd|rd|th)\sYear,\s(\d)(?:st|nd|rd|th)\sSem/);
+      if (aMatch && bMatch) {
+        const aVal = parseInt(aMatch[1]) * 10 + parseInt(aMatch[2]);
+        const bVal = parseInt(bMatch[1]) * 10 + parseInt(bMatch[2]);
+        return aVal - bVal;
+      }
+      return 0;
+    });
+  }, [classes]);
+
+  const displayedSemesters = enrolledSemesters.length > 0
+    ? ['All Semesters', ...enrolledSemesters]
+    : SEMESTERS;
 
   if (!open) return null;
 
@@ -107,7 +139,7 @@ function FilterDropdown({ open, onClose, semester, setSemester, category, setCat
       <div>
         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Semester</label>
         <div className="space-y-1">
-          {SEMESTERS.map(s => (
+          {displayedSemesters.map(s => (
             <button
               key={s}
               onClick={() => setSemester(s)}
@@ -459,9 +491,9 @@ function CompetencyRadar({ soValues }) {
             })}
           </div>
 
-          {/* Full 10-level Grading Legend - 5 top, 5 bottom */}
+          {/* Full 11-level Grading Legend - 6 top, 5 bottom */}
           <div className="mt-8">
-            <div className="grid grid-cols-5 gap-y-4 gap-x-1">
+            <div className="grid grid-cols-6 gap-y-4 gap-x-1">
               {GRADING_SYSTEM.map((level) => (
                 <div key={level.label} className="flex flex-col items-center gap-1.5 text-center group">
                   <div className={`w-2 h-2 ${level.color} rounded-full shadow-sm group-hover:scale-125 transition-transform`} />
@@ -480,7 +512,7 @@ function CompetencyRadar({ soValues }) {
 }
 
 /* ─── Integrated AI Insights Panel ─── */
-function IntegratedInsights({ tech, nonTech, latestSem }) {
+function IntegratedInsights({ tech, nonTech, latestSem, techBoost, nonTechBoost, filterLabel }) {
   const brandRed = '#70170f';
 
   return (
@@ -494,9 +526,11 @@ function IntegratedInsights({ tech, nonTech, latestSem }) {
         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm">
           <Activity className="text-white" size={20} />
         </div>
-        <div>
+        <div className="min-w-0">
           <h3 className="text-[20px] font-black text-white leading-tight">AI Performance Diagnostic</h3>
-          <p className="text-[10px] text-white/50 tracking-widest uppercase mt-0.5">Real-Time Insights</p>
+          <p className="text-[10px] text-white/50 tracking-widest uppercase mt-0.5">
+            {filterLabel ? `Scoped: ${filterLabel}` : 'Real-Time Insights · Whole Program'}
+          </p>
         </div>
       </div>
 
@@ -510,7 +544,7 @@ function IntegratedInsights({ tech, nonTech, latestSem }) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-[9px] font-black text-amber-300 uppercase tracking-widest">
-                      Risk Detected
+                      Boost Improvement
                     </span>
                   </div>
                   <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={tech.name}>
@@ -567,10 +601,47 @@ function IntegratedInsights({ tech, nonTech, latestSem }) {
 
               </div>
             </div>
+          ) : techBoost?.name ? (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-[9px] font-black text-emerald-300 uppercase tracking-widest">
+                      Boost Proficiency
+                    </span>
+                  </div>
+                  <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={techBoost.name}>
+                    {techBoost.name}
+                  </h4>
+                  <p className="text-[12px] text-white/60 font-medium italic truncate">
+                    {techBoost.so?.so_id || 'SO'}: {techBoost.so?.so_name || 'Lowest passing skill'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <div className="text-[24px] font-black text-white leading-none tracking-tighter tabular-nums">
+                    {Math.round(techBoost.val)}<span className="text-[12px] text-white/50 ml-0.5">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  {techBoost.driver?.course
+                    ? <>Push <span className="font-bold text-white uppercase tracking-tight">{techBoost.name}</span> toward <span className="font-bold text-emerald-300">EXCELLENT</span> by taking on more advanced problems in <span className="font-bold text-white uppercase tracking-tight">{techBoost.driver.course}</span> — this course offers the strongest opportunity to deepen this competency.</>
+                    : <>Aim higher in <span className="font-bold text-white uppercase tracking-tight">{techBoost.name}</span> — target an 85%+ standing by going beyond the rubric on upcoming assessments.</>}
+                </p>
+                <p className="text-[11px] text-white/40 font-medium italic">
+                  Lowest passing skill in your {filterLabel ? 'filtered' : 'technical'} scope · {(90 - techBoost.val).toFixed(1)}% remaining to reach the Excellent band (90%).
+                </p>
+              </div>
+            </div>
           ) : (
-            <div className="flex flex-col justify-center items-center border border-dashed border-white/10 rounded-2xl p-6">
+            <div className="flex flex-col justify-center items-center border border-dashed border-white/10 rounded-2xl p-6 text-center">
               <CheckCircle2 className="text-emerald-400 mb-2" size={24} />
-              <p className="text-[11px] text-white/60 font-bold">Optimal Performance</p>
+              <p className="text-[11px] text-white/60 font-bold tracking-wide">No Technical Signal</p>
+              <p className="text-[11px] text-white/55 mt-3 leading-relaxed">
+                No technical skills graded yet in this scope.
+              </p>
             </div>
           )}
         </div>
@@ -584,7 +655,7 @@ function IntegratedInsights({ tech, nonTech, latestSem }) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-[9px] font-black text-amber-300 uppercase tracking-widest">
-                      Risk Detected
+                      Boost Improvement
                     </span>
                   </div>
                   <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={nonTech.name}>
@@ -641,10 +712,47 @@ function IntegratedInsights({ tech, nonTech, latestSem }) {
 
               </div>
             </div>
+          ) : nonTechBoost?.name ? (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-[9px] font-black text-emerald-300 uppercase tracking-widest">
+                      Boost Proficiency
+                    </span>
+                  </div>
+                  <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={nonTechBoost.name}>
+                    {nonTechBoost.name}
+                  </h4>
+                  <p className="text-[12px] text-white/60 font-medium italic truncate">
+                    {nonTechBoost.so?.so_id || 'SO'}: {nonTechBoost.so?.so_name || 'Lowest passing skill'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <div className="text-[24px] font-black text-white leading-none tracking-tighter tabular-nums">
+                    {Math.round(nonTechBoost.val)}<span className="text-[12px] text-white/50 ml-0.5">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  {nonTechBoost.driver?.course
+                    ? <>Lift <span className="font-bold text-white uppercase tracking-tight">{nonTechBoost.name}</span> toward <span className="font-bold text-emerald-300">EXCELLENT</span> by engaging more deeply in <span className="font-bold text-white uppercase tracking-tight">{nonTechBoost.driver.course}</span> — this course provides the strongest opportunity to develop this competency further.</>
+                    : <>Develop <span className="font-bold text-white uppercase tracking-tight">{nonTechBoost.name}</span> further through peer-led projects, presentations, or leadership roles in upcoming coursework.</>}
+                </p>
+                <p className="text-[11px] text-white/40 font-medium italic">
+                  Lowest passing skill in your {filterLabel ? 'filtered' : 'professional'} scope · {(90 - nonTechBoost.val).toFixed(1)}% remaining to reach the Excellent band (90%).
+                </p>
+              </div>
+            </div>
           ) : (
-            <div className="flex flex-col justify-center items-center border border-dashed border-white/10 rounded-2xl p-6">
+            <div className="flex flex-col justify-center items-center border border-dashed border-white/10 rounded-2xl p-6 text-center">
               <CheckCircle2 className="text-emerald-400 mb-2" size={24} />
-              <p className="text-[11px] text-white/60 font-bold">Optimal Performance</p>
+              <p className="text-[11px] text-white/60 font-bold tracking-wide">No Professional Signal</p>
+              <p className="text-[11px] text-white/55 mt-3 leading-relaxed">
+                No professional skills graded yet in this scope.
+              </p>
             </div>
           )}
         </div>
@@ -660,7 +768,43 @@ function IntegratedInsights({ tech, nonTech, latestSem }) {
 /* ─── Proficiency Growth helpers ─── */
 
 
-function RankedSkillsChart({ sortedSkills, animated }) {
+function getCoursesForSkill(skill, perCourse) {
+  if (!skill || !Array.isArray(perCourse)) return [];
+  
+  const getSemester = (courseName) => {
+    if (!courseName) return 0;
+    const normalized = courseName.trim();
+    if (COURSE_SEMESTER_MAP[normalized]) return COURSE_SEMESTER_MAP[normalized];
+    const key = Object.keys(COURSE_SEMESTER_MAP).find(
+      k => k.toLowerCase() === normalized.toLowerCase()
+    );
+    return key ? COURSE_SEMESTER_MAP[key] : 0;
+  };
+
+  return perCourse
+    .map(c => ({
+      course: c.course,
+      score: c.predicted_skills?.[skill] ?? 0,
+      potential: c.scenario_high?.[skill] ?? 0,
+      avg_score: c.ilo_avg || 0,
+      semester: getSemester(c.course)
+    }))
+    .filter(r => r.score > 0.1 || r.potential > 0.1)
+    .sort((a, b) => b.score - a.score);
+}
+
+function RankedSkillsChart({ sortedSkills, animated, perCourse = [] }) {
+  const [activeSkillModal, setActiveSkillModal] = useState(null);
+  const overlayRef = useRef(null);
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') setActiveSkillModal(null); }
+    if (activeSkillModal) {
+      document.addEventListener('keydown', onKey);
+    }
+    return () => document.removeEventListener('keydown', onKey);
+  }, [activeSkillModal]);
+
   if (sortedSkills.length === 0) {
     return (
       <div className="bg-white border border-gray-100 rounded-2xl p-5">
@@ -669,7 +813,7 @@ function RankedSkillsChart({ sortedSkills, animated }) {
     );
   }
 
-  // Group skills into the 10 categories based on the GRADING_SYSTEM ranges
+  // Group skills into the 11 categories based on the GRADING_SYSTEM ranges
   const categorizedBoxes = GRADING_SYSTEM.map((level, idx) => {
     const nextLevel = GRADING_SYSTEM[idx - 1]; // next higher level (since the array is sorted high to low)
     const skills = sortedSkills.filter(([, val]) => {
@@ -686,36 +830,128 @@ function RankedSkillsChart({ sortedSkills, animated }) {
     return { ...level, skills, rangeText };
   }).filter(box => box.skills.length > 0);
 
+  const sourceCourses = activeSkillModal ? getCoursesForSkill(activeSkillModal.name, perCourse) : [];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-      {categorizedBoxes.map((box, idx) => (
-        <div key={idx} className={`rounded-2xl border ${box.border} ${box.bg} p-5 flex flex-col shadow-sm transition-all hover:shadow-md`}>
-          <div className="flex justify-between items-start mb-5">
-            <div className="flex flex-col">
-              <h4 className={`text-[13px] font-black ${box.text} tracking-tight`}>{box.label}</h4>
-              <span className={`text-[10px] font-bold ${box.text} opacity-50 tabular-nums`}>{box.rangeText}</span>
-            </div>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 ${box.text} border ${box.border}`}>{box.skills.length}</span>
-          </div>
-          <div className="flex-1 space-y-3.5">
-            {box.skills.map(([name, val]) => (
-              <div key={name} className="group">
-                <div className="flex justify-between items-center mb-1 gap-2">
-                  <span className={`text-[11px] font-bold truncate ${box.text} opacity-90 group-hover:opacity-100 transition-opacity`} title={name}>{name}</span>
-                  <span className={`text-[10px] font-black tabular-nums ${box.text}`}>{val.toFixed(1)}</span>
-                </div>
-                <div className="w-full h-1 bg-black/5 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${box.color} rounded-full transition-all duration-1000 ease-out`}
-                    style={{ width: animated ? `${val}%` : '0%' }}
-                  />
-                </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        {categorizedBoxes.map((box, idx) => (
+          <div key={idx} className={`rounded-2xl border ${box.border} ${box.bg} p-5 flex flex-col shadow-sm transition-all hover:shadow-md`}>
+            <div className="flex justify-between items-start mb-5">
+              <div className="flex flex-col">
+                <h4 className={`text-[13px] font-black ${box.text} tracking-tight`}>{box.label}</h4>
+                <span className={`text-[10px] font-bold ${box.text} opacity-50 tabular-nums`}>{box.rangeText}</span>
               </div>
-            ))}
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 ${box.text} border ${box.border}`}>{box.skills.length}</span>
+            </div>
+            <div className="flex-1 space-y-3.5">
+              {box.skills.map(([name, val]) => (
+                <div key={name} className="group">
+                  <div className="flex justify-between items-center mb-1 gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <span className={`text-[11px] font-bold truncate ${box.text} opacity-90`} title={name}>{name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSkillModal({ name, val })}
+                        className="shrink-0 p-0.5 hover:bg-black/5 rounded text-inherit opacity-75 hover:opacity-100 transition-opacity"
+                        title="View source subjects"
+                      >
+                        <AlertCircle size={12} className={box.text} />
+                      </button>
+                    </div>
+                    <span className={`text-[10px] font-black tabular-nums ${box.text}`}>{val.toFixed(1)}</span>
+                  </div>
+                  <div className="w-full h-1 bg-black/5 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${box.color} rounded-full transition-all duration-1000 ease-out`}
+                      style={{ width: animated ? `${val}%` : '0%' }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {activeSkillModal && (
+        <div
+          ref={overlayRef}
+          onMouseDown={(e) => { if (e.target === overlayRef.current) setActiveSkillModal(null); }}
+          className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div className="w-full max-w-md max-h-[85vh] bg-gradient-to-br from-white via-[#fffbfb] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-scale-up">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-[#f2dfdf] flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Skill Source Analysis</p>
+                <h3 className="text-[16px] font-bold text-gray-900 truncate" title={activeSkillModal.name}>
+                  {activeSkillModal.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSkillModal(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              <div className="flex justify-between items-center bg-[#fff8f8] border border-[#f3dada] rounded-xl p-3">
+                <span className="text-[12px] font-semibold text-[#70170f]">Overall Proficiency</span>
+                <span className="text-[14px] font-black text-[#70170f]">{activeSkillModal.val.toFixed(1)}%</span>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Contributing Subjects</p>
+                {sourceCourses.length === 0 ? (
+                  <p className="text-[12px] text-gray-500 italic text-center py-4 bg-gray-50 rounded-xl border border-gray-100">
+                    No academic subject has mapped score data for this skill.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {sourceCourses.map(c => {
+                      const level = GRADING_SYSTEM.find(l => c.score >= l.min) || GRADING_SYSTEM[GRADING_SYSTEM.length - 1];
+                      return (
+                        <div key={c.course} className="p-3 border border-gray-150 rounded-xl bg-white hover:border-[#eed7d3] hover:bg-[#fffcfc] transition-all flex flex-col gap-2 shadow-xs">
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-[12px] font-bold text-gray-800 leading-snug break-words max-w-[75%]" title={c.course}>
+                              {c.course}
+                            </span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded border shrink-0 ${level.bg} ${level.text} ${level.border}`}>
+                              {c.score.toFixed(1)}%
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center text-[10px] text-gray-400 font-medium">
+                            <span>Subject Average Grade:</span>
+                            <span className="font-bold text-gray-600">{c.avg_score.toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-[#eed7d3] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setActiveSkillModal(null)}
+                className="px-4 py-2 bg-white border border-[#eed7d3] hover:bg-gray-50 text-gray-700 text-[12px] font-bold rounded-xl transition-colors shadow-xs"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }
 
@@ -958,11 +1194,24 @@ export default function StudentPerformanceView({ user }) {
     else AtRisk.push({ name: key, val: `${Math.round(val)}%` });
   });
 
-  // Relative-thirds bucketing for Proficiency Growth Analysis
-  const sortedSkills = Object.entries(aggSkills).sort((a, b) => b[1] - a[1]);
+  // Relative-thirds bucketing for Proficiency Growth Analysis.
+  // When a semester/category filter is active, hide skills with no score yet —
+  // they represent competencies not present/attainable in the selected window,
+  // so showing them as a wall of zeros in "Needs to Focus" is noise. The
+  // `> 1.0` threshold matches `activeSkills` below, so the Skills Attained and
+  // Needs Attention cards share the same "introduced skills" denominator.
+  const allSortedSkills = Object.entries(aggSkills).sort((a, b) => b[1] - a[1]);
+  const sortedSkills = hasActiveFilters
+    ? allSortedSkills.filter(([, v]) => v > 1.0)
+    : allSortedSkills;
   const skillsTotal = sortedSkills.length;
   const skillsThird = Math.ceil(skillsTotal / 3) || 0;
-  const topThird = sortedSkills.slice(0, skillsThird);
+  // ACHIEVED requires reaching the Passing threshold (75). Below that the
+  // skill is "Needs to Focus", so it shouldn't be listed as achieved — and
+  // listing it would also produce an empty "Maintain through these courses"
+  // list because the per-course filter uses the same 75 threshold.
+  const ACHIEVED_THRESHOLD = 75;
+  const topThird = sortedSkills.slice(0, skillsThird).filter(([, v]) => v >= ACHIEVED_THRESHOLD);
   const midThird = sortedSkills.slice(skillsThird, skillsThird * 2);
   const botThird = sortedSkills.slice(skillsThird * 2);
 
@@ -1050,6 +1299,36 @@ export default function StudentPerformanceView({ user }) {
     .filter(s => !isTechnical(s) && aggSkills[s] > 0 && aggSkills[s] < 75)
     .sort((a, b) => aggSkills[a] - aggSkills[b])[0] || null;
 
+  // Top tech/non-tech strengths — surfaced in Priority Recommendations when
+  // the student has no weak skill, so the boost-branch can reference them.
+  const strongTechSkillName = Object.keys(aggSkills)
+    .filter(s => isTechnical(s) && aggSkills[s] >= 75)
+    .sort((a, b) => aggSkills[b] - aggSkills[a])[0] || null;
+  const strongProfessionalSkillName = Object.keys(aggSkills)
+    .filter(s => !isTechnical(s) && aggSkills[s] >= 75)
+    .sort((a, b) => aggSkills[b] - aggSkills[a])[0] || null;
+  const strongTechVal = strongTechSkillName != null ? aggSkills[strongTechSkillName] : null;
+  const strongProfessionalVal = strongProfessionalSkillName != null ? aggSkills[strongProfessionalSkillName] : null;
+
+  // Boost targets — the LOWEST passing skill in each category (≥75 but at the
+  // bottom of the high range). Only computed when there's no weak skill in
+  // that category, so the diagnostic and recommendations flip cleanly from
+  // "fix risk" to "push the next-weakest skill higher" without overlap.
+  const boostTechSkillName = !weakTechSkillName
+    ? Object.keys(aggSkills)
+        .filter(s => isTechnical(s) && aggSkills[s] >= 75)
+        .sort((a, b) => aggSkills[a] - aggSkills[b])[0] || null
+    : null;
+  const boostProfessionalSkillName = !weakProfessionalSkillName
+    ? Object.keys(aggSkills)
+        .filter(s => !isTechnical(s) && aggSkills[s] >= 75)
+        .sort((a, b) => aggSkills[a] - aggSkills[b])[0] || null
+    : null;
+  const boostTechVal = boostTechSkillName != null ? aggSkills[boostTechSkillName] : null;
+  const boostProfessionalVal = boostProfessionalSkillName != null ? aggSkills[boostProfessionalSkillName] : null;
+  const boostTechSO = boostTechSkillName ? skillSoMap[boostTechSkillName] : null;
+  const boostProfessionalSO = boostProfessionalSkillName ? skillSoMap[boostProfessionalSkillName] : null;
+
   const weakTechVal = weakTechSkillName != null ? aggSkills[weakTechSkillName] : null;
   const weakProfessionalVal = weakProfessionalSkillName != null ? aggSkills[weakProfessionalSkillName] : null;
 
@@ -1071,8 +1350,21 @@ export default function StudentPerformanceView({ user }) {
     ? topCoursesForSkill(weakProfessionalSkillName, predictions?.per_course || [], 'developing', studentCurrentSem, isFiltered)[0] || null
     : null;
 
+  // Boost drivers — using 'developing' mode lets us find the course with the
+  // largest growth gap, which is the highest-leverage place to push a passing
+  // skill toward EXCELLENT.
+  const boostTechDriver = boostTechSkillName
+    ? topCoursesForSkill(boostTechSkillName, predictions?.per_course || [], 'developing', studentCurrentSem, isFiltered)[0] || null
+    : null;
+  const boostProfessionalDriver = boostProfessionalSkillName
+    ? topCoursesForSkill(boostProfessionalSkillName, predictions?.per_course || [], 'developing', studentCurrentSem, isFiltered)[0] || null
+    : null;
+
   const weakSkillSO = weakTechSO || weakProfessionalSO;
   const weakSkillDriver = weakTechDriver || weakProfessionalDriver;
+  const boostSkillName = boostTechSkillName || boostProfessionalSkillName;
+  const boostSkillVal = boostTechVal ?? boostProfessionalVal;
+  const boostSkillDriver = boostTechDriver || boostProfessionalDriver;
 
   // Predicted skillsets — biggest growth gap (current vs scenario_high) across courses
   const predictedPotential = (() => {
@@ -1177,6 +1469,12 @@ export default function StudentPerformanceView({ user }) {
   })();
 
   const TOTAL_SKILLS = 20;
+  // When a year/semester filter is active, the Skills Attained denominator
+  // tracks only the skills introduced in that window — matching the count
+  // shown in Proficiency Growth Analysis and the Needs Attention card. Under
+  // "All Semesters" the denominator stays at the full program (20) so the
+  // student still sees overall progress against the whole curriculum.
+  const attainedDenominator = hasActiveFilters ? (totalActive || TOTAL_SKILLS) : TOTAL_SKILLS;
   const overallAvg = totalActive
     ? activeSkills.reduce((acc, [, v]) => acc + v, 0) / totalActive
     : 0;
@@ -1209,6 +1507,7 @@ export default function StudentPerformanceView({ user }) {
                 setSemester={setSemester}
                 category={category}
                 setCategory={setCategory}
+                classes={classes}
               />
             </div>
 
@@ -1238,11 +1537,11 @@ export default function StudentPerformanceView({ user }) {
           <StatCard
             label="SKILLS ATTAINED"
             icon={Award}
-            main={`${attainedCount} of ${TOTAL_SKILLS}`}
+            main={`${attainedCount} of ${attainedDenominator}`}
             sub={totalActive
               ? `Overall score: ${overallAvg.toFixed(1)}%`
               : 'awaiting graded scores'}
-            badge={totalActive ? `${Math.round((attainedCount / TOTAL_SKILLS) * 100)}%` : null}
+            badge={totalActive ? `${Math.round((attainedCount / attainedDenominator) * 100)}%` : null}
             badgeTone="green"
           />
           <StatCard
@@ -1253,7 +1552,11 @@ export default function StudentPerformanceView({ user }) {
               : '—'}
             sub={atRiskSkills.length > 0
               ? `below ${AT_RISK_THRESHOLD}% — focusing on ${lowestRiskSkill}`
-              : totalActive ? 'all skills above 75% — excellent!' : 'awaiting graded scores'}
+              : totalActive
+                ? (hasActiveFilters
+                  ? `all ${totalActive} introduced skills above 75% — excellent!`
+                  : 'all skills above 75% — excellent!')
+                : 'awaiting graded scores'}
             badge={atRiskSkills.length > 0 ? 'NEEDS TO FOCUS' : null}
             badgeTone="red"
           />
@@ -1370,74 +1673,179 @@ export default function StudentPerformanceView({ user }) {
                 so: weakProfessionalSO,
                 driver: weakProfessionalDriver
               }}
+              techBoost={{
+                name: boostTechSkillName,
+                val: boostTechVal,
+                so: boostTechSO,
+                driver: boostTechDriver
+              }}
+              nonTechBoost={{
+                name: boostProfessionalSkillName,
+                val: boostProfessionalVal,
+                so: boostProfessionalSO,
+                driver: boostProfessionalDriver
+              }}
+              filterLabel={hasActiveFilters
+                ? [semester !== 'All Semesters' ? semester : null, category !== 'All Subjects' ? category : null]
+                  .filter(Boolean).join(' · ')
+                : null}
               latestSem={studentCurrentSem}
             />
           </div>
 
           <div className={`${panelBase} p-8 flex flex-col h-full lg:col-span-2`}>
-            <div>
-              <h3 className="text-[20px] font-black text-gray-900 leading-tight mb-8">Priority Recommendations</h3>
+            <div className="mb-8">
+              <h3 className="text-[20px] font-black text-gray-900 leading-tight">Priority Recommendations</h3>
+              <p className="text-[11px] text-gray-500 font-medium mt-1">
+                {hasActiveFilters
+                  ? `Tailored to ${[semester !== 'All Semesters' ? semester : null, category !== 'All Subjects' ? category : null].filter(Boolean).join(' · ')}`
+                  : 'Across your whole program'}
+              </p>
             </div>
             <div className="grid grid-cols-1 gap-4 flex-1">
-              {weakSkillName && weakSkillVal < 75 ? (
-                <>
-                  <div className="p-4 border border-amber-100 bg-[#fffdfa] rounded-xl flex items-center gap-4 hover:border-amber-300 transition-all hover:shadow-sm cursor-pointer group ring-1 ring-amber-50">
-                    <div className="w-10 h-10 rounded-xl bg-amber-100/50 flex items-center justify-center shrink-0 text-amber-700 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300 shadow-sm">
-                      <GraduationCap size={20} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] text-black leading-relaxed">Focus on {weakSkillName} in <span className="font-bold">{weakSkillDriver?.course || 'Critical Course'}</span> to resolve this proficiency risk.</p>
-                    </div>
-                  </div>
+              {(() => {
+                // Build per-category candidates so the recommendations can draw
+                // from BOTH the technical and professional diagnostics, not just
+                // whichever one happened to surface first.
+                const techCand = weakTechSkillName
+                  ? { type: 'weak', cat: 'tech',  name: weakTechSkillName,         val: weakTechVal,         driver: weakTechDriver }
+                  : boostTechSkillName
+                    ? { type: 'boost', cat: 'tech', name: boostTechSkillName,      val: boostTechVal,        driver: boostTechDriver }
+                    : null;
+                const proCand = weakProfessionalSkillName
+                  ? { type: 'weak', cat: 'pro', name: weakProfessionalSkillName,  val: weakProfessionalVal, driver: weakProfessionalDriver }
+                  : boostProfessionalSkillName
+                    ? { type: 'boost', cat: 'pro', name: boostProfessionalSkillName, val: boostProfessionalVal, driver: boostProfessionalDriver }
+                    : null;
 
-                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
-                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
-                      <Zap size={20} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] text-black leading-relaxed">Analyze your recent assessment errors in <span className="font-bold">{weakSkillName}</span> and focus on the technical indicators where you scored below the 75% threshold.</p>
-                    </div>
-                  </div>
+                // Order: weak signals first, then by lowest score (most urgent on top).
+                const candidates = [techCand, proCand].filter(Boolean).sort((a, b) => {
+                  if (a.type !== b.type) return a.type === 'weak' ? -1 : 1;
+                  return (a.val ?? 0) - (b.val ?? 0);
+                });
 
-                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
-                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
-                      <Search size={20} />
+                if (candidates.length === 0) {
+                  return (
+                    <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161]">
+                        <Activity size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[12px] text-black leading-relaxed">
+                          No graded skills in this scope yet — recommendations will appear once your instructors release scores.
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] text-black leading-relaxed">Analyze the technical indicators for {weakSkillName} and retake the relevant formative assessments to reach the 75% threshold.</p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
-                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
-                      <Target size={20} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] text-black leading-relaxed">Align your high performance in your current courses with industry job requirements.</p>
-                    </div>
-                  </div>
+                  );
+                }
 
-                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
-                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
-                      <Microscope size={20} />
+                const Card = ({ tone, icon: Icon, children }) => {
+                  const palette = tone === 'weak'
+                    ? 'border-amber-100 bg-[#fffdfa] hover:border-amber-300 ring-1 ring-amber-50'
+                    : tone === 'boost'
+                      ? 'border-emerald-100 bg-emerald-50/40 hover:border-emerald-300 ring-1 ring-emerald-50'
+                      : 'border-[#f0dddd] bg-white/75 hover:border-[#e3bebe]';
+                  const iconBox = tone === 'weak'
+                    ? 'bg-amber-100/50 text-amber-700 group-hover:bg-amber-600 group-hover:text-white'
+                    : tone === 'boost'
+                      ? 'bg-emerald-100/60 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white'
+                      : 'bg-[#fff2f2] text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white';
+                  return (
+                    <div className={`p-4 border rounded-xl flex items-center gap-4 transition-all hover:shadow-sm cursor-pointer group ${palette}`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-sm ${iconBox}`}>
+                        <Icon size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[12px] text-black leading-relaxed">{children}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] text-black leading-relaxed">Engage in high-complexity projects to maintain your competitive edge.</p>
-                    </div>
-                  </div>
+                  );
+                };
 
-                  <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-all hover:shadow-sm cursor-pointer group">
-                    <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white transition-all duration-300 shadow-sm">
-                      <Activity size={20} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] text-black leading-relaxed">Share your technical mastery with peers to solidify your leadership skills.</p>
-                    </div>
-                  </div>
-                </>
-              )}
+                const recs = [];
+
+                // Card 1 — most-urgent signal (tech or professional).
+                const first = candidates[0];
+                if (first.type === 'weak') {
+                  recs.push(
+                    <Card key="c1" tone="weak" icon={GraduationCap}>
+                      <span className="font-bold">{first.name}</span> is at <span className="font-bold tabular-nums">{first.val.toFixed(1)}%</span> — {first.driver?.course
+                        ? <>concentrate your review time on <span className="font-bold">{first.driver.course}</span> to clear the 75% Passing threshold.</>
+                        : <>build it up steadily across your active coursework to clear the 75% Passing threshold.</>}
+                    </Card>
+                  );
+                } else {
+                  recs.push(
+                    <Card key="c1" tone="boost" icon={Target}>
+                      <span className="font-bold">{first.name}</span> is your lowest passing {first.cat === 'tech' ? 'technical' : 'professional'} skill at <span className="font-bold tabular-nums">{first.val.toFixed(1)}%</span> — {first.driver?.course
+                        ? <>advance it toward the Excellent band (90%) by going deeper into <span className="font-bold">{first.driver.course}</span>.</>
+                        : <>aim past 85% on your next assessments to lift it into the upper band.</>}
+                    </Card>
+                  );
+                }
+
+                // Card 2 — the OTHER category's signal, if it exists. This is
+                // the key change: the recommendations now span both diagnostics.
+                const second = candidates[1];
+                if (second) {
+                  if (second.type === 'weak') {
+                    recs.push(
+                      <Card key="c2" tone="weak" icon={GraduationCap}>
+                        <span className="font-bold">{second.name}</span> ({second.cat === 'tech' ? 'technical' : 'professional'}) is also at <span className="font-bold tabular-nums">{second.val.toFixed(1)}%</span> — {second.driver?.course
+                          ? <>strengthen it through <span className="font-bold">{second.driver.course}</span> alongside your primary focus.</>
+                          : <>address it in parallel so it doesn't widen the gap with the rest of your competencies.</>}
+                      </Card>
+                    );
+                  } else {
+                    recs.push(
+                      <Card key="c2" tone="boost" icon={Target}>
+                        On the {second.cat === 'tech' ? 'technical' : 'professional'} side, <span className="font-bold">{second.name}</span> sits at <span className="font-bold tabular-nums">{second.val.toFixed(1)}%</span> — {second.driver?.course
+                          ? <>advance it toward Excellent through deliberate practice in <span className="font-bold">{second.driver.course}</span>.</>
+                          : <>continue applying it in upcoming projects to consolidate the standing.</>}
+                      </Card>
+                    );
+                  }
+                }
+
+                // Card 3 — cross-cutting study action. Different framing depending
+                // on whether we have one signal or two, weak vs boost, so it
+                // doesn't repeat the first two cards.
+                const both = candidates.length === 2;
+                const allWeak = candidates.every(c => c.type === 'weak');
+                const allBoost = candidates.every(c => c.type === 'boost');
+
+                if (both && allWeak) {
+                  recs.push(
+                    <Card key="c3" tone="general" icon={Search}>
+                      Schedule a consultation with your instructors (or use the AI Chat) for targeted help on <span className="font-bold">{first.name}</span> and <span className="font-bold">{second.name}</span> — both fall below the Passing threshold, so coordinated support will move your standing fastest.
+                    </Card>
+                  );
+                } else if (both && allBoost) {
+                  recs.push(
+                    <Card key="c3" tone="general" icon={Microscope}>
+                      Take on capstone-level or stretch work that exercises both <span className="font-bold">{first.name}</span> and <span className="font-bold">{second.name}</span> — integrated projects convert passing standing into a signature strength across both categories.
+                    </Card>
+                  );
+                } else if (both) {
+                  // Mixed: one weak, one boost.
+                  const weakOne = candidates.find(c => c.type === 'weak');
+                  const boostOne = candidates.find(c => c.type === 'boost');
+                  recs.push(
+                    <Card key="c3" tone="general" icon={Zap}>
+                      Prioritize closing the gap in <span className="font-bold">{weakOne.name}</span> first, then channel the momentum into pushing <span className="font-bold">{boostOne.name}</span> toward Excellent — sequencing these two will lift your overall standing more than splitting effort evenly.
+                    </Card>
+                  );
+                } else {
+                  // Single-category case — still give a cross-cutting third action.
+                  recs.push(
+                    <Card key="c3" tone="general" icon={Zap}>
+                      Review the items where you lost points on recent <span className="font-bold">{first.name}</span> assessments — recurring error patterns are the fastest route to {first.type === 'weak' ? 'crossing 75%' : 'reaching the Excellent band'}.
+                    </Card>
+                  );
+                }
+
+                return recs;
+              })()}
             </div>
           </div>
         </div>
@@ -1451,8 +1859,20 @@ export default function StudentPerformanceView({ user }) {
             </p>
           </div>
 
+          {semester !== 'All Semesters' && (
+            <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#f3dada] bg-[#fff8f8] p-4">
+              <div className="shrink-0 mt-0.5 text-[#70170f]">
+                <AlertCircle size={16} />
+              </div>
+              <p className="text-[12px] text-[#70170f] leading-relaxed">
+                Scores reflect only courses in <span className="font-bold">{semester}</span>;
+                whole-program scores are under <span className="font-bold">&ldquo;All Semesters&rdquo;</span>.
+              </p>
+            </div>
+          )}
+
           <div className="flex-1 pt-2">
-            <RankedSkillsChart sortedSkills={sortedSkills} animated={barsAnimated} />
+            <RankedSkillsChart sortedSkills={sortedSkills} animated={barsAnimated} perCourse={predictions?.per_course || []} />
           </div>
         </div>
       </div>

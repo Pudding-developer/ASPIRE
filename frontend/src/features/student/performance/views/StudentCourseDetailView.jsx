@@ -93,11 +93,36 @@ function CourseFallback({ courseName, kind, message, onBack }) {
   );
 }
 
+// Mirrors GRADING_SYSTEM in StudentPerformanceView.jsx so the Course Standing
+// indicator uses the same bands as the My Performance grading system.
+const GRADING_SYSTEM = [
+  { label: 'Excellent',           min: 98, color: 'text-purple-700',  bg: 'bg-purple-50',   border: 'border-purple-200' },
+  { label: 'Superior',            min: 94, color: 'text-violet-600',  bg: 'bg-violet-50',   border: 'border-violet-200' },
+  { label: 'Very Good',           min: 90, color: 'text-blue-700',    bg: 'bg-blue-50',     border: 'border-blue-200' },
+  { label: 'Good',                min: 88, color: 'text-sky-600',     bg: 'bg-sky-50',      border: 'border-sky-200' },
+  { label: 'Meritorious',         min: 85, color: 'text-teal-700',    bg: 'bg-teal-50',     border: 'border-teal-200' },
+  { label: 'Very Satisfactory',   min: 83, color: 'text-green-700',   bg: 'bg-green-50',    border: 'border-green-200' },
+  { label: 'Satisfactory',        min: 80, color: 'text-emerald-700', bg: 'bg-emerald-50',  border: 'border-emerald-200' },
+  { label: 'Fairly Satisfactory', min: 78, color: 'text-yellow-700',  bg: 'bg-yellow-50',   border: 'border-yellow-200' },
+  { label: 'Passing',             min: 75, color: 'text-orange-600',  bg: 'bg-orange-50',   border: 'border-orange-200' },
+  { label: 'Needs to Focus',      min: 70, color: 'text-red-600',     bg: 'bg-red-50',      border: 'border-red-200' },
+  { label: 'Poor Performance',    min: 0,  color: 'text-red-900',     bg: 'bg-red-100/60',  border: 'border-red-900/40' },
+];
+
 function getStanding(avg) {
   const val = parseFloat(avg || 0);
-  if (val >= 90) return { label: 'EXCEPTIONAL', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' };
-  if (val >= 75) return { label: 'COMPETENT', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' };
-  return { label: 'NEEDS ATTENTION', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' };
+  return GRADING_SYSTEM.find(b => val >= b.min) || GRADING_SYSTEM[GRADING_SYSTEM.length - 1];
+}
+
+// Returns the next-higher grading band above the current avg, or null if the
+// student is already at the top band. Used by Focus Insight to anchor coaching
+// targets to the same grading system the rest of the app uses.
+function getNextStanding(avg) {
+  const val = parseFloat(avg || 0);
+  // GRADING_SYSTEM is ordered high→low; the next target is the lowest band
+  // whose threshold is still above the student's current value.
+  const higher = GRADING_SYSTEM.filter(b => b.min > val);
+  return higher.length ? higher[higher.length - 1] : null;
 }
 
 const SO_NAMES = {
@@ -607,26 +632,26 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
                   <div key={i} className="group">
                     {/* ILO header row */}
                     <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest shrink-0">ILO {i + 1}</span>
-                        <div className="h-px flex-1 bg-gray-100" />
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-[11px] font-black text-gray-900 uppercase tracking-widest shrink-0">ILO {i + 1}</span>
+                        {soLabels.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {soLabels.map(l => (
+                              <span
+                                key={l.so}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-[11px] font-semibold text-indigo-800"
+                              >
+                                <span className="font-black text-indigo-900">SO {l.so}</span>
+                                <span className="text-indigo-700">"{l.name}"</span>
+                                <span className="px-1.5 py-0.5 bg-indigo-200 text-indigo-900 rounded text-[9px] font-black tracking-wide">{l.pis}</span>
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[12px] text-gray-400 italic">No SO Mapping</span>
+                        )}
+                        <div className="h-px flex-1 bg-gray-100 min-w-[24px]" />
                       </div>
-                      {soLabels.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {soLabels.map(l => (
-                            <span
-                              key={l.so}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-[11px] font-semibold text-indigo-800"
-                            >
-                              <span className="font-black text-indigo-900">SO {l.so}</span>
-                              <span className="text-indigo-700">"{l.name}"</span>
-                              <span className="px-1.5 py-0.5 bg-indigo-200 text-indigo-900 rounded text-[9px] font-black tracking-wide">{l.pis}</span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-[12px] text-gray-400 italic">No SO Mapping</span>
-                      )}
                     </div>
 
                     <div className="space-y-4 pl-1">
@@ -668,60 +693,178 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
               </div>
               <p className="text-[13px] text-white/70 mb-6">Recommended Skill Focus</p>
 
-              <div className="space-y-2.5">
-                {Object.entries(data.so?.scores || {})
-                  .filter(([id]) => {
-                    // DYNAMIC: Only show SOs that are actually mapped to this course's ILOs
-                    const courseMap = COURSE_ILO_SO_MAP[data.course_code] || {};
-                    const mappedSoIds = new Set();
-                    Object.values(courseMap).forEach(entries => {
-                      entries.forEach(e => mappedSoIds.add(`SO ${e.so}`));
-                    });
-                    return mappedSoIds.has(id);
-                  })
-                  .sort(([, a], [, b]) => a - b)
-                  .slice(0, 2)
-                  .map(([id, score]) => (
-                    <div key={id} className="flex justify-between items-center text-[12px] mb-2.5">
-                      <span className="font-bold text-white/80">{id}</span>
-                      <span className="font-black text-white">{score.toFixed(1)}%</span>
-                    </div>
-                  ))}
-              </div>
-
-              {/* Technical Proficiencies Checklist */}
+              {/* Actionable focus items — concrete, non-repetitive recommendations
+                  derived from real signal in THIS course: missing work, weakest ILOs
+                  relative to the next grading band, lowest-scoring assessments,
+                  alignment-vs-mastery gaps, and maintenance advice when applicable. */}
               {(() => {
-                const courseData = {
-                  'ENGG 403': {
-                    skills: [
-                      { label: "CAD Layering & Organization", level: "Critical" },
-                      { label: "Engineering Design Principles", level: "Essential" },
-                      { label: "Component & Assembly Understanding", level: "Technical" }
-                    ]
-                  },
-                  'CpE 411': {
-                    skills: [
-                      { label: "Big O Complexity Analysis", level: "Critical" },
-                      { label: "Core Structure Implementation", level: "Essential" },
-                      { label: "Memory/Pointer Management", level: "Technical" }
-                    ]
-                  },
-                  'ENGG 416': {
-                    skills: [
-                      { label: "Research Design & Framework", level: "Critical" },
-                      { label: "Statistical Data Validation", level: "Essential" },
-                      { label: "Technical Paper Composition", level: "Technical" }
-                    ]
+                const items = [];
+                const currentAvg = data.ilo?.weighted_avg || 0;
+                const currentStanding = getStanding(currentAvg);
+                const nextStanding = getNextStanding(currentAvg);
+                // Anchor "weak" to the next band the student needs to clear.
+                // If already at the top band, hold the line at the current band.
+                const weakThreshold = nextStanding ? nextStanding.min : currentStanding.min;
+                const courseMap = COURSE_ILO_SO_MAP[data.course_code] || {};
+
+                // 1. Missing assessments — biggest mastery lift available.
+                const missing = assessments.find(
+                  a => a.ilos.reduce((s, i) => s + i.score, 0) === 0
+                );
+                if (missing) {
+                  items.push(`Complete the ${missing.name} — an ungraded component is capping your mastery.`);
+                }
+
+                // 2. Weakest two ILOs across graded work, gated by the next-band threshold.
+                const iloStats = {};
+                assessments.forEach(a => {
+                  a.ilos.forEach(i => {
+                    if (i.max_score <= 0) return;
+                    if (!iloStats[i.ilo_number]) iloStats[i.ilo_number] = { total: 0, max: 0 };
+                    iloStats[i.ilo_number].total += i.score;
+                    iloStats[i.ilo_number].max += i.max_score;
+                  });
+                });
+                const weakIlos = Object.entries(iloStats)
+                  .map(([num, v]) => ({ num, pct: v.max ? (v.total / v.max) * 100 : 0 }))
+                  .filter(x => x.pct > 0 && x.pct < weakThreshold)
+                  .sort((a, b) => a.pct - b.pct);
+
+                const usedIlos = new Set();
+                if (weakIlos[0]) {
+                  const w = weakIlos[0];
+                  const so = courseMap[w.num]?.[0];
+                  const topic = so ? (SO_NAMES[so.so] || `SO ${so.so}`) : 'core concepts';
+                  items.push(`Review ILO ${w.num} (${topic}) — it's the area pulling your standing down.`);
+                  usedIlos.add(w.num);
+                }
+
+                // 3. Lowest-scoring graded assessment, if it's not already implied
+                //    by the weakest-ILO message and not the same as `missing`.
+                const lowAssess = assessments
+                  .map(a => {
+                    const total = a.ilos.reduce((s, i) => s + i.score, 0);
+                    const max = a.ilos.reduce((s, i) => s + i.max_score, 0);
+                    return { name: a.name, pct: max ? (total / max) * 100 : 0, hasScore: total > 0 };
+                  })
+                  .filter(a => a.hasScore)
+                  .sort((a, b) => a.pct - b.pct)[0];
+                if (lowAssess && lowAssess.pct < weakThreshold && items.length < 3) {
+                  items.push(`Re-study topics from your ${lowAssess.name} and work through similar practice problems.`);
+                }
+
+                // 4. Alignment-vs-mastery gap — if Alignment lags Mastery by ≥ 10pt
+                //    on the weakest ILO, the student knows the material but isn't
+                //    hitting the SO/PI criteria. Different focus than raw practice.
+                const perIloPct = data.ilo?.percentages || [];
+                const weakestIdx = perIloPct.length
+                  ? perIloPct.indexOf(Math.min(...perIloPct.filter(p => p > 0)))
+                  : -1;
+                if (
+                  items.length < 3 &&
+                  weakestIdx >= 0 &&
+                  iloStats[weakestIdx + 1] &&
+                  iloStats[weakestIdx + 1].max > 0
+                ) {
+                  const masteryPct = perIloPct[weakestIdx];
+                  const alignPct = (iloStats[weakestIdx + 1].total / iloStats[weakestIdx + 1].max) * 100;
+                  if (masteryPct - alignPct >= 10) {
+                    items.push(`Tighten ILO ${weakestIdx + 1} deliverables to the SO rubric — your understanding is there, but the alignment is lagging behind.`);
                   }
-                }[data.course_code] || {
-                  skills: [{ label: "General Course Proficiency", level: "Required" }]
-                };
+                }
+
+                // 5. Topic-aware 3rd recommendation — picks a tactical study mode
+                //    based on the weakest SO's discipline + the lowest assessment's
+                //    type, so the 3rd bullet feels distinct per student/course.
+                if (items.length < 3) {
+                  const topWeakIlo = weakIlos[0];
+                  const topWeakSo = topWeakIlo ? courseMap[topWeakIlo.num]?.[0]?.so : null;
+
+                  // Tactics keyed to SO topic (drawn from the SO_NAMES taxonomy).
+                  const soTactics = {
+                    1:  `Map the weakest topic to its prerequisite from earlier coursework — most discipline-knowledge gaps trace back to a missed foundation.`,
+                    2:  `Replicate one investigation end-to-end (hypothesis → data → analysis) before attempting new ones — it surfaces the step where your reasoning breaks.`,
+                    3:  `Re-attempt your last design exercise with the rubric in hand and check each criterion before submitting.`,
+                    4:  `Volunteer to lead a study-group walkthrough — teaching the topic forces you to find the gaps in your own understanding.`,
+                    5:  `Work through worked-example problems before tackling unseen ones — pattern recognition is what's missing, not effort.`,
+                    6:  `Re-read the ethics case studies in the syllabus and articulate the principle that applies to each — abstract memorization won't transfer.`,
+                    7:  `Practice explaining a hard concept aloud (or in writing) without notes — communication gaps mask understanding gaps.`,
+                    8:  `Tie the weakest topic to a real-world environmental case — context anchors abstract material.`,
+                    9:  `Pick one supplementary reading or video tied to the weakest ILO this week — independent learning closes lifelong-learning gaps.`,
+                    10: `Connect the weakest topic to a current industry or societal example — engineering-and-society alignment improves when context is concrete.`,
+                    11: `Spend one focused session deliberately using the course tools (CLI, IDE, simulator) on a side problem — fluency comes from hands-on hours.`,
+                    12: `Plan the next assessment's deliverables backwards from the deadline — project-management gaps usually show up as last-minute scope cuts.`,
+                    13: `Reflect on how this course's material affects communities you know — social-responsibility outcomes need personal grounding to stick.`,
+                  };
+
+                  // Tactics keyed to assessment type (Lab, Exam, Project, Quiz, etc.).
+                  // Match by name keywords so we don't need a separate field.
+                  const assessNameLower = (lowAssess?.name || '').toLowerCase();
+                  let assessTactic = null;
+                  if (lowAssess && lowAssess.pct < weakThreshold) {
+                    if (/\blab\b|laboratory/.test(assessNameLower)) {
+                      assessTactic = `Repeat the lab procedure outside class hours and document where your output diverged — labs reward iteration, not memorization.`;
+                    } else if (/exam|midterm|final/.test(assessNameLower)) {
+                      assessTactic = `Rework the items you missed on the exam under timed conditions — past-paper drilling outperforms re-reading notes.`;
+                    } else if (/project/.test(assessNameLower)) {
+                      assessTactic = `Iterate on the lowest-scoring deliverable instead of moving on — most projects allow revisions and the rubric is reusable.`;
+                    } else if (/quiz/.test(assessNameLower)) {
+                      assessTactic = `Convert your missed quiz items into flashcards and self-test across the week — spaced repetition will close this gap fastest.`;
+                    } else if (/assignment|homework|hw/.test(assessNameLower)) {
+                      assessTactic = `Redo the assignment problems where you lost points and compare your steps to the model solution line by line.`;
+                    }
+                  }
+
+                  // Behavioral tactics — non-topic-specific but contextual.
+                  const behavioralPool = [
+                    `Bring two specific questions from this course to office hours this week — targeted asks get better answers than open-ended ones.`,
+                    `Pair with a classmate who scored well on the assessment you're weakest in — peer explanations often unlock what lecture didn't.`,
+                    `Block two short, focused practice sessions on the weakest ILO instead of one long cram — sustained spacing outperforms volume.`,
+                    `Skim ahead to next week's syllabus topic before lecture — entering class already primed turns lectures into reinforcement.`,
+                  ];
+
+                  // Build a deterministic 3rd-bullet selection so the recommendation
+                  // stays stable per (course, student) but varies across them.
+                  const pool = [];
+                  if (assessTactic) pool.push(assessTactic);
+                  if (topWeakSo && soTactics[topWeakSo]) pool.push(soTactics[topWeakSo]);
+
+                  // Second-weakest ILO callout (kept for variety; rephrased so it
+                  // doesn't duplicate the first weak-ILO bullet's structure).
+                  if (weakIlos[1] && !usedIlos.has(weakIlos[1].num)) {
+                    const w = weakIlos[1];
+                    const so = courseMap[w.num]?.[0];
+                    const topic = so ? (SO_NAMES[so.so] || `SO ${so.so}`) : 'a related area';
+                    pool.push(`Don't let ILO ${w.num} (${topic}) slip further — even a short weekly review keeps it from becoming the next weak spot.`);
+                  }
+
+                  // Deterministic pick from the behavioral pool, seeded by avg + ilo count.
+                  const seed = Math.floor((currentAvg || 0) * 10 + (assessments?.length || 0));
+                  pool.push(behavioralPool[seed % behavioralPool.length]);
+
+                  for (const candidate of pool) {
+                    if (items.length >= 3) break;
+                    if (!items.includes(candidate)) items.push(candidate);
+                  }
+                }
+
+                // 6. Maintenance advice — only when there's genuinely nothing to fix.
+                if (items.length === 0) {
+                  if (currentAvg >= 90) {
+                    items.push(`Take on stretch problems or mentor classmates to consolidate your ${currentStanding.label.toLowerCase()} standing.`);
+                    items.push(`Document your problem-solving process — it sharpens long-term retention and helps future-you debug your own thinking.`);
+                  } else {
+                    items.push(`Maintain steady progress — no specific weak area is flagged from your current assessments.`);
+                  }
+                }
+
 
                 return (
                   <ul className="space-y-3 mt-1">
-                    {courseData.skills.map((skill, i) => (
-                      <li key={i} className="flex items-center justify-between">
-                        <span className="text-[14px] font-bold text-white leading-tight">{skill.label}</span>
+                    {items.slice(0, 3).map((item, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-white/50 mt-1 text-[14px] leading-none shrink-0">•</span>
+                        <span className="text-[13.5px] font-semibold text-white leading-snug">{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -772,18 +915,21 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
                     );
                   }
 
-                  if (currentAvg >= 90) {
+                  const currentStanding = getStanding(currentAvg);
+                  const nextStanding = getNextStanding(currentAvg);
+
+                  if (!nextStanding) {
+                    // Already at the top band (Excellent, ≥ 98).
                     return (
                       <p className="text-[14px] text-gray-800 leading-relaxed">
-                        You've achieved <span className="font-bold text-emerald-700">EXCEPTIONAL</span> status! To maintain this mastery, continue refining your <span className="font-bold text-[#70170f]">{courseSuggestions[lowSoId] || "course skills"}</span> across upcoming projects.
+                        You've reached <span className="font-bold text-emerald-700 uppercase">{currentStanding.label}</span> standing — the top tier of the grading system. Maintain this mastery by continuing to refine your <span className="font-bold text-[#70170f]">{courseSuggestions[lowSoId] || "course skills"}</span> across upcoming projects.
                       </p>
                     );
                   }
 
-                  const nextTarget = currentAvg < 75 ? "COMPETENT" : "EXCEPTIONAL";
                   return (
                     <p className="text-[14px] text-gray-800 leading-relaxed">
-                      To reach <span className="font-bold text-[#70170f]">{nextTarget}</span> standing, focus on <span className="font-bold text-[#70170f]">ILO {lowestIlo?.ilo_number}</span> ({courseSuggestions[lowSoId] || "technical core"}). This is your primary path to proficiency.
+                      You're currently at <span className="font-bold text-[#70170f] uppercase">{currentStanding.label}</span> standing ({currentAvg.toFixed(1)}%). To reach <span className="font-bold text-[#70170f] uppercase">{nextStanding.label}</span> ({nextStanding.min}%+), focus on <span className="font-bold text-[#70170f]">ILO {lowestIlo?.ilo_number}</span> ({courseSuggestions[lowSoId] || "technical core"}). This is your primary path to proficiency.
                     </p>
                   );
                 })()}

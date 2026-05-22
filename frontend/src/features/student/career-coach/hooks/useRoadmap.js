@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { roadmapService, CAREER_TO_SLUG } from '../../../../services/roadmapService'
+import { roadmapService } from '../../../../services/roadmapService'
 
 export function useRoadmap(careerTitle) {
   const [roadmap, setRoadmap] = useState(null)
@@ -14,18 +14,11 @@ export function useRoadmap(careerTitle) {
       return
     }
 
-    const slug = CAREER_TO_SLUG[careerTitle]
-    if (!slug) {
-      // Unknown title — don't crash, just surface a clean error
-      setError(`No roadmap available for "${careerTitle}"`)
-      return
-    }
-
     const fetchRoadmap = async () => {
       setLoading(true)
       setError(null)
       try {
-        const data = await roadmapService.getRoadmap(slug)
+        const data = await roadmapService.getRoadmap(encodeURIComponent(careerTitle))
         setRoadmap(data)
       } catch (err) {
         setError('Could not load roadmap')

@@ -13,6 +13,8 @@ const InstructorDashboard = () => {
   const { token, logout } = useAuth();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('instructor-portal');
+  const [selectedYear, setSelectedYear] = useState('All');
+  const [selectedSemester, setSelectedSemester] = useState('All');
 
   const { classes, archivedClasses, stats, loading, error, createClass, archiveClass, restoreClass, deleteClass, refetch } = useInstructorClasses();
 
@@ -90,6 +92,10 @@ const InstructorDashboard = () => {
             classes={classes}
             onSelectClass={setActiveView}
             onCreateClass={() => setIsCreateOpen(true)}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            selectedSemester={selectedSemester}
+            setSelectedSemester={setSelectedSemester}
           />
         )}
 

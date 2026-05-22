@@ -14,10 +14,9 @@ async def get_previous_report(
     student_id: int,
 ) -> CareerReport | None:
     """
-    Return the second-most-recent completed CareerReport for a student.
+    Return the most recent completed CareerReport for a student.
 
     This is the report Agent 7 uses as the 'before' baseline.
-    We skip offset=0 (the current/latest report being written) and take offset=1.
     Filters to reports that have a non-empty report_json (completed runs only).
     """
     result = await db.execute(
@@ -25,7 +24,6 @@ async def get_previous_report(
         .where(CareerReport.student_id == student_id)
         .where(CareerReport.report_json != "{}")
         .order_by(CareerReport.created_at.desc())
-        .offset(1)
         .limit(1)
     )
     return result.scalar_one_or_none()

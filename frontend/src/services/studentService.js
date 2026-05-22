@@ -13,6 +13,7 @@ export const studentService = {
   joinClass:       (classCode)  => request('POST',  '/api/student/join', { class_code: classCode }),
 
   // Career goal selection
+  getCareers:      ()           => request('GET',   '/api/student/careers'),
   getChosenCareer: ()           => request('GET',   '/api/student/career'),
   setChosenCareer: (career)     => request('PATCH', '/api/student/career', { career }),
 

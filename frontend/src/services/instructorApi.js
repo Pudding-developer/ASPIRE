@@ -18,4 +18,5 @@ export const instructorApi = {
   getClassAssessmentDetails: (classId, assessmentId) => request('GET', `${BASE}/classes/${classId}/assessments/${assessmentId}`),
   updateAssessmentScores: (classId, assessmentId, data) => request('PUT', `${BASE}/classes/${classId}/assessments/${assessmentId}`, data),
   deleteAssessment: (classId, assessmentId) => request('DELETE', `${BASE}/classes/${classId}/assessments/${assessmentId}`),
+  csvImportAssessments: (classId, data) => request('POST', `${BASE}/classes/${classId}/assessments/csv-import`, data),
 };

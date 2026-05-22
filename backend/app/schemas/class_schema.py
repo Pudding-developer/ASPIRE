@@ -89,3 +89,12 @@ class AssessmentSummary(BaseModel):
 class AssessmentBatchDetail(AssessmentBatchSubmit):
     id: int
     created_at: datetime
+
+
+class CSVImportBatch(BaseModel):
+    """Payload for the CSV batch-import endpoint.
+
+    Each item in ``assessments`` follows the same shape as
+    AssessmentBatchSubmit so the upsert service can reuse existing logic.
+    """
+    assessments: list[AssessmentBatchSubmit]

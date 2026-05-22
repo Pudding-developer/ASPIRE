@@ -1,0 +1,152 @@
+[
+  {
+    "query": "Where do I learn logic design and gates?",
+    "expected_title": "Logic Circuits and Design",
+    "category": "curriculum"
+  },
+  {
+    "query": "What are the required skills for a backend developer?",
+    "expected_title": "Backend Developer",
+    "category": "career_path"
+  },
+  {
+    "query": "How do I become a full stack engineer?",
+    "expected_title": "Full Stack Developer",
+    "category": "career_path"
+  },
+  {
+    "query": "What subjects teach microprocessors and registers?",
+    "expected_title": "Microprocessors",
+    "category": "curriculum"
+  },
+  {
+    "query": "What courses cover object-oriented programming?",
+    "expected_title": "Object Oriented Programming",
+    "category": "curriculum"
+  },
+  {
+    "query": "How is ABET student outcome SO1 defined?",
+    "expected_title": "SO1: Discipline Knowledge",
+    "category": "ilo"
+  },
+  {
+    "query": "What does SO6 stand for and how is ethics related?",
+    "expected_title": "SO6: Ethics",
+    "category": "ilo"
+  },
+  {
+    "query": "What projects can help me learn Docker?",
+    "expected_title": "Dockerization Project for BSCpE",
+    "category": "gap_closer"
+  },
+  {
+    "query": "What project helps me build a CI/CD pipeline using GitHub Actions?",
+    "expected_title": "CI/CD Pipeline Project for BSCpE",
+    "category": "gap_closer"
+  },
+  {
+    "query": "Where are the major tech hubs in the Philippines?",
+    "expected_title": "Philippine Tech Hubs",
+    "category": "ph_tech_eco"
+  },
+  {
+    "query": "Which tech community can I join for Python in PH?",
+    "expected_title": "Philippine Tech Communities",
+    "category": "ph_tech_eco"
+  },
+  {
+    "query": "What free learning platforms do you recommend?",
+    "expected_title": "Free Learning Resources for BSCpE Gaps",
+    "category": "resources"
+  },
+  {
+    "query": "What subjects map to communication outcomes?",
+    "expected_title": "Professional Communication for Engineers",
+    "category": "prof_skills"
+  },
+  {
+    "query": "What skills are needed for a hardware engineering career?",
+    "expected_title": "Embedded Systems Engineer",
+    "category": "career_path"
+  },
+  {
+    "query": "How to become a VLSI design engineer?",
+    "expected_title": "VLSI Design Engineer",
+    "category": "career_path"
+  },
+  {
+    "query": "What does an IoT systems engineer do?",
+    "expected_title": "IoT Systems Engineer",
+    "category": "career_path"
+  },
+  {
+    "query": "Where do we study data mining or AI track?",
+    "expected_title": "Cognate/Elective Course 3 (Data Mining Track/ AI Track)",
+    "category": "curriculum"
+  },
+  {
+    "query": "What does SO12 Project Management map to?",
+    "expected_title": "SO12: Project Management",
+    "category": "ilo"
+  },
+  {
+    "query": "Where do we learn computer architecture?",
+    "expected_title": "Computer Architecture and Organization",
+    "category": "curriculum"
+  },
+  {
+    "query": "What subjects cover CISCO routing and switching?",
+    "expected_title": "Routing and Switching (CISCO 2)",
+    "category": "curriculum"
+  },
+  {
+    "query": "What is the learning path for a software architect?",
+    "expected_title": "Software Architect learning path for BSU CpE",
+    "category": "roadmap"
+  },
+  {
+    "query": "What is the ML model category for modern engineering tools?",
+    "expected_title": "ML Skill Category: Modern Engineering Tools",
+    "category": "skillset_ml"
+  },
+  {
+    "query": "How does the ML model predict Programming proficiency?",
+    "expected_title": "ML Skill Category: Programming & Software Development",
+    "category": "skillset_ml"
+  },
+  {
+    "query": "What skills does a cybersecurity analyst need?",
+    "expected_title": "Cybersecurity Analyst",
+    "category": "career_path"
+  },
+  {
+    "query": "What is the learning path for a DevOps engineer?",
+    "expected_title": "DevOps Engineer learning path for BSU CpE",
+    "category": "roadmap"
+  },
+  {
+    "query": "What is the learning path for a Data Scientist?",
+    "expected_title": "Data Scientist learning path for BSU CpE",
+    "category": "roadmap"
+  },
+  {
+    "query": "What is the learning path for an AI Engineer?",
+    "expected_title": "AI Engineer learning path for BSU CpE",
+    "category": "roadmap"
+  },
+  {
+    "query": "How to become a machine learning engineer?",
+    "expected_title": "Machine Learning Engineer",
+    "category": "career_path"
+  },
+  {
+    "query": "What is the learning path for a machine learning engineer?",
+    "expected_title": "Machine Learning Engineer learning path for BSU CpE",
+    "category": "roadmap"
+  },
+  {
+    "query": "What project covers cloud deployment?",
+    "expected_title": "Cloud Deployment Project for BSCpE",
+    "category": "gap_closer"
+  }
+]

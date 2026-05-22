@@ -18,6 +18,17 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
+# Pseudonymization key — independent of SECRET_KEY so JWT rotation does not
+# break cross-report pseudonym stability. Falls back to SECRET_KEY only for
+# dev so the app still boots; production should set PSEUDONYM_KEY explicitly.
+PSEUDONYM_KEY = os.getenv("PSEUDONYM_KEY", SECRET_KEY)
+if PSEUDONYM_KEY == SECRET_KEY:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(
+        "PSEUDONYM_KEY not set — falling back to SECRET_KEY. "
+        "Set PSEUDONYM_KEY in .env for production."
+    )
+
 # CORS Origins
 _origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:5175")
 ALLOWED_ORIGINS = [o.strip() for o in _origins.split(",") if o.strip()]

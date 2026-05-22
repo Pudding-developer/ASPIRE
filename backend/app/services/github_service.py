@@ -325,14 +325,14 @@ async def connect_github_account(db, user_id: int, gh_user: dict, access_token: 
 
     github_username = gh_user.get("login", "")
 
-    # Check if GitHub account is linked to a different student
-    existing = await github_repository.get_profile_by_username(db, github_username)
-    if existing and existing.user_id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="This GitHub account is already connected to a different student.",
-            headers={"X-Error-Code": "GITHUB_ALREADY_LINKED"},
-        )
+    # Temporarily bypassed for thesis evaluation: allow multiple test students to link the same GitHub account.
+    # existing = await github_repository.get_profile_by_username(db, github_username)
+    # if existing and existing.user_id != user_id:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT,
+    #         detail="This GitHub account is already connected to a different student.",
+    #         headers={"X-Error-Code": "GITHUB_ALREADY_LINKED"},
+    #     )
 
     profile = await github_repository.get_profile(db, user_id)
     is_new = profile is None

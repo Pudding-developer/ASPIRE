@@ -248,6 +248,12 @@
   {
     "year": "3",
     "semester": "1",
+    "code": "CpE 412",
+    "title": "Introduction to Networks, Data and Digital Communications (CISCO 1)"
+  },
+  {
+    "year": "3",
+    "semester": "1",
     "code": "CpE 413",
     "title": "Fundamentals of Mixed Signals and Sensors"
   },

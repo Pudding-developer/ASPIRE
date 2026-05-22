@@ -7,9 +7,18 @@ export default function CareerPathCard({ match, index, selected, optimal, onSele
   // Fall back to the dynamic careerOptions skill list when the AI hasn't
   // produced match data for this title yet.
   const fallback = unanalyzed ? (careerOptions || []).find(o => o.title === match.title) : null;
-  const tags = unanalyzed
-    ? (fallback?.skills || []).slice(0, 2)
-    : (match.matched_skills || []).slice(0, 2);
+  const getSkillName = (entry) => {
+    if (typeof entry === 'string') return entry;
+    if (entry && typeof entry === 'object') {
+      return String(entry.name ?? entry.skill ?? entry.title ?? '');
+    }
+    return '';
+  };
+
+  const tags = (unanalyzed
+    ? (fallback?.skills || [])
+    : (match.matched_skills || [])
+  ).map(getSkillName).filter(Boolean).slice(0, 2);
 
   return (
     <div

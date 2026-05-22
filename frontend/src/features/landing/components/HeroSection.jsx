@@ -110,7 +110,8 @@ export default function HeroSection({ scrollToSection, onGetStarted }) {
         </h1>
 
         <p className="hero-description text-[#430202]/60 text-lg md:text-xl mb-12 max-w-3xl mx-auto opacity-0 font-bold leading-relaxed">
-          ASPIRE provides advanced enrollment prediction tools that analyze student data, generate insights, and help you engage better — built for institutions of all sizes.
+          Discover your ideal career path based on your academic progress and skills.<br/>
+          Find your direction and start building the future you want today.
         </p>
 
         <div className="hero-cta flex justify-center opacity-0 pointer-events-auto">

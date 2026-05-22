@@ -33,6 +33,13 @@ async function request(method, path, body, options = {}) {
     localStorage.setItem(TOKEN_KEY, refreshed);
   }
 
+  if (res.status === 401) {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('aspire_user');
+    window.location.href = '/';
+    throw new Error('Session expired. Please log in again.');
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || `Request failed: ${res.status}`);

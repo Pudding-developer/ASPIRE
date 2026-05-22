@@ -85,6 +85,8 @@ SKILL_REQUIREMENT_ALIASES: dict[str, list[str]] = {
     "i2c/spi/uart protocols": ["i2c/spi/uart protocols", "microprocessor architecture", "embedded systems"],
     "hdl":               ["verilog", "hdl", "introduction to hdl", "vhdl"],
     "digital signal processing": ["dsp algorithms", "digital signal processing", "dsp"],
+    "sensors":           ["sensor technology", "sensors"],
+    "embedded c":        ["c", "cpp", "programming fundamentals", "computer programming", "object-oriented programming", "microprocessor architecture"],
 }
 
 # Proficiency → points (must match what the LLM was asked to use)

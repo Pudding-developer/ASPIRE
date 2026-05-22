@@ -1577,6 +1577,184 @@ ROADMAP_NODES = {
             "group": "Soft Skills",
             "order": 27
         }
+    ],
+    "embedded": [
+        {
+            "id": "c-lang",
+            "label": "C Programming",
+            "group": "Fundamentals",
+            "order": 1
+        },
+        {
+            "id": "cpp-lang",
+            "label": "C++ Programming",
+            "group": "Fundamentals",
+            "order": 2
+        },
+        {
+            "id": "electronics",
+            "label": "Basic Electronics & Circuit Analysis",
+            "group": "Fundamentals",
+            "order": 3
+        },
+        {
+            "id": "digital-logic",
+            "label": "Digital Logic Design",
+            "group": "Hardware",
+            "order": 4
+        },
+        {
+            "id": "computer-arch",
+            "label": "Computer Architecture",
+            "group": "Hardware",
+            "order": 5
+        },
+        {
+            "id": "microprocessors",
+            "label": "Microprocessors & Assembly",
+            "group": "Hardware",
+            "order": 6
+        },
+        {
+            "id": "microcontrollers",
+            "label": "Microcontrollers (STM32, ESP32)",
+            "group": "Hardware",
+            "order": 7
+        },
+        {
+            "id": "embedded-c",
+            "label": "Embedded C",
+            "group": "Embedded Software",
+            "order": 8
+        },
+        {
+            "id": "rtos",
+            "label": "Real-Time Operating Systems (RTOS)",
+            "group": "Embedded Software",
+            "order": 9
+        },
+        {
+            "id": "peripherals",
+            "label": "Peripherals & Communication Protocols (I2C/SPI/UART)",
+            "group": "Embedded Software",
+            "order": 10
+        },
+        {
+            "id": "pcb-design",
+            "label": "PCB Design & EDA Tools",
+            "group": "Design & Diagnostic",
+            "order": 11
+        },
+        {
+            "id": "oscilloscopes",
+            "label": "Hardware Debugging & Oscilloscopes",
+            "group": "Design & Diagnostic",
+            "order": 12
+        },
+        {
+            "id": "wireless-protocols",
+            "label": "Wireless Protocols (LoRaWAN, Zigbee, BLE)",
+            "group": "IoT & Networking",
+            "order": 13
+        },
+        {
+            "id": "mqtt",
+            "label": "MQTT & IoT Messaging Protocols",
+            "group": "IoT & Networking",
+            "order": 14
+        },
+        {
+            "id": "cloud-integration",
+            "label": "Cloud Integration (AWS IoT, Google Cloud IoT)",
+            "group": "IoT & Networking",
+            "order": 15
+        }
+    ],
+    "computer-science": [
+        {
+            "id": "discrete-math",
+            "label": "Discrete Mathematics",
+            "group": "Fundamentals",
+            "order": 1
+        },
+        {
+            "id": "algorithms",
+            "label": "Algorithms & Data Structures",
+            "group": "Fundamentals",
+            "order": 2
+        },
+        {
+            "id": "digital-logic",
+            "label": "Digital Logic Design",
+            "group": "Fundamentals",
+            "order": 3
+        },
+        {
+            "id": "verilog",
+            "label": "Verilog HDL",
+            "group": "Hardware Description",
+            "order": 4
+        },
+        {
+            "id": "vhdl",
+            "label": "VHDL",
+            "group": "Hardware Description",
+            "order": 5
+        },
+        {
+            "id": "systemverilog",
+            "label": "SystemVerilog",
+            "group": "Hardware Description",
+            "order": 6
+        },
+        {
+            "id": "fpga-arch",
+            "label": "FPGA Architecture (Xilinx/Altera)",
+            "group": "FPGA Design",
+            "order": 7
+        },
+        {
+            "id": "timing-closure",
+            "label": "Timing Closure & Constraints",
+            "group": "FPGA Design",
+            "order": 8
+        },
+        {
+            "id": "high-speed-interfaces",
+            "label": "High-Speed Interfaces (PCIe, DDR)",
+            "group": "FPGA Design",
+            "order": 9
+        },
+        {
+            "id": "cmos",
+            "label": "CMOS Fundamentals & Analog Circuits",
+            "group": "VLSI Design",
+            "order": 10
+        },
+        {
+            "id": "eda-tools",
+            "label": "EDA Design Tools (Cadence/Synopsys)",
+            "group": "VLSI Design",
+            "order": 11
+        },
+        {
+            "id": "sta",
+            "label": "Static Timing Analysis (STA)",
+            "group": "VLSI Design",
+            "order": 12
+        },
+        {
+            "id": "computer-arch",
+            "label": "Computer Architecture",
+            "group": "Digital Systems",
+            "order": 13
+        },
+        {
+            "id": "dsp",
+            "label": "Digital Signal Processing (DSP)",
+            "group": "Digital Systems",
+            "order": 14
+        }
     ]
 }
 

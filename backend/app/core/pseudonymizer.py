@@ -86,6 +86,27 @@ _SR_CODE_RE = re.compile(r"\b\d{2}-\d{4,6}\b")  # e.g. 21-12345
 
 _MIN_REDACT_LEN = 3
 
+# Technical or common system terms that should never be redacted (case-insensitive),
+# even if they appear in a student's name, email, or username.
+# Redacting these would corrupt JSON keys (e.g. github_score) or core technical concepts.
+NON_REDACTABLE_WORDS: frozenset[str] = frozenset({
+    "git",
+    "github",
+    "demo",
+    "test",
+    "cpe",
+    "bsu",
+    "app",
+    "api",
+    "code",
+    "repo",
+    "user",
+    "student",
+    "developer",
+    "engineering",
+    "science",
+})
+
 
 def _collect_pii_strings(original: dict) -> list[str]:
     """Pull every PII string out of the *original* (cleartext) student_data.
@@ -98,7 +119,9 @@ def _collect_pii_strings(original: dict) -> list[str]:
 
     def _add(s: Any) -> None:
         if isinstance(s, str) and len(s) >= _MIN_REDACT_LEN:
-            pii.add(s.strip())
+            val = s.strip()
+            if val.lower() not in NON_REDACTABLE_WORDS:
+                pii.add(val)
 
     _add(original.get("sr_code"))
     _add(original.get("email"))

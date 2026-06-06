@@ -9,18 +9,18 @@ This document details the AI-generated Career Coach report and readiness assessm
 - **SR Code:** `22-01019`
 - **Email:** `victor@gmail.com`
 - **GitHub Account:** [@Pudding-developer](https://github.com/Pudding-developer)
-- **Chosen Career:** Frontend Developer
-- **Report Date:** 2026-05-22 12:36:46.693442
-- **Report ID:** `70` (Job ID: `2e950fc8-8076-4547-980f-9c6835ab941b`)
+- **Chosen Career:** Backend Developer
+- **Report Date:** 2026-05-22 14:21:06.013591
+- **Report ID:** `74` (Job ID: `6810e913-8847-4d78-9469-929e4db4d289`)
 
 ---
 
 ## 📝 Executive Summary
-You demonstrate a strong foundation in core academic areas, with advanced proficiency in Engineering Design Process and Calculus, alongside solid Programming Fundamentals. Your GitHub activity shows consistent engagement across 5 original projects, contributing a total of 105 commits, primarily utilizing intermediate JavaScript and Python. This blend of academic rigor and practical coding experience positions you well for further specialization.
+You demonstrate a strong foundation in core engineering principles, highlighted by your 'Exceeding Expectations' status in Engineering Design Process and Prototyping. Your GitHub profile shows consistent activity with 105 total commits across 5 original projects, showcasing practical application of skills like intermediate JavaScript and Python. Academically, you've achieved an 'Outstanding' overall performance with high scores in subjects like Programming Fundamentals and Calculus, indicating a robust theoretical understanding.
 
-Based on your current skill set, the role of Backend Developer stands out as the top recommendation with a match score of 53%. Your intermediate Python and JavaScript skills, coupled with beginner experience in REST API and Flask, align well with the core requirements of this role. Alternative paths like Software Architect (45%) and Full Stack Developer (38%) also show potential, leveraging your foundational programming and design skills.
+Based on your current skill set, the Full Stack Developer role is your strongest match, with a score of 26. This alignment is driven by your intermediate proficiency in both Python or JavaScript for backend logic and HTML/CSS/JavaScript for frontend development. Other promising paths include Frontend Developer (score 23) and Data Scientist (score 16), which also leverage your programming strengths.
 
-To advance towards a Backend Developer role, focus on addressing key gaps such as PostgreSQL, Docker, and Git, which are estimated to take about 9 weeks combined. Your existing proficiency in Python and your experience with web development concepts mean that integrating these new tools and technologies into your workflow is a well-defined and achievable next step.
+To further advance towards a Full Stack Developer role, focus on closing key skill gaps, particularly Git and Docker. These foundational tools are crucial for modern development workflows. With an estimated total of 12 weeks of focused effort, your existing programming skills and academic rigor provide an excellent base to quickly acquire these new competencies and significantly boost your career readiness.
 
 ---
 
@@ -30,28 +30,28 @@ Below is the compatibility analysis across all assessed career paths, sorted by 
 
 | Career Title | Match Score | Matched Skills | Key Gaps |
 | :--- | :---: | :--- | :--- |
-| **Software Architect** | `30%` | Programming Fundamentals (via Computer Programming 1), Engineering Design Process (via Introduction to Engineering), REST API (via GitHub), Relational Database Design (via GitHub), Authentication (via GitHub), OAuth (via GitHub) | System design, microservices, distributed systems, cloud architecture, API design patterns, performance optimization |
-| **Data Scientist** | `30%` | Python (via GitHub), Mathematical Reasoning (via Mathematics in the Modern World), Calculus (via Differential Calculus, Integral Calculus) | pandas, scikit-learn, SQL, data visualization, statistical analysis, machine learning |
-| **Full Stack Developer** | `29%` | JavaScript (via GitHub), Python (via GitHub), HTML (via GitHub), CSS (via GitHub), REST API (via GitHub), Environment Variables (via GitHub) | React, Node.js, PostgreSQL, Git, Docker, basic DevOps |
-| **Backend Developer** | `25%` | Python (via GitHub), JavaScript (via GitHub), REST API (via GitHub), Flask (via GitHub), SQLAlchemy (via GitHub), ORM (via GitHub) | PostgreSQL, Docker, Git, Linux, Redis, CI/CD pipelines |
-| **Frontend Developer** | `21%` | JavaScript (via GitHub), HTML (via GitHub), CSS (via GitHub), REST API (via GitHub) | React or Vue, TypeScript, Git, responsive design, accessibility |
-| **IoT Systems Engineer** | `17%` | C (via GitHub), Google APIs (via GitHub) | Wireless protocols, Cloud integration, Sensors, MQTT, Embedded C |
-| **FPGA Engineer** | `17%` | *None* | HDL (Verilog/VHDL), FPGA Architecture (Xilinx/Altera), Digital Signal Processing, High-speed interfaces, Timing closure |
-| **Machine Learning Engineer** | `14%` | Python (via GitHub), REST API (via GitHub) | scikit-learn, TensorFlow or PyTorch, feature engineering, model deployment, Docker, MLflow |
-| **AI Engineer** | `12%` | Python (via GitHub) | PyTorch or TensorFlow, LLMs, prompt engineering, vector databases, RAG pipelines, MLOps |
-| **Embedded Systems Engineer** | `11%` | C (via GitHub), C++ (via GitHub) | RTOS, Microcontrollers, I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes |
-| **Cybersecurity Analyst** | `10%` | Authentication (via GitHub), OAuth (via GitHub) | Networking, Linux, ethical hacking, penetration testing, SIEM tools, incident response |
-| **DevOps Engineer** | `6%` | Environment Variables (via GitHub) | Linux, Docker, Kubernetes, CI/CD, AWS or GCP, Terraform |
+| **Frontend Developer** | `21%` | JavaScript (via GitHub) | HTML, CSS, React or Vue, TypeScript, Git, REST API integration |
+| **Full Stack Developer** | `15%` | Node.js or Python, HTML/CSS/JavaScript | React, PostgreSQL, Git, Docker, REST APIs, basic DevOps |
+| **Data Scientist** | `10%` | Python (via GitHub) | pandas, scikit-learn, SQL, data visualization, statistical analysis, machine learning |
+| **Machine Learning Engineer** | `10%` | Python (via GitHub) | scikit-learn, TensorFlow or PyTorch, feature engineering, model deployment, Docker, REST APIs for ML |
+| **AI Engineer** | `10%` | Python (via GitHub) | PyTorch or TensorFlow, LLMs, prompt engineering, vector databases, RAG pipelines, MLOps |
+| **Embedded Systems Engineer** | `7%` | *None* | C/C++, RTOS (FreeRTOS/Zephyr), Microcontrollers (STM32, ESP32, AVR), I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes |
+| **Backend Developer** | `0%` | Python or JavaScript | REST APIs, PostgreSQL, Docker, Git, Linux, Redis |
+| **IoT Systems Engineer** | `0%` | *None* | Embedded C, Wireless protocols (LoRaWAN, Zigbee, BLE), Cloud integration (AWS IoT, Google Cloud IoT), Sensors, MQTT |
+| **Software Architect** | `0%` | *None* | System design, microservices, distributed systems, cloud architecture, API design patterns, database design |
 | **VLSI Design Engineer** | `0%` | *None* | Verilog/SystemVerilog, VHDL, Digital Logic Design, CMOS fundamentals, EDA tools (Cadence, Synopsys), Static Timing Analysis |
+| **DevOps Engineer** | `0%` | *None* | Linux, Docker, Kubernetes, CI/CD, AWS or GCP, Terraform |
+| **Cybersecurity Analyst** | `0%` | *None* | Networking, Linux, ethical hacking, penetration testing, SIEM tools, incident response |
+| **FPGA Engineer** | `0%` | *None* | HDL (Verilog/VHDL), FPGA Architecture (Xilinx/Altera), Digital Signal Processing, High-speed interfaces, Timing closure |
 
 ---
 
 ## 🛠️ Skill Profile
 
-VICTOR WEMBANYAMA has **27 total assessed skills** split between academic coursework and GitHub history.
+VICTOR WEMBANYAMA has **36 total assessed skills** split between academic coursework and GitHub history.
 
 ### Summary Metrics
-- 🌟 **Exceeding Expectations:** 5
+- 🌟 **Exceeding Expectations:** 14
 - 🟢 **On Track:** 2
 - 🟡 **Needs Attention:** 20
 - 🔴 **Critical:** 0
@@ -60,7 +60,7 @@ VICTOR WEMBANYAMA has **27 total assessed skills** split between academic course
 > [!NOTE]
 > Strongest skills are primarily academic/mathematical, while weaker skills represent niche technologies not yet fully explored.
 
-- **Strongest Skills:** Engineering Design Process, Calculus, Programming Fundamentals
+- **Strongest Skills:** Engineering Design Process, Prototyping, Teamwork
 - **Weakest Skills (Needs Attention):**
   - Authentication (50.0%)
   - C (50.0%)
@@ -91,29 +91,28 @@ Based on the recommended career paths, the AI Career Coach recommends the follow
 
 | Skill | Priority | Est. Time | Actionable Recommendation / Reason |
 | :--- | :---: | :---: | :--- |
-| **PostgreSQL** | **High** | 3 Weeks | Backend Developer roles heavily rely on relational databases like PostgreSQL for data storage and management; proficiency is crucial for building robust applications. |
-| **Docker** | **High** | 3 Weeks | Backend Developer roles use Docker to package services for deployment; without it, you can run applications locally but cannot efficiently ship them to production environments. |
-| **Git** | **High** | 3 Weeks | Git is the industry standard for version control; Backend Developers must use it for collaborative development, tracking changes, and managing codebases. |
-| **Linux** | **Medium** | 3 Weeks | Backend applications are typically deployed on Linux servers; understanding Linux commands and administration is essential for deployment, debugging, and monitoring. |
-| **Redis** | **Medium** | 3 Weeks | Backend Developer roles often use Redis for caching, session management, and real-time data processing to improve application performance and scalability. |
+| **Git** | **High** | 3 Weeks | Full Stack Developer roles heavily rely on Git for version control and collaboration; without it, contributing to projects is impossible. |
+| **Docker** | **High** | 3 Weeks | Full Stack Developer roles use Docker to package services for deployment and ensure consistent development environments; it's crucial for modern application delivery. |
+| **React** | **High** | 6 Weeks | React is a primary frontend framework for Full Stack Developers, essential for building interactive user interfaces. |
+| **PostgreSQL** | **Medium** | 2 Weeks | PostgreSQL is a fundamental relational database for Full Stack Developers. The student has a beginner signal in general relational database design, needing to deepen this specifically for PostgreSQL. |
+| **REST APIs** | **Medium** | 2 Weeks | Full Stack Developers frequently design and consume REST APIs to enable communication between frontend and backend services. The student has a beginner signal in REST API. |
 
-### 📚 Recommended Academic Subjects to Prioritize (for Frontend Developer)
+### 📚 Recommended Academic Subjects to Prioritize (for Backend Developer)
 These upcoming subjects in the BSCpE curriculum align directly with this career path. Prioritize these in your study plan:
 - **Programming Logic and Design** (Focus: *Algorithm Design, Logic Formulation, Programming Fundamentals* | Category: *Programming & Software Development*)
 - **Object Oriented Programming** (Focus: *OOP, Software Design Patterns, Python, Java* | Category: *Programming & Software Development*)
+- **Data Structures and Algorithms** (Focus: *Algorithm Design, Data Structures, Computational Thinking* | Category: *Programming & Software Development, Mathematics & Science Foundations*)
 - **Software Design** (Focus: *Software Architecture, Design Patterns, SOLID Principles, UML* | Category: *Programming & Software Development, Engineering Design & Research*)
-- **CpE Practice and Design 1** (Focus: *System Design, Project Management, Research Methodology, Prototyping* | Category: *Engineering Design & Research, Programming & Software Development*)
+- **Operating Systems** (Focus: *OS Concepts, Process Management, Memory Management, Linux* | Category: *Operating Systems & Architecture*)
 - **CpE Practice and Design 2** (Focus: *Capstone Design, Full System Implementation, Technical Documentation* | Category: *Engineering Design & Research, Programming & Software Development*)
 - **Computer Engineering as a Discipline** (Focus: *Engineering Ethics, CpE Overview, Professional Practice* | Category: *Engineering Design & Research, Modern Engineering Tools*)
-- **Emerging Technologies in CpE** (Focus: *IoT, Cloud Computing, AI Trends, Industry 4.0* | Category: *Modern Engineering Tools, Data Science & AI/ML*)
-- **Technopreneurship** (Focus: *Entrepreneurship, Business Planning, Tech Startup, Innovation* | Category: *Entrepreneurial Mindset, Project Management*)
 - **On-the-Job Training** (Focus: *Professional Practice, Industry Experience, Communication* | Category: *Communication, Ethics & Professionalism*)
 - **Seminars and Fieldtrips** (Focus: *Industry Awareness, Professional Networking, Lifelong Learning* | Category: *Lifelong Learning, Cultural & Global Competence*)
 
 ---
 
 ## 📈 Progression & Trends
-- **Career Readiness Score:** `30 / 100`
+- **Career Readiness Score:** `21 / 100`
 - **Readiness Score Change:** `0`
 - **Trend:** Baseline
 - **Progress Summary:** This is the student's first career readiness assessment.

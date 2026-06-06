@@ -1,12 +1,34 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
+import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function DashboardPreview() {
   const containerRef = useRef(null);
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
 
   useGSAP(() => {
     // Entrance animation for the video container
@@ -50,39 +72,41 @@ export default function DashboardPreview() {
             </div>
           </div>
 
-          {/* Video Placeholder Container */}
-          <div className="w-full h-full pt-10 relative flex items-center justify-center overflow-hidden bg-black/20">
-             {/* This is where the video loop will go */}
-             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
-             
-             <div className="text-center z-10 p-8">
-                <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-6 backdrop-blur-2xl group-hover:scale-110 transition-transform duration-500">
-                  <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[16px] border-l-white border-b-[10px] border-b-transparent ml-1.5"></div>
-                </div>
-                <h3 className="text-white text-xl font-bold mb-2 tracking-tight">Experience ASPIRE in Action</h3>
-                <p className="text-white/60 font-medium tracking-wide text-sm max-w-md mx-auto">
-                  Dashboard Loop Placeholder — Dynamic visual showcase of analytics and student tracking is coming soon.
-                </p>
-             </div>
+          {/* Video Container */}
+          <div className="w-full h-full pt-10 relative flex items-center justify-center overflow-hidden bg-black/40 group/video">
+             <video
+               ref={videoRef}
+               className="w-full h-full object-cover"
+               autoPlay
+               loop
+               muted={isMuted}
+               playsInline
+               preload="auto"
+             >
+               <source src="/preview.mp4" type="video/mp4" />
+               <source src="/preview.mov" type="video/quicktime" />
+               Your browser does not support the video tag.
+             </video>
 
-             {/* Faint UI Mockup elements in the background to simulate a dashboard */}
-             <div className="absolute top-16 left-8 w-64 h-6 rounded-lg bg-white/5 animate-pulse"></div>
-             <div className="absolute top-28 left-8 w-40 h-4 rounded-lg bg-white/5"></div>
-             <div className="absolute top-16 right-8 w-12 h-12 rounded-full bg-white/5"></div>
-             
-             <div className="absolute bottom-8 left-8 flex gap-4">
-                <div className="w-32 h-24 rounded-xl bg-white/5 border border-white/5"></div>
-                <div className="w-32 h-24 rounded-xl bg-white/5 border border-white/5"></div>
-                <div className="w-32 h-24 rounded-xl bg-white/5 border border-white/5"></div>
-             </div>
-             
-             <div className="absolute bottom-8 right-8 w-48 h-48 rounded-xl bg-white/5 border border-white/5 flex items-end p-4">
-                <div className="w-full h-1/2 flex items-end gap-1">
-                   <div className="w-full bg-white/10 h-1/2 rounded-t-sm"></div>
-                   <div className="w-full bg-white/20 h-3/4 rounded-t-sm"></div>
-                   <div className="w-full bg-[#9f0707]/40 h-full rounded-t-sm"></div>
-                   <div className="w-full bg-white/10 h-2/3 rounded-t-sm"></div>
-                </div>
+             {/* Subtle gradient overlay to blend with the dark/glassmorphic aesthetic */}
+             <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-10"></div>
+
+             {/* Premium Floating Video Controls */}
+             <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20 opacity-0 group-hover/video:opacity-100 transition-opacity duration-300">
+               <button
+                 onClick={togglePlay}
+                 className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+                 title={isPlaying ? "Pause" : "Play"}
+               >
+                 {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+               </button>
+               <button
+                 onClick={toggleMute}
+                 className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+                 title={isMuted ? "Unmute" : "Mute"}
+               >
+                 {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+               </button>
              </div>
           </div>
         </div>

@@ -10,17 +10,17 @@ This document details the AI-generated Career Coach report and readiness assessm
 - **Email:** `andrei@gmail.com`
 - **GitHub Account:** *Not Connected*
 - **Chosen Career:** Data Scientist
-- **Report Date:** 2026-05-21 14:13:53.823212
-- **Report ID:** `58` (Job ID: `33824128-435c-4a38-abcc-feb79f52ef09`)
+- **Report Date:** 2026-05-22 15:26:50.139935
+- **Report ID:** `79` (Job ID: `421328e3-0e4b-4843-b23d-69d00b01d9aa`)
 
 ---
 
 ## 📝 Executive Summary
-This report provides a comprehensive overview of your career readiness, BSU CpE student. Your academic performance highlights strong capabilities, particularly in advanced Numerical Analysis and Routing Protocols, both at an exceeding level. While your GitHub activity was not available for analysis, your academic record demonstrates a solid foundation in core Computer Engineering principles.
+This report provides a snapshot of your current career readiness based on your academic performance. You demonstrate strong foundational skills, particularly in advanced Networking Fundamentals and Routing Protocols, both at an exceeding proficiency level. Your academic record shows an outstanding overall performance, indicating a solid grasp of core Computer Engineering concepts, though specific GitHub activity was not available for analysis.
 
-Based on your current skill set, the role of Data Scientist stands out as the top recommendation with a match score of 43. This is largely due to your advanced proficiency in Statistics and Machine Learning, along with solid Programming Fundamentals and scikit-learn knowledge. Other promising career paths include Embedded Systems Engineer and FPGA Engineer, both scoring 40, which leverage your hardware and low-level programming strengths.
+Based on your current skill set, the role of VLSI Design Engineer is identified as the best match with a score of 50%. This is largely due to your solid background in Verilog/SystemVerilog and Digital Logic Design. Other potential career paths include Embedded Systems Engineer and FPGA Engineer, which also align with your hardware-focused strengths.
 
-No specific skill gaps or recommended actions could be generated at this time, as the detailed gap analysis data was not provided. To further refine your career path and identify concrete next steps, a complete gap analysis would be beneficial. Continue building on your strong academic foundation, and consider exploring practical projects to apply your theoretical knowledge.
+To further strengthen your profile for a VLSI Design Engineer role, focus on addressing the top two identified gaps: CMOS fundamentals and EDA tools (Cadence, Synopsys), which will take an estimated total of 26 weeks. Your existing strong foundation in Digital Logic and Circuit Analysis from subjects like Logic Circuits and Design and Electronic Circuits: Devices and Analysis provides an excellent starting point for tackling these specialized areas.
 
 ---
 
@@ -30,28 +30,28 @@ Below is the compatibility analysis across all assessed career paths, sorted by 
 
 | Career Title | Match Score | Matched Skills | Key Gaps |
 | :--- | :---: | :--- | :--- |
-| **Embedded Systems Engineer** | `50%` | RTOS (via Embedded Systems), Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), Microprocessor Architecture (via Microprocessors) | I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes |
-| **Data Scientist** | `46%` | Statistics (via Engineering Data Analysis), Machine Learning (via Cognate/Elective Course 1, Cognate/Elective Course 2, Cognate/Elective Course 3 (Data Mining / AI Track)), Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), scikit-learn (via Cognate/Elective Course 1, Cognate/Elective Course 2, Cognate/Elective Course 3 (Data Mining / AI Track)) | pandas, SQL, data visualization, Jupyter |
-| **Software Architect** | `43%` | System Design (via CpE Practice and Design 1, Computer Engineering Drafting and Design), Software Architecture (via Software Design), Network Security (via Connecting Networks and Security (CISCO 4)) | cloud architecture, API design patterns, database design, performance optimization |
-| **IoT Systems Engineer** | `40%` | Sensor Technology (via Fundamentals of Mixed Signals and Sensors), Programming Fundamentals (via Computer Programming 1, Programming Logic and Design) | Wireless protocols (LoRaWAN, Zigbee, BLE), Cloud integration (AWS IoT, Google Cloud IoT), MQTT |
-| **FPGA Engineer** | `40%` | Verilog (via Introduction to HDL), DSP Algorithms (via Digital Signal Processing) | FPGA Architecture (Xilinx/Altera), High-speed interfaces, Timing closure |
-| **VLSI Design Engineer** | `33%` | Verilog (via Introduction to HDL), Digital Logic (via Logic Circuits and Design) | VHDL, CMOS fundamentals, EDA tools (Cadence, Synopsys), Static Timing Analysis |
-| **Machine Learning Engineer** | `30%` | Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), Machine Learning (via Cognate/Elective Course 1, Cognate/Elective Course 2, Cognate/Elective Course 3 (Data Mining / AI Track)), scikit-learn (via Cognate/Elective Course 1, Cognate/Elective Course 2, Cognate/Elective Course 3 (Data Mining / AI Track)), TensorFlow or PyTorch, feature engineering | model deployment, Docker, REST APIs for ML, MLflow |
-| **AI Engineer** | `25%` | Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), Machine Learning (via Cognate/Elective Course 1, Cognate/Elective Course 2, Cognate/Elective Course 3 (Data Mining / AI Track)), PyTorch or TensorFlow, LLMs | prompt engineering, vector databases, RAG pipelines, MLOps |
-| **Backend Developer** | `25%` | Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), OS Concepts (via Operating Systems) | REST APIs, PostgreSQL, Docker, Git, Redis, CI/CD pipelines |
-| **Full Stack Developer** | `21%` | Programming Fundamentals (via Computer Programming 1, Programming Logic and Design) | React, PostgreSQL, REST APIs, Git, Docker, basic DevOps, HTML/CSS/JavaScript |
-| **Cybersecurity Analyst** | `12%` | Networking, OS Concepts (via Operating Systems) | ethical hacking, penetration testing, SIEM tools, incident response, security frameworks, cryptography |
-| **DevOps Engineer** | `11%` | Networking, OS Concepts (via Operating Systems) | Docker, Kubernetes, CI/CD, AWS or GCP, Terraform, monitoring tools, bash scripting |
-| **Frontend Developer** | `8%` | *None* | HTML, CSS, JavaScript, React or Vue, TypeScript, Git, REST API integration, responsive design, accessibility |
+| **Embedded Systems Engineer** | `63%` | C/C++, RTOS (FreeRTOS/Zephyr) (via Embedded Systems), Microcontrollers (STM32, ESP32, AVR) | I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes |
+| **Data Scientist** | `30%` | statistical analysis, machine learning (via Cognate/Elective Course 1, Cognate/Elective Course 2, Cognate/Elective Course 3 (Data Mining / AI Track)) | Python, pandas, scikit-learn, SQL, data visualization, Jupyter |
+| **FPGA Engineer** | `28%` | HDL (Verilog/VHDL), Digital Signal Processing | FPGA Architecture (Xilinx/Altera), High-speed interfaces, Timing closure |
+| **IoT Systems Engineer** | `28%` | Embedded C (via Microprocessors, Embedded Systems), Sensors | Wireless protocols (LoRaWAN, Zigbee, BLE), Cloud integration (AWS IoT, Google Cloud IoT), MQTT |
+| **Software Architect** | `24%` | System design (via CpE Practice and Design 1, Computer Engineering Drafting and Design) | microservices, distributed systems, cloud architecture, API design patterns, database design, security architecture |
+| **Machine Learning Engineer** | `23%` | *None* | Python, scikit-learn, TensorFlow or PyTorch, feature engineering, model deployment, Docker |
+| **VLSI Design Engineer** | `17%` | Verilog/SystemVerilog, VHDL, Digital Logic Design | CMOS fundamentals, EDA tools (Cadence, Synopsys), Static Timing Analysis |
+| **AI Engineer** | `12%` | *None* | Python, PyTorch or TensorFlow, LLMs, prompt engineering, vector databases, RAG pipelines |
+| **Frontend Developer** | `10%` | Git | HTML, CSS, JavaScript, React or Vue, TypeScript, REST API integration |
+| **Cybersecurity Analyst** | `9%` | Networking, Linux (via Operating Systems) | ethical hacking, penetration testing, SIEM tools, incident response, security frameworks, cryptography |
+| **Backend Developer** | `9%` | Git, Linux (via Operating Systems) | Python or JavaScript, REST APIs, PostgreSQL, Docker, Redis, CI/CD pipelines |
+| **DevOps Engineer** | `9%` | Linux (via Operating Systems), networking | Docker, Kubernetes, CI/CD, AWS or GCP, Terraform, monitoring tools |
+| **Full Stack Developer** | `0%` | Git | React, Node.js or Python, PostgreSQL, REST APIs, Docker, basic DevOps |
 
 ---
 
 ## 🛠️ Skill Profile
 
-NIEL ANDREI AFRICA has **37 total assessed skills** split between academic coursework and GitHub history.
+NIEL ANDREI AFRICA has **40 total assessed skills** split between academic coursework and GitHub history.
 
 ### Summary Metrics
-- 🌟 **Exceeding Expectations:** 37
+- 🌟 **Exceeding Expectations:** 40
 - 🟢 **On Track:** 0
 - 🟡 **Needs Attention:** 0
 - 🔴 **Critical:** 0
@@ -60,7 +60,7 @@ NIEL ANDREI AFRICA has **37 total assessed skills** split between academic cours
 > [!NOTE]
 > Strongest skills are primarily academic/mathematical, while weaker skills represent niche technologies not yet fully explored.
 
-- **Strongest Skills:** Advanced Routing, Routing Protocols, Network Security
+- **Strongest Skills:** Networking Fundamentals, Advanced Routing, Routing Protocols
 - **Weakest Skills (Needs Attention):**
   - *None*
 
@@ -72,12 +72,14 @@ Based on the recommended career paths, the AI Career Coach recommends the follow
 
 | Skill | Priority | Est. Time | Actionable Recommendation / Reason |
 | :--- | :---: | :---: | :--- |
-
+| **CMOS fundamentals** | **High** | 10 Weeks | CMOS fundamentals are foundational for a VLSI Design Engineer, as they underpin the design and operation of all modern integrated circuits. Without this understanding, designing efficient and reliable chips is impossible. |
+| **EDA tools (Cadence, Synopsys)** | **High** | 6 Weeks | Proficiency in EDA tools like Cadence and Synopsys is critical for a VLSI Design Engineer to translate circuit designs into physical layouts, perform simulations, and verify functionality, which are core tasks in the role. |
+| **Static Timing Analysis** | **High** | 10 Weeks | Static Timing Analysis is a crucial technique for a VLSI Design Engineer to ensure that digital circuits meet their performance specifications and operate correctly at the desired clock frequency, preventing timing violations in complex designs. |
 
 ---
 
 ## 📈 Progression & Trends
-- **Career Readiness Score:** `50 / 100`
+- **Career Readiness Score:** `63 / 100`
 - **Readiness Score Change:** `0`
 - **Trend:** Baseline
 - **Progress Summary:** This is the student's first career readiness assessment.

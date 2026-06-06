@@ -46,6 +46,7 @@ async def create_class(session: AsyncSession, instructor_id: int, data: ClassCre
         semester=data.semester,
         section=data.section,
         class_code=class_code,
+        curriculum_id=data.curriculum_id,
     )
     session.add(new_class)
     await session.commit()

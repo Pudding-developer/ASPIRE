@@ -3,7 +3,7 @@ admin_routes.py — Admin-only management endpoints.
 
 Routes call services only — no direct DB queries or business logic.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 from typing import Optional
@@ -96,3 +96,63 @@ async def remove_instructor(
 ):
     await admin_service.remove_instructor(session, instructor_id)
     return {"data": {}, "message": "Instructor role removed. This account no longer has instructor access."}
+
+
+@router.get("/students")
+async def list_students(
+    page: int = 1,
+    limit: int = 10,
+    search: Optional[str] = None,
+    admin: Admin = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    return await admin_service.list_students(session, page, limit, search)
+
+
+class AssignAdvisorBody(BaseModel):
+    advisor_id: Optional[int] = None
+
+
+@router.put("/students/{student_id}/advisor")
+async def assign_advisor(
+    student_id: int,
+    body: AssignAdvisorBody,
+    admin: Admin = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    await admin_service.assign_advisor(session, student_id, body.advisor_id)
+    return {"message": "Advisor assigned successfully."}
+
+
+@router.get("/curriculum")
+async def get_curriculum(
+    admin: Admin = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    curricula = await admin_service.get_curricula(session)
+    return {"data": curricula}
+
+
+@router.get("/curriculum/{curriculum_id}/subjects")
+async def get_curriculum_subjects(
+    curriculum_id: int,
+    admin: Admin = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    subjects = await admin_service.get_curriculum_subjects(session, curriculum_id)
+    return {"data": subjects}
+
+
+@router.post("/curriculum/upload")
+async def upload_curriculum(
+    file: UploadFile = File(...),
+    custom_name: Optional[str] = None,
+    admin: Admin = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    file_bytes = await file.read()
+    result = await admin_service.upload_curriculum(session, file_bytes, file.filename, custom_name)
+    return {"data": result, "message": "Curriculum uploaded successfully."}
+
+
+

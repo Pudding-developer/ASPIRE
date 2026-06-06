@@ -7,6 +7,7 @@ class Class(SQLModel, table=True):
     __tablename__ = "classes"
     id: Optional[int] = Field(default=None, primary_key=True)
     instructor_id: int = Field(foreign_key="instructor.id", index=True)
+    curriculum_id: Optional[int] = Field(default=None, foreign_key="curricula.id")
     subject_name: str
     course_code: str
     year_level: int  # 1-4

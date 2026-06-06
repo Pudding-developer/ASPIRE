@@ -384,9 +384,20 @@ def _parse_combined_output(report_raw: str, progress_raw: str) -> dict:
             progress_dict["career_readiness_score"] - prev if prev else 0
         )
 
+    raw_recs = report_dict.get("recommendations", []) or []
+    clean_recs = []
+    for r in raw_recs:
+        if isinstance(r, str):
+            clean_recs.append(r)
+        elif isinstance(r, dict):
+            val = r.get("recommendation") or r.get("text") or r.get("desc") or str(r)
+            clean_recs.append(val)
+        else:
+            clean_recs.append(str(r))
+
     return {
         "career_matches":  rescored,
-        "recommendations": report_dict.get("recommendations", []),
+        "recommendations": clean_recs,
         "summary":         report_dict.get("summary", ""),
         "skill_profile":   skill_profile,
         "gap_analysis":    report_dict.get("gap_analysis", []),

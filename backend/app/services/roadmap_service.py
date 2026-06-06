@@ -2048,10 +2048,7 @@ async def get_roadmap_with_overlay(
     unassessed_count = sum(1 for n in nodes if n["status"] == "unassessed")
     total = len(nodes)
 
-    if specific_match_score is not None:
-        readiness_pct = specific_match_score
-    else:
-        readiness_pct = round((has_count / total) * 100) if total > 0 else 0
+    readiness_pct = round((has_count / total) * 100) if total > 0 else 0
 
     return {
         "career": career_name,

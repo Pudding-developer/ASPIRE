@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { studentService } from '../../../../services/studentService';
+import { request } from '../../../../services/api';
 
-export default function useStudentData(filters = {}) {
+export default function useStudentData(filters = {}, studentId = null) {
   const [profile, setProfile] = useState(null);
   const [classes, setClasses] = useState([]);
   const [archivedClasses, setArchivedClasses] = useState([]);
@@ -13,31 +14,52 @@ export default function useStudentData(filters = {}) {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
+    const qs = new URLSearchParams(filters).toString();
     try {
-      const [profileRes, classesRes, archivedClassesRes, scoresRes, predictionsRes] = await Promise.allSettled([
-        studentService.getProfile(),
-        studentService.getClasses(),
-        studentService.getArchivedClasses(),
-        studentService.getScores(),
-        studentService.getPredictions(filters),
-      ]);
+      if (studentId) {
+        const [infoRes, classesRes, scoresRes, predictionsRes] = await Promise.allSettled([
+          request('GET', `/api/instructor/advisees`),
+          request('GET', `/api/instructor/advisees/${studentId}/classes`),
+          request('GET', `/api/instructor/advisees/${studentId}/scores`),
+          request('GET', `/api/instructor/advisees/${studentId}/predictions${qs ? '?' + qs : ''}`),
+        ]);
 
-      if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
-      else throw new Error('Failed to load profile');
+        if (infoRes.status === 'fulfilled') {
+          const current = (infoRes.value.data || []).find(s => s.id === Number(studentId));
+          if (current) setProfile(current);
+          else throw new Error('Advisee not found');
+        } else throw new Error('Failed to load advisees');
 
-      if (classesRes.status === 'fulfilled') setClasses(classesRes.value.data || []);
-      if (archivedClassesRes.status === 'fulfilled') setArchivedClasses(archivedClassesRes.value.data || []);
-      if (scoresRes.status === 'fulfilled') setScores(scoresRes.value.data || []);
-      
-      if (predictionsRes.status === 'fulfilled') {
-        setPredictions(predictionsRes.value.data);
+        if (classesRes.status === 'fulfilled') setClasses(classesRes.value.data || []);
+        setArchivedClasses([]);
+        if (scoresRes.status === 'fulfilled') setScores(scoresRes.value.data || []);
+        if (predictionsRes.status === 'fulfilled') setPredictions(predictionsRes.value.data);
+      } else {
+        const [profileRes, classesRes, archivedClassesRes, scoresRes, predictionsRes] = await Promise.allSettled([
+          studentService.getProfile(),
+          studentService.getClasses(),
+          studentService.getArchivedClasses(),
+          studentService.getScores(),
+          studentService.getPredictions(filters),
+        ]);
+
+        if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
+        else throw new Error('Failed to load profile');
+
+        if (classesRes.status === 'fulfilled') setClasses(classesRes.value.data || []);
+        if (archivedClassesRes.status === 'fulfilled') setArchivedClasses(archivedClassesRes.value.data || []);
+        if (scoresRes.status === 'fulfilled') setScores(scoresRes.value.data || []);
+        
+        if (predictionsRes.status === 'fulfilled') {
+          setPredictions(predictionsRes.value.data);
+        }
       }
     } catch (e) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [JSON.stringify(filters)]);
+  }, [studentId, JSON.stringify(filters)]);
 
   useEffect(() => {
     fetchAll();

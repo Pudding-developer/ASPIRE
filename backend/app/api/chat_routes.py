@@ -342,6 +342,8 @@ async def _build_full_system_prompt(
     if chosen:
         lines.append(f"\nChosen career goal: {chosen}")
 
+    has_report_data = False
+
     # Career report (DB-sourced; falls back to context if no row exists yet)
     result = await db.execute(
         select(CareerReport)
@@ -352,24 +354,40 @@ async def _build_full_system_prompt(
     report = result.scalar_one_or_none()
     if report:
         try:
-            lines.extend(_format_career_report(json.loads(report.report_json)))
+            report_data = json.loads(report.report_json)
+            if report_data and (report_data.get("career_matches") or report_data.get("skill_profile")):
+                lines.extend(_format_career_report(report_data))
+                has_report_data = True
         except (ValueError, TypeError):
             pass
     elif context:
-        lines.extend(_format_career_report(context))
+        if context.get("career_matches") or context.get("skill_profile"):
+            lines.extend(_format_career_report(context))
+            has_report_data = True
 
-    lines.extend(await _format_ilo_performance(student.id, db))
-    lines.extend(await _format_github(student.id, db))
+    ilo_perf = await _format_ilo_performance(student.id, db)
+    lines.extend(ilo_perf)
+    has_ilo = len(ilo_perf) > 0
+
+    gh_perf = await _format_github(student.id, db)
+    lines.extend(gh_perf)
+    has_github = len(gh_perf) > 0
 
     # Per-turn RAG: pull curriculum/skillset/roadmap chunks relevant to THIS question
     if user_message:
         chunks = _query_knowledge_base(user_message, top_k=6)
         lines.extend(_format_knowledge(chunks))
 
-    if len(lines) == 1:
+    # Strict fallback guard against LLM hallucination:
+    if not (has_report_data or has_ilo or has_github):
         lines.append(
-            "\n(No academic scores, GitHub data, or career report yet — suggest the "
-            "student submit assessments and run the pipeline.)"
+            "\n### IMPORTANT NOTICE:\n"
+            "This student has NO academic scores submitted, NO connected GitHub profile, "
+            "and NO career coach report. Do NOT make up, invent, or hallucinate any match scores, "
+            "percentages, skills, or repo details. State clearly and encouragingly that their "
+            "profile currently has no data. Instruct the student to go to the Dashboard to "
+            "connect their GitHub account, wait for instructors to enter academic grades, and "
+            "then run a profile analysis to generate their first report."
         )
     return "\n".join(lines)
 

@@ -55,8 +55,8 @@ function ReadinessBar({ pct, change, daysSince, firstRun }) {
 }
 
 /* ─── Main component ────────────────────────────────────────────── */
-export default function RoadmapViewer({ careerTitle }) {
-  const { roadmap, loading, error } = useRoadmap(careerTitle)
+export default function RoadmapViewer({ careerTitle, studentId = null }) {
+  const { roadmap, loading, error } = useRoadmap(careerTitle, studentId)
 
   if (!careerTitle) {
     return (

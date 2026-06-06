@@ -1113,7 +1113,7 @@ function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, bar
 
 
 /* ─── View Main Component ─── */
-export default function StudentPerformanceView({ user }) {
+export default function StudentPerformanceView({ user, studentId = null }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [showAllActivities, setShowAllActivities] = useState(false);
@@ -1141,30 +1141,32 @@ export default function StudentPerformanceView({ user }) {
     return params;
   };
 
-  const { profile, classes, predictions, iloCoverage, loading, refetch: refetchPredictions } = useStudentData(getFilterParams());
-  const { items: notifications, refetch: refetchActivity } = useActivityFeed(10);
+  const { profile, classes, predictions, iloCoverage, loading, refetch: refetchPredictions } = useStudentData(getFilterParams(), studentId);
+  const { items: notifications, refetch: refetchActivity } = useActivityFeed(10, { disabled: !!studentId });
   const unreadCount = notifications.filter(n => n.unread).length;
   const lastGradeTs = useRef(null);
 
   useEffect(() => {
+    if (studentId) return;
     if (!notifOpen || unreadCount === 0) return;
     studentService.markActivityRead()
       .then(() => refetchActivity())
       .catch(() => { });
-  }, [notifOpen, unreadCount, refetchActivity]);
+  }, [notifOpen, unreadCount, refetchActivity, studentId]);
 
   // Refetch ML predictions whenever the instructor releases a new grade.
   // Why: backend caches by hash(score_inputs); a new grade changes the hash,
   // so a fetch returns fresh ML output. We trigger that fetch off the
   // grade_released activity event the polling feed already surfaces.
   useEffect(() => {
+    if (studentId) return;
     const latestGrade = notifications.find(n => n.type === 'grade_released');
     if (!latestGrade) return;
     if (lastGradeTs.current !== latestGrade.created_at) {
       if (lastGradeTs.current !== null) refetchPredictions();
       lastGradeTs.current = latestGrade.created_at;
     }
-  }, [notifications, refetchPredictions]);
+  }, [notifications, refetchPredictions, studentId]);
 
   if (loading) {
     return <StudentPerformanceSkeleton />;
@@ -1175,6 +1177,7 @@ export default function StudentPerformanceView({ user }) {
       <StudentCourseDetailView
         courseName={selectedCourse}
         user={user}
+        studentId={studentId}
         onBack={() => setSelectedCourse(null)}
       />
     );
@@ -1479,26 +1482,24 @@ export default function StudentPerformanceView({ user }) {
     ? activeSkills.reduce((acc, [, v]) => acc + v, 0) / totalActive
     : 0;
 
+  const containerClass = studentId
+    ? "space-y-4"
+    : "p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)] min-h-screen";
+
   return (
     <>
-      <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)] min-h-screen">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">PERFORMANCE HUB</p>
-            <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">Academic Analytics</h1>
-          </div>
-          <div className="flex items-center gap-4 mt-2">
-            {/* Filter button */}
+      <div className={containerClass}>
+        {studentId ? (
+          <div className="flex justify-end -mb-2">
             <div className="relative">
               <button
                 onClick={() => { setFilterOpen(!filterOpen); setNotifOpen(false); }}
-                className={`flex items-center gap-2 px-5 py-2.5 border rounded-xl text-[13px] font-bold transition-all ${hasActiveFilters
-                  ? 'border-[#9f0707] bg-[#9f0707] text-white shadow-lg'
+                className={`flex items-center gap-1.5 px-3 py-1 border rounded-lg text-xs font-bold transition-all cursor-pointer ${hasActiveFilters
+                  ? 'border-[#9f0707] bg-[#9f0707] text-white shadow-sm'
                   : 'border-[#ead3d3] text-[#70170f] hover:bg-[#fff5f5]'
                   }`}
               >
-                <Filter size={16} /> Filter
+                <Filter size={12} /> Filter
               </button>
               <FilterDropdown
                 open={filterOpen}
@@ -1510,27 +1511,61 @@ export default function StudentPerformanceView({ user }) {
                 classes={classes}
               />
             </div>
+          </div>
+        ) : (
+          <div className="flex items-start justify-between">
+            {!studentId ? (
+              <div>
+                <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">PERFORMANCE HUB</p>
+                <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">Academic Analytics</h1>
+              </div>
+            ) : <div />}
+            <div className="flex items-center gap-4 mt-2">
+              {/* Filter button */}
+              <div className="relative">
+                <button
+                  onClick={() => { setFilterOpen(!filterOpen); setNotifOpen(false); }}
+                  className={`flex items-center gap-2 px-5 py-2.5 border rounded-xl text-[13px] font-bold transition-all ${hasActiveFilters
+                    ? 'border-[#9f0707] bg-[#9f0707] text-white shadow-lg'
+                    : 'border-[#ead3d3] text-[#70170f] hover:bg-[#fff5f5]'
+                    }`}
+                >
+                  <Filter size={16} /> Filter
+                </button>
+                <FilterDropdown
+                  open={filterOpen}
+                  onClose={() => setFilterOpen(false)}
+                  semester={semester}
+                  setSemester={setSemester}
+                  category={category}
+                  setCategory={setCategory}
+                  classes={classes}
+                />
+              </div>
 
-            <div className="relative">
-              <button
-                onClick={() => { setNotifOpen(!notifOpen); setFilterOpen(false); }}
-                className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
-              >
-                <Bell size={16} className="text-[#8b6363]" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#fffdfd]" />
-                )}
-              </button>
-              <NotificationDropdown
-                open={notifOpen}
-                onClose={() => setNotifOpen(false)}
-                notifications={notifications}
-                unreadCount={unreadCount}
-                onShowAll={() => setShowAllActivities(true)}
-              />
+              {!studentId && (
+                <div className="relative">
+                  <button
+                    onClick={() => { setNotifOpen(!notifOpen); setFilterOpen(false); }}
+                    className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
+                  >
+                    <Bell size={16} className="text-[#8b6363]" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#fffdfd]" />
+                    )}
+                  </button>
+                  <NotificationDropdown
+                    open={notifOpen}
+                    onClose={() => setNotifOpen(false)}
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                    onShowAll={() => setShowAllActivities(true)}
+                  />
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
 
         {/* 4 Stat Cards — ML-driven, refetched on grade_released */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

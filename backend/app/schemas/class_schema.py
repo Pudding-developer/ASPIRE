@@ -9,6 +9,7 @@ class ClassCreate(BaseModel):
     year_level: int
     semester: int
     section: str
+    curriculum_id: Optional[int] = None
 
 
 class ClassOut(BaseModel):
@@ -20,6 +21,7 @@ class ClassOut(BaseModel):
     section: str
     class_code: str
     is_archived: bool
+    curriculum_id: Optional[int] = None
     student_count: int = 0
     created_at: datetime
 

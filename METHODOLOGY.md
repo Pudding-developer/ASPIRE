@@ -9,10 +9,10 @@ This chapter describes the design, architecture, data, and evaluation approach o
 ASPIRE follows a **design-science research methodology**: the artifact *is* the research output, and its design choices, internal mechanics, and evaluation results constitute the contribution. The system was developed iteratively in feature-scoped sprints, with each major component (authentication, classroom data capture, ML predictor, multi-agent AI pipeline, RAG knowledge base, career roadmap overlay, longitudinal progress tracking) treated as an independently testable unit.
 
 **Scope:**
-- *In scope:* enrolled BSU CpE students; per-class ILO assessment capture by instructors; AI-driven career mapping, gap analysis, and longitudinal progress tracking; institutional admin oversight of instructor accounts and access tokens.
+- *In scope:* enrolled BSU CpE students; per-class ILO assessment capture by instructors; AI-driven career mapping, gap analysis, and longitudinal progress tracking; institutional admin oversight of instructor accounts, access tokens, **adviser–advisee assignment**, and **versioned curriculum management**; instructor visibility into the academic, GitHub, and roadmap data of their assigned advisees.
 - *Out of scope:* applicant/enrollment funnels (pre-registration), grade encoding for non-CpE programs, automated grade-book sync with the registrar.
 
-**Domain anchor:** every classroom-derived analysis is grounded in the institutional `BSCpE_ILO_Skillset_Alignment.xlsx` curriculum mapping document, ensuring outputs are traceable to BSU-defined Intended Learning Outcomes (ILOs) and ABET Student Outcomes.
+**Domain anchor:** every classroom-derived analysis is grounded in the institutional `BSCpE_ILO_Skillset_Alignment.xlsx` curriculum mapping document together with the **active curriculum version** stored in the `curricula` / `curriculum_subjects` tables, ensuring outputs are traceable to BSU-defined Intended Learning Outcomes (ILOs) and ABET Student Outcomes while remaining auditable across curriculum revisions.
 
 ---
 
@@ -29,10 +29,10 @@ ASPIRE is a **three-tier web application**:
 ```
 
 **Backend layering** (`app/`):
-- `api/` — FastAPI route definitions (53 endpoints across 9 routers).
-- `services/` — business logic (`pipeline_service`, `roadmap_service`, `interventions_service`, `ml_service`, `class_service`, `github_service`, etc.).
+- `api/` — FastAPI route definitions across **11 routers** (`auth`, `instructor_auth`, `admin`, `curriculum`, `student`, `instructor`, `github`, `instructor_class`, `pipeline`, `chat`, `roadmap`). The `instructor` router now exposes a dedicated **advisee sub-tree** (`/api/instructor/advisees/{student_id}/{dashboard,predictions,scores,classes,github/...,roadmap/...}`), and the `admin` router exposes **adviser-assignment** (`PUT /admin/students/{id}/advisor`) and **curriculum management** (`/admin/curriculum`, `/admin/curriculum/upload`, `/admin/curriculum/{id}/subjects`).
+- `services/` — business logic (`pipeline_service`, `roadmap_service`, `interventions_service`, `ml_service`, `class_service`, `admin_service` (which now owns advisor-assignment + curriculum upload), `github_service`, etc.).
 - `repositories/` — async SQLAlchemy data access.
-- `models/` — SQLModel ORM definitions.
+- `models/` — SQLModel ORM definitions (now including `Curriculum`, `CurriculumSubject`, plus an `advisor_id` foreign key on `User`).
 - `ai/` — agents, tools, schemas, and the CrewAI orchestrator.
 - `ml/` — scikit-learn predictor and training scripts.
 - `core/` — shared config (DB session, settings, security helpers).
@@ -53,6 +53,7 @@ The same async pattern is used for `/api/github/analyze`.
 | Source | Format | Cadence | Used by |
 |---|---|---|---|
 | `BSCpE_ILO_Skillset_Alignment.xlsx` | Excel (3 sheets: skillset reference, SO legend, curriculum mapping) | One-time seed (re-run on curriculum change) | Knowledge corpus → RAG, Agents 4 & 5 |
+| **Curriculum catalog (versioned)** — `curricula` + `curriculum_subjects` | DB tables; admin uploads accept **PDF, CSV, or JSON** | One default version seeded at startup; admin uploads add new versions as needed | Class creation (`classes.curriculum_id`), advisement views, validation of subject titles |
 | Per-class ILO assessment scores | Manual table input + CSV bulk upload (with class-mismatch validation) | Per assessment | ML predictor, Agent 2, roadmap classifier |
 | GitHub repositories & contributions | OAuth-linked GraphQL fetch + REST events | On-demand `/api/github/analyze` | Agent 1, Agent 3 fusion |
 | ML model artefacts (`skill_pipeline.joblib`, `meta.json`, `metrics.json`) | scikit-learn joblib pickle | Re-train when curriculum or training set changes | `SkillsPredictor` runtime |
@@ -66,6 +67,16 @@ The same async pattern is used for `/api/github/analyze`.
 
 **At query time**, identical text inputs hit the deterministic embedding cache (SHA-256 keyed) before falling back to the API, eliminating duplicate calls.
 
+**Curriculum ingestion pipeline** (`admin_service.upload_curriculum`) — runs each time an admin uploads a new curriculum version:
+
+1. **Dispatch by file extension** — `.pdf`, `.csv`, `.json` accepted; any other extension returns `400 Unsupported file format`.
+2. **PDF path** — text is extracted with `pypdf`, then handed to **Gemini 2.5 Flash** with a `response_schema` enforcing a JSON array of `{year, semester, code, title}` objects (temperature = 0.1 for parsing stability). Empty or unparseable PDFs return `400` rather than producing a partial version.
+3. **CSV / JSON paths** — validated against the required header set `{year, semester, code, title}`; missing keys raise `400` with a precise index for JSON or column name for CSV.
+4. **Title-validation pass** — every parsed `title` is normalised and checked against the `COURSE_PROFILES` registry from `ml/config.py`; titles that do not match a known profile are returned to the admin as **warnings** (the upload still succeeds) so the curator can decide whether to rename the row or extend the registry.
+5. **Atomic write** — a new `Curriculum` row is created (auto-named from the upload or an admin-supplied label); subjects are inserted with `curriculum_id` set; the transaction commits as a unit so a failed batch leaves no orphan curriculum row.
+
+A **default curriculum** ("BSCpE Curriculum (Default)") is seeded in the FastAPI `lifespan` startup hook from `app/data/curriculum.json` when the `curricula` table is empty, guaranteeing the system is functional on a fresh database without any admin action.
+
 ---
 
 ## 3.4 Authentication & Access Control
@@ -77,10 +88,12 @@ The same async pattern is used for `/api/github/analyze`.
 | Roles | `admin`, `instructor`, `student` — enforced via FastAPI dependency injection on each protected route |
 | Instructor onboarding | **Token-gated**: admin generates a one-time registration token; instructor presents the token + Google login at `/instructor/register` |
 | Session management | Bearer JWT with refresh; per-request signature verification |
-| Resource scoping | Repository-layer queries take the authenticated user as a filter parameter — students cannot enumerate other students' data, instructors cannot read classes they do not own |
+| Resource scoping (classes) | Repository-layer queries take the authenticated user as a filter parameter — students cannot enumerate other students' data, instructors cannot read classes they do not own |
+| **Resource scoping (advisement)** | A dedicated `get_instructor_advisee(student_id, instructor)` dependency verifies that `student.advisor_id == instructor.id` before any advisee endpoint resolves; mismatched access returns `403 NOT_YOUR_ADVISEE`, missing student returns `404`. This dependency is reused across **all** advisee-scoped endpoints (`dashboard`, `predictions`, `scores`, `classes`, `github/*`, `roadmap/*`), so the relationship check is enforced exactly once per request at the framework boundary, not duplicated per service. |
+| **Adviser assignment** | Performed only by admins via `PUT /admin/students/{student_id}/advisor` (`AssignAdvisorBody.advisor_id`); the service verifies both the target student (role = `student`) and the candidate instructor exist before mutating `user.advisor_id`. Passing `advisor_id: null` unassigns. |
 | GitHub integration | Optional, opt-in OAuth; access token stored encrypted on `GitHubProfile`; revocable via `/api/github/disconnect` |
 
-Empirical verification: protected routes return `401 Not authenticated` when called without a valid token; role-mismatched routes return `403`.
+Empirical verification: protected routes return `401 Not authenticated` when called without a valid token; role-mismatched routes return `403`; an instructor calling `/api/instructor/advisees/{id}/...` for a student not assigned to them is rejected with `403 NOT_YOUR_ADVISEE` even though the JWT is otherwise valid.
 
 ---
 
@@ -91,21 +104,96 @@ Empirical verification: protected routes return `401 Not authenticated` when cal
 **Migrations:** Alembic (`alembic upgrade head`).
 **Schema initialization:** idempotent in the FastAPI lifespan handler (`init_db`).
 
-**Active tables (22 total):**
+**Active tables (25 total):**
 
 | Group | Tables | Purpose |
 |---|---|---|
-| Identity & auth | `users`, `instructor_registration_tokens`, `github_profiles` | Identity, token-gated instructor signup, GitHub OAuth |
-| Classroom | `classes`, `class_enrollments`, `assessments`, `assessment_scores` | Instructor classes, student enrolment, ILO scores |
+| Identity & auth | `users` *(with `advisor_id` FK → `instructor.id`)*, `instructors`, `admins`, `instructor_registration_tokens`, `github_profiles` | Identity, token-gated instructor signup, GitHub OAuth, **adviser pointer** |
+| Classroom | `classes` *(with optional `curriculum_id` FK → `curricula.id`)*, `class_enrollments`, `assessments`, `assessment_ilos`, `student_scores` | Instructor classes, student enrolment, ILO scores, **link from class to its source curriculum** |
+| **Curriculum** | `curricula`, `curriculum_subjects` | Versioned curriculum catalog (one row per uploaded version + its parsed subjects) |
 | AI artifacts | `career_reports` (with `report_json`, `progression_json`), `student_interventions` | Pipeline outputs and remediation suggestions |
-| Knowledge & cache | `knowledge_chunks` *(pgvector 768)*, `embedding_cache` *(pgvector 768)*, `roadmap_cache` | RAG corpus and deterministic caches |
+| Knowledge & cache | `knowledge_chunks` *(pgvector 768)*, `embedding_cache` *(pgvector 768)*, `roadmap_cache`, `academic_skill_cache`, `github_skill_cache` | RAG corpus and deterministic caches |
 | Conversational | `chat_sessions`, `chat_messages` | Career-coach chat history |
-| Telemetry & jobs | `repository_cache`, `contribution_cache`, `github_jobs`, `pipeline_jobs` | GitHub snapshots and async job state |
+| Telemetry & jobs | `repository_cache`, `contribution_cache`, `github_jobs` (`analysis_jobs`), `pipeline_jobs`, `activity_events` | GitHub snapshots, async job state, student-facing activity feed |
 
-**Two notable design choices:**
+**Four notable design choices:**
 
 1. **`embedding_cache` keys are hashes, not raw text.** `query_hash = sha256(task_type + ':' + text)`. The cache survives restarts and never persists user queries verbatim.
 2. **`career_reports` stores the entire pipeline output** as `report_json` (verbatim from Agent 6) plus `progression_json` (Agent 7), enabling perfect re-rendering and longitudinal diffs without re-invoking the LLM.
+3. **`users.advisor_id` is a single nullable FK, not a join table.** A student has *at most one* adviser at a time; admins reassign by overwriting the column. The simplicity is intentional — there is no historical adviser-assignment log (acknowledged in §3.13).
+4. **Curriculum versions are immutable once uploaded.** A new upload always creates a new `Curriculum` row rather than mutating an existing one; classes referencing an older `curriculum_id` continue to resolve to the catalog they were created against, so subject-title validation is **point-in-time correct** even after a curriculum revision.
+
+### 3.5.1 Advisement Relationship
+
+The advisement feature gives instructors a faculty-adviser view of specific students without exposing the rest of the cohort. The design follows three guarantees:
+
+| Guarantee | How it's enforced |
+|---|---|
+| **Single authoritative pointer** | `users.advisor_id INTEGER NULL REFERENCES instructor(id)` — added in migration `c2ba04c1cb25_add_advisor_id_to_user.py`. No join table; no duplicates possible. |
+| **Admin-only mutation** | The only write path is `PUT /admin/students/{student_id}/advisor`, gated by `get_current_admin`. Instructors cannot self-assign advisees; students cannot opt out. |
+| **Read-only on the instructor side** | All advisee endpoints (`/api/instructor/advisees`, `/api/instructor/advisees/{id}/{dashboard,predictions,scores,classes,github/*,roadmap/*}`) run under `get_instructor_advisee`, which mirrors the data shapes already exposed to the student themselves — there is **no new write surface area** introduced by the advisement view, so the addition cannot regress data-modification permissions. |
+
+The frontend surfaces this on two screens:
+
+- **Admin → Advising tab** — a drag-and-drop board (`AdvisingTab.jsx`) where each instructor card is a drop zone; unassigned students appear in a side panel. The PUT call fires on drop, with an optimistic UI update reverted on `4xx`.
+- **Instructor → My Advisees** — a list (`MyAdviseesView.jsx`) plus a per-advisee profile (`AdviseeProfileView.jsx`) that reuses the student dashboard/career-coach views in a read-only mode against the advisee's `student_id`.
+
+### 3.5.2 Curriculum Versioning
+
+The curriculum-versioning feature replaces the prior assumption that the curriculum is a single static spreadsheet seeded once. Multiple versions can co-exist; each `Class` records which version it was created under.
+
+**Schema** (`app/models/curriculum.py`):
+
+```python
+class Curriculum(SQLModel, table=True):
+    __tablename__ = "curricula"
+    id: int (PK)
+    name: str                       # human label, e.g. "BSCpE Curriculum 2024-2025"
+    uploaded_at: datetime           # default = now()
+
+class CurriculumSubject(SQLModel, table=True):
+    __tablename__ = "curriculum_subjects"
+    id: int (PK)
+    curriculum_id: int (FK → curricula.id, ON DELETE CASCADE)
+    year: str        # "1" | "2" | "3" | "4"
+    semester: str    # "1" | "2" | "3" (midyear)
+    code: str        # "ENGG 401"
+    title: str       # "Introduction to Engineering"
+```
+
+**Cascade-delete on `curriculum_id`** ensures removing a curriculum version cleanly removes all its subjects with no orphans. Note that `classes.curriculum_id` is *not* set to cascade — if a curriculum is deleted, classes that referenced it retain the FK as `NULL`-by-policy (enforced at service level), so historical class records are not silently destroyed.
+
+**Public read surface** (`/api/curriculum`, unauthenticated):
+
+- `GET /api/curriculum` — list of versions (id, name, uploaded_at).
+- `GET /api/curriculum/{id}/subjects` — subjects sorted by `(year, semester, code)`.
+
+These are deliberately public so that the **class-creation modal in the instructor UI** can fetch the catalog before the user is authenticated against the class endpoint, eliminating an authentication race during the form-mount phase.
+
+**Admin write surface** (`/admin/curriculum/*`, admin-only):
+
+- `GET /admin/curriculum` — version list (mirrors the public list).
+- `GET /admin/curriculum/{id}/subjects` — version detail.
+- `POST /admin/curriculum/upload` — multipart upload (PDF / CSV / JSON) + optional `custom_name` query parameter.
+
+The PDF parsing path uses Gemini 2.5 Flash with **structured-output enforcement** via a `response_schema`, so the model cannot return free-form prose — only an array of objects conforming to `{year, semester, code, title}`. This eliminates the most common LLM-extraction failure mode (well-formed-looking text that doesn't actually parse).
+
+**Validation hand-off to the ML config:**
+
+```
+for each parsed subject:
+    if subject.title not in COURSE_PROFILES (case-insensitive):
+        warnings.append(subject.title)
+```
+
+`COURSE_PROFILES` is the same registry the ML predictor uses to one-hot encode the `Course` feature. Surfacing unknown titles as **non-blocking warnings** lets the admin reconcile two failure modes:
+
+1. The uploaded PDF uses a course name the ML model has never seen — the model will fall back to its default-course encoding for those rows, and the admin can decide to extend `COURSE_PROFILES` or rename the curriculum row.
+2. The PDF parser misread a course name (e.g. truncated by line wrap) — the warning surfaces the mismatch before any class is created against the version.
+
+The upload succeeds either way; the warnings are returned in the response so the admin can act on them out-of-band.
+
+**Linkage to classes:** `ClassCreate.curriculum_id` is optional. When provided, `class_service` writes it onto the new `Class`; when omitted (e.g. legacy instructor workflows), the class is created with `curriculum_id = NULL` and is treated as belonging to no specific catalog.
 
 ---
 
@@ -677,6 +765,8 @@ The system is evaluated as a set of independently testable components rather tha
 | Identity / institutional misuse | Domain-locked OAuth (`ALLOWED_EMAIL_DOMAIN`); admin-issued instructor tokens |
 | Privacy of user queries | `embedding_cache` stores SHA-256 hash keys only — raw query text never persisted in the cache |
 | Cross-student data leakage | Repository-layer queries filter by authenticated `user_id`; role-gated routes reject unauthorized roles with `403` |
+| **Adviser–advisee scope creep** | Instructors see advisee data **only** through `get_instructor_advisee`, which re-checks `advisor_id == instructor.id` on every request. Even an instructor with a valid JWT cannot read data for a student not assigned to them. Reassigning an advisee instantly revokes the prior instructor's read access on the next request. |
+| **Curriculum integrity** | Only admins can upload curriculum versions; uploads create a new immutable row rather than mutating an existing one, so a class created against an earlier version cannot be retroactively altered by a later upload. |
 | External integration consent | GitHub linkage is **opt-in** via OAuth and revocable via `/api/github/disconnect` |
 | AI bias in career recommendations | Career titles must originate from RAG over an institutional corpus; learning-resource URLs must be retrieved (cannot be invented) |
 | Explainability | Each AI insight cites concrete evidence (skill names, scores, repo references); roadmap classification is rule-based and inspectable |
@@ -701,7 +791,9 @@ These are stated upfront to pre-empt panel objections:
 6. **GitHub depth.** Dependency parsing is performed only on the top 10 repositories per user.
 7. **Sample-size constraints.** Human-evaluation studies (skill extraction ground truth, career-matching expert validation, SUS) operate on N=15–30 — sufficient for indicative findings, insufficient for statistical generalization.
 8. **Soft-skill predictability.** The ML predictor's per-skill R² is lowest on soft-skill dimensions (Ethics, Critical Thinking) — these should be interpreted with wider error bars than STEM-skill predictions.
-9. **Single LLM provider dependence.** All agents and embeddings rely on Vertex AI Gemini; provider unavailability degrades the AI pipeline (the rule-based roadmap and ML predictor remain functional).
+9. **Single LLM provider dependence.** All agents and embeddings rely on Vertex AI Gemini; provider unavailability degrades the AI pipeline (the rule-based roadmap and ML predictor remain functional). The PDF curriculum parser also relies on Gemini structured-output; CSV and JSON uploads remain available as a fallback if the Gemini path is unavailable.
+10. **No adviser-assignment history.** `users.advisor_id` records only the *current* adviser; a student reassigned from one instructor to another loses the prior linkage. Auditability of past advisement (who advised whom, when) would require a dedicated history table — deferred as future work.
+11. **Curriculum-title coverage drift.** New curriculum uploads can introduce course titles outside `COURSE_PROFILES`; warnings are surfaced at upload time, but the ML predictor will fall back to default-course encoding for unknown titles until the registry is extended.
 
 ---
 

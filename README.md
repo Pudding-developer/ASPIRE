@@ -49,60 +49,6 @@ ASPIRE/
         └── index.css          # Tailwind / global styling configuration
 ```
 
-## System Architecture & Data Flow
-
-ASPIRE is built using a decoupled client-server architecture with a local machine learning predicting pipeline and an agentic AI advising system.
-
-```
-┌────────────────────────────────────────────────────────┐
-│                   FRONTEND (React)                     │
-│  - React 19 UI Modules (features/admin, student, etc.) │
-│  - Axios Client (services/roadmapService.js, etc.)     │
-└──────────────────────────┬─────────────────────────────┘
-                           │ HTTP REST APIs
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│                   BACKEND (FastAPI)                    │
-│  - REST Controllers (app/api/curriculum_routes.py)     │
-│  - Business Layer (app/services/roadmap_service.py)    │
-│  - Data Layer (app/repositories/ & app/models/)        │
-└────────────┬─────────────┬─────────────┬───────────────┘
-             │             │             │
-             │ SQL         │ Feature     │ LLM Config
-             ▼             ▼ Matrices    ▼
-┌────────────┐     ┌───────────┐     ┌───────────────────┐
-│ DATABASE   │     │ ML MODEL  │     │ CREWAI & GEMINI   │
-│ PostgreSQL │     │ Gradient  │     │ - Career Agent    │
-│  & SQLModel│     │ Boosting  │     │ - Skillset RAG    │
-│            │     │ Predictor │     │ - Gemini Model    │
-└────────────┘     └───────────┘     └───────────────────┘
-```
-
-### 1. Client-Side Presentation Layer (`/frontend`)
-- **Vite Bundler:** Compiles modern ES6 modules and applies global styles via TailwindCSS.
-- **Routing:** Governed by `react-router-dom` in `src/pages/` to redirect users based on roles (Student, Instructor, Admin).
-- **State Management:** Preserves user profiles, current enrollment details, and active advising sessions via context wrappers (`src/context/`).
-- **Feature Modules (`src/features/`):** Encapsulates visual views and custom hooks (e.g., student classes, career roadmaps, advising chat components) separately.
-
-### 2. Server-Side Application Layer (`/backend/app`)
-- **FastAPI Routing (`app/api/`):** Validates incoming requests using Pydantic DTOs (`app/schemas/`), checks role-based permissions via dependencies (`app/api/deps.py`), and routes to services.
-- **Business Logic Services (`app/services/`):** Integrates curriculum ingestion, student profile updates, ML evaluations, and automated advising pipelines.
-- **Database Abstraction (`app/repositories/`):** Encapsulates raw database actions via SQLModel/SQLAlchemy async sessions to decouple queries from the service layer.
-
-### 3. Machine Learning Subsystem (`/backend/ml`)
-- **Configuration (`ml/config/targets.py`):** Holds course profiles and course-specific sub-skill weights.
-- **Model Training Pipeline (`ml/training/train.py`):** Fetches student assessment scores from PostgreSQL, aggregates Intended Learning Outcome (ILO) grades, and trains a `MultiOutputRegressor` (wrapping `GradientBoostingRegressor`) to map student performance to professional skillset scores.
-- **Artifact Store (`ml/artifacts/`):** Serializes the trained pipeline into `.joblib` files along with performance evaluations (`metrics.json`).
-
-### 4. Agentic AI Advising Subsystem (`/backend/app/ai`)
-- **RAG & Knowledge Base (`app/ai/rag.py`):** Embeds and indexes curriculum career guides into SQLite/PostgreSQL vectors for semantic career-path retrieval.
-- **Multi-Agent Pipeline (`app/ai/crew.py`):** Uses CrewAI to spin up role-specific agents:
-  - **Academic Advisor Agent:** Analyzes the student's ML-generated skillset profile, grade statistics, and elective interests.
-  - **Career Coach Agent:** Searches the curriculum knowledge base for matching career paths and aligns them with industrial skills.
-- **LLM Coordinator (`app/core/config.py`):** Interfaces with LiteLLM to dispatch prompts to Gemini-2.5 models using Google AI Studio API or Google Vertex AI.
-
----
-
 ## LLM (Large Language Model) Configuration
 
 The application uses Gemini models (e.g. `gemini-2.5-flash`) for AI advising, career coaching, RAG (Retrieval-Augmented Generation), and skill synthesis. It supports two authentication modes configured via the `backend/.env` file:

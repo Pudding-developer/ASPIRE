@@ -1,11 +1,14 @@
 import aspireLogo from '../../../assets/aspire-logo.png';
-import { LayoutDashboard, Users, KeyRound, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, KeyRound, LogOut, GraduationCap, UserCheck, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../../features/auth/hooks/useAuth';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'students', label: 'Students', icon: GraduationCap },
   { id: 'instructors', label: 'Instructors', icon: Users },
+  { id: 'advising', label: 'Advising Map', icon: UserCheck },
+  { id: 'curriculum', label: 'Curriculum', icon: BookOpen },
   { id: 'tokens', label: 'Invite Tokens', icon: KeyRound },
 ];
 

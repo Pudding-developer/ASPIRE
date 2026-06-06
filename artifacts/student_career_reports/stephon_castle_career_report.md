@@ -8,19 +8,19 @@ This document details the AI-generated Career Coach report and readiness assessm
 - **Full Name:** STEPHON CASTLE
 - **SR Code:** `22-01020`
 - **Email:** `stephon@gmail.com`
-- **GitHub Account:** [@Pudding-developer](https://github.com/Pudding-developer)
+- **GitHub Account:** *Not Connected*
 - **Chosen Career:** Backend Developer
-- **Report Date:** 2026-05-22 07:04:49.873662
-- **Report ID:** `67` (Job ID: `ed17fa3f-2cce-4b3d-9d3a-89e52667f49c`)
+- **Report Date:** 2026-05-22 14:25:16.442494
+- **Report ID:** `75` (Job ID: `36818516-8573-4bb0-9732-37ccece6f534`)
 
 ---
 
 ## 📝 Executive Summary
-You demonstrate a solid foundation in core Computer Engineering skills, highlighted by your advanced proficiency in Calculus and intermediate Python programming. Your GitHub activity shows consistent engagement with 46 total commits across 11 original projects, with notable work in web development using Python, JavaScript, HTML, and CSS. Academically, you've achieved an overall performance of 69.0%, with strong results in foundational subjects like Programming Fundamentals and Engineering Design Process.
+You demonstrate a strong academic foundation, achieving an Outstanding performance tier with an overall academic score of 87.9. Your strongest skills include advanced Calculus and advanced Programming Fundamentals, reflecting a solid grasp of core engineering and mathematical principles. While your academic record is impressive, there is no GitHub activity to assess practical coding experience or project contributions.
 
-Based on your current skill set, the most promising career path identified is a Full Stack Developer, with a match score of 44%. Your existing intermediate skills in Python, HTML, CSS, JavaScript, and REST API are strong assets for this role. Other potential career avenues include Frontend Developer (31% match) and Backend Developer (18% match), which also leverage your web development and programming strengths.
+Based on your current skill set, the career path of a Data Scientist is recommended, showing a match score of 9. This recommendation is primarily driven by your strong mathematical reasoning and calculus skills, which are crucial for statistical analysis in data science. Other potential career paths to consider include IoT Systems Engineer (match score 6) and Embedded Systems Engineer (match score 5), which also align with your foundational programming abilities.
 
-To further strengthen your profile for a Full Stack Developer role, focus on addressing key gaps such as Git and React. These, along with PostgreSQL, Docker, and basic DevOps, represent a total estimated learning time of 21 weeks. Your existing foundation in Python and experience with web projects mean that tackling these next steps is well within your reach, setting you up for success in your chosen career path.
+To advance towards your recommended career as a Data Scientist, your immediate focus should be on developing your Python and SQL skills. These two areas represent the most critical gaps, and dedicating time to them will significantly boost your readiness, with an estimated total commitment of 35 weeks to cover all identified gaps. Your existing strong foundation in problem-solving and mathematical analysis provides an excellent starting point for tackling these new technical skills.
 
 ---
 
@@ -30,40 +30,39 @@ Below is the compatibility analysis across all assessed career paths, sorted by 
 
 | Career Title | Match Score | Matched Skills | Key Gaps |
 | :--- | :---: | :--- | :--- |
-| **Full Stack Developer** | `40%` | Python (via GitHub), HTML (via GitHub), CSS (via GitHub), JavaScript (via GitHub), REST API (via GitHub) | React, PostgreSQL, Git, Docker, basic DevOps |
-| **Frontend Developer** | `31%` | HTML (via GitHub), CSS (via GitHub), JavaScript (via GitHub), REST API (via GitHub) | React or Vue, TypeScript, Git, responsive design, accessibility |
-| **Backend Developer** | `23%` | Python (via GitHub), JavaScript (via GitHub), REST API (via GitHub) | PostgreSQL, Docker, Git, Linux, Redis, CI/CD pipelines |
-| **Software Architect** | `23%` | Relational Database Design (via GitHub), Google Cloud Platform (via GitHub), REST API (via GitHub) | System design, microservices, distributed systems, cloud architecture, API design patterns, security architecture |
-| **Machine Learning Engineer** | `18%` | Python (via GitHub), REST API (via GitHub) | scikit-learn, TensorFlow or PyTorch, feature engineering, model deployment, Docker, MLflow |
-| **IoT Systems Engineer** | `14%` | Google Cloud Platform (via GitHub) | Embedded C, Wireless protocols (LoRaWAN, Zigbee, BLE), Sensors, MQTT |
-| **Data Scientist** | `10%` | Python (via GitHub) | pandas, scikit-learn, SQL, data visualization, statistical analysis, machine learning |
-| **AI Engineer** | `10%` | Python (via GitHub) | PyTorch or TensorFlow, LLMs, prompt engineering, vector databases, RAG pipelines, MLOps |
-| **DevOps Engineer** | `10%` | Google Cloud Platform (via GitHub) | Linux, Docker, Kubernetes, CI/CD, Terraform, monitoring tools |
+| **Data Scientist** | `12%` | *None* | Python, pandas, scikit-learn, SQL, data visualization, machine learning |
+| **AI Engineer** | `12%` | *None* | Python, PyTorch or TensorFlow, LLMs, prompt engineering, vector databases, RAG pipelines |
+| **Machine Learning Engineer** | `12%` | *None* | Python, scikit-learn, TensorFlow or PyTorch, feature engineering, model deployment, Docker |
+| **Frontend Developer** | `12%` | *None* | HTML, CSS, JavaScript, React or Vue, TypeScript, Git |
+| **IoT Systems Engineer** | `0%` | *None* | Embedded C, Wireless protocols (LoRaWAN, Zigbee, BLE), Cloud integration (AWS IoT, Google Cloud IoT), Sensors, MQTT |
+| **Embedded Systems Engineer** | `0%` | *None* | C/C++, RTOS (FreeRTOS/Zephyr), Microcontrollers (STM32, ESP32, AVR), I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes |
+| **Full Stack Developer** | `0%` | *None* | React, Node.js or Python, PostgreSQL, REST APIs, Git, Docker |
+| **Backend Developer** | `0%` | *None* | Python or JavaScript, REST APIs, PostgreSQL, Docker, Git, Linux |
+| **Software Architect** | `0%` | *None* | System design, microservices, distributed systems, cloud architecture, API design patterns, database design |
 | **Cybersecurity Analyst** | `0%` | *None* | Networking, Linux, ethical hacking, penetration testing, SIEM tools, incident response |
 | **FPGA Engineer** | `0%` | *None* | HDL (Verilog/VHDL), FPGA Architecture (Xilinx/Altera), Digital Signal Processing, High-speed interfaces, Timing closure |
-| **Embedded Systems Engineer** | `0%` | *None* | C/C++, RTOS (FreeRTOS/Zephyr), Microcontrollers (STM32, ESP32, AVR), I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes |
 | **VLSI Design Engineer** | `0%` | *None* | Verilog/SystemVerilog, VHDL, Digital Logic Design, CMOS fundamentals, EDA tools (Cadence, Synopsys), Static Timing Analysis |
+| **DevOps Engineer** | `0%` | *None* | Linux, Docker, Kubernetes, CI/CD, AWS or GCP, Terraform |
 
 ---
 
 ## 🛠️ Skill Profile
 
-STEPHON CASTLE has **24 total assessed skills** split between academic coursework and GitHub history.
+STEPHON CASTLE has **5 total assessed skills** split between academic coursework and GitHub history.
 
 ### Summary Metrics
-- 🌟 **Exceeding Expectations:** 13
-- 🟢 **On Track:** 9
-- 🟡 **Needs Attention:** 2
+- 🌟 **Exceeding Expectations:** 5
+- 🟢 **On Track:** 0
+- 🟡 **Needs Attention:** 0
 - 🔴 **Critical:** 0
 
 ### Strongest & Weakest Areas
 > [!NOTE]
 > Strongest skills are primarily academic/mathematical, while weaker skills represent niche technologies not yet fully explored.
 
-- **Strongest Skills:** Calculus, Mathematical Analysis, Quantitative Reasoning
+- **Strongest Skills:** Calculus, Engineering Design Process, Programming Fundamentals
 - **Weakest Skills (Needs Attention):**
-  - Environment Variables (50.0%)
-  - Mako (50.0%)
+  - *None*
 
 ---
 
@@ -73,11 +72,11 @@ Based on the recommended career paths, the AI Career Coach recommends the follow
 
 | Skill | Priority | Est. Time | Actionable Recommendation / Reason |
 | :--- | :---: | :---: | :--- |
-| **Git** | **High** | 3 Weeks | Git is a foundational skill for a Full Stack Developer, enabling version control, collaboration, and managing code changes across projects. |
-| **React** | **High** | 6 Weeks | React is a critical frontend framework for Full Stack Developers, allowing the creation of dynamic and interactive user interfaces. |
-| **PostgreSQL** | **High** | 3 Weeks | PostgreSQL is a robust relational database system essential for Full Stack Developers to store, manage, and retrieve application data. |
-| **Docker** | **Medium** | 3 Weeks | Docker is crucial for Full Stack Developers to containerize applications, ensuring consistent environments from development to production and simplifying deployment. |
-| **basic DevOps** | **Medium** | 6 Weeks | Basic DevOps principles and tools are important for Full Stack Developers to understand the deployment pipeline, automate tasks, and manage application infrastructure. |
+| **Python** | **High** | 10 Weeks | Python is the primary programming language for Data Scientists, used for data manipulation, analysis, machine learning, and building data-driven applications. |
+| **SQL** | **High** | 3 Weeks | Data Scientists rely on SQL to query, manipulate, and manage data stored in relational databases, which is a fundamental step in any data analysis pipeline. |
+| **machine learning** | **High** | 10 Weeks | Machine learning is the core discipline of a Data Scientist, involving the development and application of algorithms to enable systems to learn from data and make predictions or decisions. |
+| **pandas** | **Medium** | 6 Weeks | pandas is the essential Python library for data manipulation and analysis, providing powerful data structures like DataFrames that are central to a Data Scientist's workflow. |
+| **scikit-learn** | **Medium** | 6 Weeks | scikit-learn is the most widely used Python library for classical machine learning algorithms, crucial for Data Scientists to implement, train, and evaluate models. |
 
 ### 📚 Recommended Academic Subjects to Prioritize (for Backend Developer)
 These upcoming subjects in the BSCpE curriculum align directly with this career path. Prioritize these in your study plan:
@@ -94,7 +93,7 @@ These upcoming subjects in the BSCpE curriculum align directly with this career 
 ---
 
 ## 📈 Progression & Trends
-- **Career Readiness Score:** `40 / 100`
+- **Career Readiness Score:** `12 / 100`
 - **Readiness Score Change:** `0`
 - **Trend:** Baseline
 - **Progress Summary:** This is the student's first career readiness assessment.

@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 
 from app.core.config import DATABASE_URL
 
@@ -24,3 +25,8 @@ async def get_session() -> AsyncSession:
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
+        try:
+            await conn.execute(text("ALTER TABLE classes ADD COLUMN IF NOT EXISTS curriculum_id INTEGER REFERENCES curricula(id) ON DELETE SET NULL;"))
+        except Exception as e:
+            print("Warning: could not add curriculum_id column to classes table:", e)
+

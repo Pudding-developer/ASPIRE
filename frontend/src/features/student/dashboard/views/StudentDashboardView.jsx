@@ -327,18 +327,22 @@ export function TopProjects({ repos }) {
 }
 
 /* ─── GitHub Card ─── */
-export function GitHubCard({ githubStatus, onConnect }) {
+export function GitHubCard({ githubStatus, onConnect, isReadOnly = false }) {
   if (!githubStatus?.connected) {
     return (
       <div className={`${panelBase} p-6`}>
         <h3 className="text-[20px] font-black text-gray-900 mb-2">GitHub</h3>
-        <p className="text-[12px] text-gray-500 mb-4">Connect GitHub to track projects.</p>
-        <button
-          onClick={onConnect}
-          className={`w-full ${primaryBtn} flex items-center justify-center gap-2`}
-        >
-          Connect <Github size={14} />
-        </button>
+        <p className="text-[12px] text-gray-500 mb-4">
+          {isReadOnly ? 'GitHub account not linked by student.' : 'Connect GitHub to track projects.'}
+        </p>
+        {!isReadOnly && (
+          <button
+            onClick={onConnect}
+            className={`w-full ${primaryBtn} flex items-center justify-center gap-2`}
+          >
+            Connect <Github size={14} />
+          </button>
+        )}
       </div>
     );
   }
@@ -457,7 +461,7 @@ export function TopCoursesCard({ predictions, onNavigate }) {
 }
 
 /* ─── Career Choice Card ─── */
-export function CareerChoiceCard({ report, chosenCareer, onNavigate }) {
+export function CareerChoiceCard({ report, chosenCareer, onNavigate, studentId = null }) {
   const [showRoadmap, setShowRoadmap] = useState(false);
   let careerMatches = [];
   try {
@@ -473,17 +477,19 @@ export function CareerChoiceCard({ report, chosenCareer, onNavigate }) {
 
   if (!targetCareer) {
     return (
-      <div className={`${panelBase} p-6 flex flex-col md:flex-row md:items-center justify-between gap-6`}>
+      <div className={`${panelBase} p-5 flex flex-col md:flex-row md:items-center justify-between gap-6`}>
         <div className="flex-1 min-w-0">
-          <h3 className="text-[18px] font-black text-gray-900 mb-1">Career Map</h3>
+          <h3 className={`${studentId ? 'text-base font-bold' : 'text-[18px] font-black'} text-gray-900 mb-1`}>Career Map</h3>
           <p className="text-[12px] text-gray-500">No AI career report generated yet. We analyze your performance to map out a career path.</p>
         </div>
-        <button 
-          onClick={() => onNavigate('career-coach')}
-          className={`shrink-0 px-6 py-3 ${subtleBtn}`}
-        >
-          Generate map
-        </button>
+        {!studentId && (
+          <button 
+            onClick={() => onNavigate('career-coach')}
+            className={`shrink-0 px-6 py-3 ${subtleBtn}`}
+          >
+            Generate map
+          </button>
+        )}
       </div>
     );
   }
@@ -492,15 +498,18 @@ export function CareerChoiceCard({ report, chosenCareer, onNavigate }) {
   const description = targetCareer.reasoning
     ? targetCareer.reasoning.split('.')[0] + '.'
     : 'Run the AI analyzer to get detailed insights.';
-  const size = 80, stroke = 8, r = (size - stroke) / 2;
+  
+  const size = studentId ? 60 : 80;
+  const stroke = studentId ? 6 : 8;
+  const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
   const gap = circ - dash;
 
   return (
-    <div className={`${panelBase} p-6 flex flex-col md:flex-row md:items-center justify-between gap-6`}>
+    <div className={`${panelBase} ${studentId ? 'p-5' : 'p-6'} flex flex-col md:flex-row md:items-center justify-between gap-6`}>
       <div className="flex-1 min-w-0">
-        <h3 className="text-[18px] font-black text-gray-900 mb-4">{chosenCareer ? 'Your Career Goal' : 'Top Career Match'}</h3>
+        <h3 className={`${studentId ? 'text-base font-bold' : 'text-[18px] font-black'} text-gray-900 ${studentId ? 'mb-2' : 'mb-4'}`}>{chosenCareer ? 'Your Career Goal' : 'Top Career Match'}</h3>
         <div className="flex items-center gap-5">
           <div className="relative shrink-0">
             <svg width={size} height={size} className="-rotate-90">
@@ -520,7 +529,7 @@ export function CareerChoiceCard({ report, chosenCareer, onNavigate }) {
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-[14px] font-extrabold text-gray-900">{pct}%</span>
+              <span className={`${studentId ? 'text-xs' : 'text-[14px]'} font-extrabold text-gray-900`}>{pct}%</span>
             </div>
           </div>
           <div className="min-w-0">
@@ -533,7 +542,10 @@ export function CareerChoiceCard({ report, chosenCareer, onNavigate }) {
       <div className="shrink-0">
         <button
           onClick={() => setShowRoadmap(true)}
-          className="w-full md:w-auto bg-[#9f0707] hover:bg-[#430202] text-white px-6 py-3 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10"
+          className={studentId
+            ? "w-full md:w-auto border border-[#eed8d8] text-[#70170f] hover:bg-[#fff5f5] px-4 py-2 rounded-xl text-[12px] font-bold transition-all duration-300 cursor-pointer"
+            : "w-full md:w-auto bg-[#9f0707] hover:bg-[#430202] text-white px-6 py-3 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10"
+          }
         >
           View Career Roadmap
         </button>
@@ -552,7 +564,7 @@ export function CareerChoiceCard({ report, chosenCareer, onNavigate }) {
               </button>
             </div>
             <div className="p-8">
-              <RoadmapViewer careerTitle={targetCareer.title} />
+              <RoadmapViewer careerTitle={targetCareer.title} studentId={studentId} />
             </div>
           </div>
         </div>
@@ -580,25 +592,32 @@ export function CTABanner({ onNavigate }) {
 }
 
 /* ─── Dashboard Main View ─── */
-export default function StudentDashboardView({ user, onNavigate }) {
-  const { classes, predictions, iloCoverage, loading: studentLoading } = useStudentData();
-  const { status: githubStatus, repos, loading: githubLoading, connectGithub } = useGithubData();
-  const { report, loading: pipelineLoading } = usePipeline(user?.id);
+export default function StudentDashboardView({ user, studentId = null, onNavigate }) {
+  const { classes, predictions, iloCoverage, loading: studentLoading } = useStudentData({}, studentId);
+  const { status: githubStatus, repos, loading: githubLoading, connectGithub } = useGithubData(studentId);
+  const { report, loading: pipelineLoading } = usePipeline(studentId || user?.id);
   const [chosenCareer, setChosenCareer] = useState(null);
   const [notifOpen, setNotifOpen] = useState(false);
   const [showAllActivities, setShowAllActivities] = useState(false);
 
-  const { items: notifications, refetch: refetchActivity } = useActivityFeed(10);
+  const { items: notifications, refetch: refetchActivity } = useActivityFeed(10, { disabled: !!studentId });
   const unreadCount = notifications.filter(n => n.unread).length;
 
   useEffect(() => {
+    if (studentId) return;
     if (!notifOpen || unreadCount === 0) return;
     studentService.markActivityRead()
       .then(() => refetchActivity())
       .catch(() => { });
-  }, [notifOpen, unreadCount, refetchActivity]);
+  }, [notifOpen, unreadCount, refetchActivity, studentId]);
 
   useEffect(() => {
+    if (studentId) {
+      if (user?.chosen_career) {
+        setChosenCareer(user.chosen_career);
+      }
+      return;
+    }
     studentService.getChosenCareer()
       .then(data => { if (data?.chosen_career) setChosenCareer(data.chosen_career); })
       .catch(() => { });
@@ -606,7 +625,7 @@ export default function StudentDashboardView({ user, onNavigate }) {
     const handleCareerChosen = (e) => setChosenCareer(e.detail);
     window.addEventListener('aspire_career_chosen', handleCareerChosen);
     return () => window.removeEventListener('aspire_career_chosen', handleCareerChosen);
-  }, []);
+  }, [studentId, user?.chosen_career]);
 
   if (studentLoading) {
     return <StudentDashboardSkeleton />;
@@ -631,45 +650,51 @@ export default function StudentDashboardView({ user, onNavigate }) {
 
   const matchPct = Math.round(targetCareer?.match_score || 0);
 
+  const containerClass = studentId
+    ? "space-y-6"
+    : "p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)]";
+
   return (
-    <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)]">
+    <div className={containerClass}>
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-5">
-          {user?.avatar_url && (
-            <img
-              src={user.avatar_url}
-              alt={fullName}
-              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#70170f]/10"
-              referrerPolicy="no-referrer"
-            />
-          )}
-          <div>
-            <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">Student Overview</p>
-            <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">Hello, {fullName}.</h1>
+      {!studentId && (
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-5">
+            {user?.avatar_url && (
+              <img
+                src={user.avatar_url}
+                alt={fullName}
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg ring-1 ring-[#70170f]/10"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <div>
+              <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">Student Overview</p>
+              <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">Hello, {fullName}.</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 mt-2">
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(true)}
+                className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
+              >
+                <Bell size={16} className="text-[#8b6363]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#fffdfd]" />
+                )}
+              </button>
+              <NotificationDropdown
+                open={notifOpen}
+                onClose={() => setNotifOpen(false)}
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onShowAll={() => setShowAllActivities(true)}
+              />
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 mt-2">
-          <div className="relative">
-            <button
-              onClick={() => setNotifOpen(true)}
-              className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
-            >
-              <Bell size={16} className="text-[#8b6363]" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#fffdfd]" />
-              )}
-            </button>
-            <NotificationDropdown
-              open={notifOpen}
-              onClose={() => setNotifOpen(false)}
-              notifications={notifications}
-              unreadCount={unreadCount}
-              onShowAll={() => setShowAllActivities(true)}
-            />
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -691,15 +716,15 @@ export default function StudentDashboardView({ user, onNavigate }) {
       </div>
 
       {/* Body: Main Left Column & Sidebar Right Column */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      <div className={`grid grid-cols-1 lg:grid-cols-3 ${studentId ? 'gap-6' : 'gap-8'} mb-8`}>
 
         {/* Left Column (Main Content) */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className={`lg:col-span-2 ${studentId ? 'space-y-6' : 'space-y-8'}`}>
           {/* Career Goal row */}
-          <CareerChoiceCard report={report} chosenCareer={chosenCareer} onNavigate={onNavigate} />
+          <CareerChoiceCard report={report} chosenCareer={chosenCareer} onNavigate={onNavigate} studentId={studentId} />
 
           {/* Skills row */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className={`grid md:grid-cols-2 ${studentId ? 'gap-5' : 'gap-6'}`}>
             <DevelopingSkills weakSkills={predictions?.weak_skills} aggregatedSkills={predictions?.aggregated_skills} />
             <ExcelledSkills topSkills={predictions?.top_skills} onNavigate={onNavigate} />
           </div>
@@ -709,10 +734,10 @@ export default function StudentDashboardView({ user, onNavigate }) {
         </div>
 
         {/* Right Column (Sidebar) */}
-        <div className="flex flex-col gap-6">
-          <GitHubCard githubStatus={githubStatus} onConnect={connectGithub} />
+        <div className={`flex flex-col ${studentId ? 'gap-5' : 'gap-6'}`}>
+          <GitHubCard githubStatus={githubStatus} onConnect={connectGithub} isReadOnly={!!studentId} />
           <TopCoursesCard predictions={predictions} onNavigate={onNavigate} />
-          <CTABanner onNavigate={onNavigate} />
+          {!studentId && <CTABanner onNavigate={onNavigate} />}
         </div>
 
       </div>

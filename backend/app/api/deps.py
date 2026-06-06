@@ -82,6 +82,32 @@ async def get_current_instructor(
     return instructor
 
 
+async def get_instructor_advisee(
+    student_id: int,
+    instructor: Instructor = Depends(get_current_instructor),
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    """Verifies that the target student is an advisee of the calling instructor."""
+    result = await session.execute(
+        select(User)
+        .where(User.id == student_id)
+        .where(User.role == "student")
+    )
+    student = result.scalar_one_or_none()
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student not found."
+        )
+    if student.advisor_id != instructor.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. This student is not your assigned advisee.",
+            headers={"X-Error-Code": "NOT_YOUR_ADVISEE"}
+        )
+    return student
+
+
 # ---------------------------------------------------------------------------
 # Admin dependency
 # ---------------------------------------------------------------------------

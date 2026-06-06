@@ -33,6 +33,7 @@ async def _to_class_out(session: AsyncSession, cls) -> ClassOut:
         section=cls.section,
         class_code=cls.class_code,
         is_archived=cls.is_archived,
+        curriculum_id=getattr(cls, "curriculum_id", None),
         student_count=count,
         created_at=cls.created_at,
     )

@@ -254,10 +254,33 @@ export default function useCareerCoach(userId) {
   
   const careerMatches = useMemo(() => {
     const validTitles = new Set(careerOptions.map(o => o.title));
-    return (pipelineData?.career_matches || []).filter(m => validTitles.has(m.title));
+    const rawMatches = pipelineData?.career_matches || [];
+    return rawMatches.filter(m => validTitles.has(m.title)).map(m => {
+      const recs = m.career_recommendations || [];
+      const normalizedRecs = recs.map(rec => {
+        if (typeof rec === 'string') return rec;
+        if (rec && typeof rec === 'object') {
+          return rec.recommendation || rec.text || rec.desc || JSON.stringify(rec);
+        }
+        return String(rec || '');
+      }).filter(Boolean);
+      return {
+        ...m,
+        career_recommendations: normalizedRecs
+      };
+    });
   }, [pipelineData, careerOptions]);
   const skillProfile    = pipelineData?.skill_profile || {};
-  const recommendations = pipelineData?.recommendations || [];
+  const recommendations = useMemo(() => {
+    const raw = pipelineData?.recommendations || [];
+    return raw.map(rec => {
+      if (typeof rec === 'string') return rec;
+      if (rec && typeof rec === 'object') {
+        return rec.recommendation || rec.text || rec.desc || JSON.stringify(rec);
+      }
+      return String(rec || '');
+    }).filter(Boolean);
+  }, [pipelineData]);
   const summary         = pipelineData?.summary || report?.summary || '';
   const aggregatedSkills = predictions?.aggregated_skills || {};
 

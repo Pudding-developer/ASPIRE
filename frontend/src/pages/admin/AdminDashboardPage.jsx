@@ -11,6 +11,9 @@ import DashboardTab from '../../features/admin/components/DashboardTab';
 import InstructorsTab from '../../features/admin/components/InstructorsTab';
 import TokensTab from '../../features/admin/components/TokensTab';
 import GenerateTokenModal from '../../features/admin/components/GenerateTokenModal';
+import StudentsTab from '../../features/admin/components/StudentsTab';
+import AdvisingTab from '../../features/admin/components/AdvisingTab';
+import CurriculumTab from '../../features/admin/components/CurriculumTab';
 
 export default function AdminDashboardPage() {
   const { token } = useAuth();
@@ -20,6 +23,12 @@ export default function AdminDashboardPage() {
   const [tokens, setTokens] = useState([]);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [unauthorized, setUnauthorized] = useState(false);
+
+  const [students, setStudents] = useState([]);
+  const [studentPage, setStudentPage] = useState(1);
+  const [studentTotalPages, setStudentTotalPages] = useState(1);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentLoading, setStudentLoading] = useState(false);
 
   const navigate = useNavigate();
   useEffect(() => {
@@ -57,8 +66,61 @@ export default function AdminDashboardPage() {
   }, [token]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
-  useEffect(() => { if (tab === 'instructors') fetchInstructors(); }, [tab, fetchInstructors]);
+  useEffect(() => { if (tab === 'instructors' || tab === 'students' || tab === 'advising') fetchInstructors(); }, [tab, fetchInstructors]);
   useEffect(() => { if (tab === 'tokens') fetchTokens(); }, [tab, fetchTokens]);
+
+  const fetchStudents = useCallback(async () => {
+    if (!token) return;
+    setStudentLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: studentPage,
+        limit: 10,
+      });
+      if (studentSearch) {
+        queryParams.append('search', studentSearch);
+      }
+      const res = await fetch(`${API_BASE}/admin/students?${queryParams.toString()}`, {
+        headers: authHeaders(token),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStudents(data.students || []);
+        setStudentTotalPages(data.total_pages || 1);
+      }
+    } catch (err) {
+      console.error("Failed to fetch students:", err);
+    } finally {
+      setStudentLoading(false);
+    }
+  }, [token, studentPage, studentSearch]);
+
+  useEffect(() => {
+    if (tab === 'students') {
+      fetchStudents();
+    }
+  }, [tab, fetchStudents]);
+
+  const handleAssignAdvisor = useCallback(async (studentId, advisorId) => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/students/${studentId}/advisor`, {
+        method: 'PUT',
+        headers: {
+          ...authHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ advisor_id: advisorId }),
+      });
+      if (res.ok) {
+        fetchStudents();
+      } else {
+        console.error("Failed to assign advisor:", await res.json());
+      }
+    } catch (err) {
+      console.error("Failed to assign advisor:", err);
+    }
+  }, [token, fetchStudents]);
 
   const toggleInstructor = async (id, activate) => {
     const endpoint = activate ? 'activate' : 'deactivate';
@@ -95,8 +157,29 @@ export default function AdminDashboardPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-7xl p-8">
           {tab === 'dashboard' && <DashboardTab stats={stats} />}
+          {tab === 'students' && (
+            <StudentsTab
+              students={students}
+              page={studentPage}
+              setPage={setStudentPage}
+              totalPages={studentTotalPages}
+              search={studentSearch}
+              setSearch={setStudentSearch}
+              loading={studentLoading}
+              instructors={instructors}
+              onAssignAdvisor={handleAssignAdvisor}
+            />
+          )}
           {tab === 'instructors' && <InstructorsTab instructors={instructors} toggleInstructor={toggleInstructor} removeInstructor={removeInstructor} />}
+          {tab === 'advising' && (
+            <AdvisingTab
+              token={token}
+              instructors={instructors}
+              onAssignAdvisor={handleAssignAdvisor}
+            />
+          )}
           {tab === 'tokens' && <TokensTab tokens={tokens} setShowGenerateModal={setShowGenerateModal} deleteToken={deleteToken} />}
+          {tab === 'curriculum' && <CurriculumTab />}
         </div>
       </main>
 

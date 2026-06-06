@@ -197,24 +197,28 @@ function ArchivedCard({ cls, index, onClickView }) {
   );
 }
 
-function EmptyState({ onSuccess }) {
+function EmptyState({ onSuccess, isReadOnly }) {
   return (
     <div className="flex flex-col items-center justify-center py-16">
       <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,rgba(188,19,19,0.12),rgba(188,19,19,0.04))]">
         <BookOpen size={36} className="text-[#70170f]" />
       </div>
-      <h3 className="text-[20px] font-extrabold text-gray-900 mb-2">Join your first class</h3>
+      <h3 className="text-[20px] font-extrabold text-gray-900 mb-2">
+        {isReadOnly ? 'No enrolled classes' : 'Join your first class'}
+      </h3>
       <p className="text-[13px] text-gray-400 max-w-md text-center leading-relaxed mb-8">
-        Your instructor will give you a 6-character class code. Paste it below to enroll and start tracking your performance.
+        {isReadOnly ? 'This student has not joined any active classes yet.' : 'Your instructor will give you a 6-character class code. Paste it below to enroll and start tracking your performance.'}
       </p>
-      <JoinClassForm onSuccess={onSuccess} />
-      <div className="mt-10 flex max-w-sm items-start gap-3 rounded-xl border border-[#ece8e8] bg-[linear-gradient(180deg,#ffffff_0%,#fff8f8_100%)] p-4 shadow-sm">
-        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0 mt-0.5"><AlertCircle size={15} className="text-gray-400" /></div>
-        <div className="text-left">
-          <p className="text-[12px] font-semibold text-gray-700 mb-0.5">Where do I find my class code?</p>
-          <p className="text-[11px] text-gray-400 leading-relaxed">Your instructor shares the code when they create a class. It looks like <span className="font-mono font-bold text-gray-600">XY7Z4K</span>. Ask them if you don't have it yet.</p>
+      {!isReadOnly && <JoinClassForm onSuccess={onSuccess} />}
+      {!isReadOnly && (
+        <div className="mt-10 flex max-w-sm items-start gap-3 rounded-xl border border-[#ece8e8] bg-[linear-gradient(180deg,#ffffff_0%,#fff8f8_100%)] p-4 shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0 mt-0.5"><AlertCircle size={15} className="text-gray-400" /></div>
+          <div className="text-left">
+            <p className="text-[12px] font-semibold text-gray-700 mb-0.5">Where do I find my class code?</p>
+            <p className="text-[11px] text-gray-400 leading-relaxed">Your instructor shares the code when they create a class. It looks like <span className="font-mono font-bold text-gray-600">XY7Z4K</span>. Ask them if you don't have it yet.</p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -234,7 +238,7 @@ function EmptyArchive() {
 }
 
 /* ─── Main View ─── */
-export default function EnrolledClassesView({ user, classes, archivedClasses, predictions, onRefresh }) {
+export default function EnrolledClassesView({ user, classes, archivedClasses, predictions, studentId = null, isReadOnly = false, onRefresh }) {
   const [activeTab, setActiveTab] = useState('classes');
   const [search, setSearch] = useState('');
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -283,33 +287,47 @@ export default function EnrolledClassesView({ user, classes, archivedClasses, pr
       <StudentCourseDetailView
         courseName={selectedCourse}
         user={user}
+        studentId={studentId}
         onBack={() => setSelectedCourse(null)}
       />
     );
   }
 
+  const containerClass = isReadOnly
+    ? "space-y-4"
+    : "p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)] min-h-screen";
+
   return (
-    <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)] min-h-screen" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className={containerClass} style={{ fontFamily: 'Inter, sans-serif' }}>
       {/* Header */}
-      <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-        <div className="space-y-2">
-          <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">Dashboard</p>
-          <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">My Classes</h1>
-          <p className="text-[13px] text-gray-600">Track your enrolled subjects and view course analytics.</p>
-          {!loading && classList.length > 0 && activeTab === 'classes' && (
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="rounded-full border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] px-3 py-1 text-[12px] font-semibold text-gray-700 shadow-sm">{classList.length} total classes</span>
-              <span className="rounded-full border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] px-3 py-1 text-[12px] font-semibold text-gray-700 shadow-sm">{filtered.length} shown</span>
-            </div>
+      {isReadOnly ? (
+        !loading && classList.length > 0 && activeTab === 'classes' && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] px-3 py-1 text-[12px] font-semibold text-gray-700 shadow-sm">{classList.length} total classes</span>
+            <span className="rounded-full border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] px-3 py-1 text-[12px] font-semibold text-gray-700 shadow-sm">{filtered.length} shown</span>
+          </div>
+        )
+      ) : (
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div className="space-y-2">
+            <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">Dashboard</p>
+            <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">My Classes</h1>
+            <p className="text-[13px] text-gray-600">Track your enrolled subjects and view course analytics.</p>
+            {!loading && classList.length > 0 && activeTab === 'classes' && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="rounded-full border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] px-3 py-1 text-[12px] font-semibold text-gray-700 shadow-sm">{classList.length} total classes</span>
+                <span className="rounded-full border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] px-3 py-1 text-[12px] font-semibold text-gray-700 shadow-sm">{filtered.length} shown</span>
+              </div>
+            )}
+          </div>
+          {activeTab === 'classes' && (
+            <button onClick={() => setJoinModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(180deg,#d11717_0%,#a81010_100%)] px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_10px_22px_rgba(0,0,0,0.25)] transition-all hover:brightness-105">
+              <Plus size={15} /> Join Class
+            </button>
           )}
         </div>
-        {activeTab === 'classes' && (
-          <button onClick={() => setJoinModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(180deg,#d11717_0%,#a81010_100%)] px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_10px_22px_rgba(0,0,0,0.25)] transition-all hover:brightness-105">
-            <Plus size={15} /> Join Class
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Tabs & Filters */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -361,7 +379,7 @@ export default function EnrolledClassesView({ user, classes, archivedClasses, pr
       {activeTab === 'classes' && (
         <>
           {loading && <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-4">{[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}</div>}
-          {!loading && classList.length === 0 && <EmptyState onSuccess={handleJoinSuccess} />}
+          {!loading && classList.length === 0 && <EmptyState onSuccess={handleJoinSuccess} isReadOnly={isReadOnly} />}
           {!loading && classList.length > 0 && filtered.length === 0 && (
             <div className="rounded-2xl border border-[#eadede] bg-[linear-gradient(180deg,#ffffff_0%,#fff9f9_100%)] p-10 text-center shadow-sm">
               <h3 className="text-[20px] font-extrabold text-gray-900">No classes found</h3>

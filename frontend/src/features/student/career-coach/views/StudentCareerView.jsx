@@ -364,17 +364,19 @@ export default function StudentCareerView({ user }) {
 
                   const filteredRecs = recommendations && recommendations.length > 0
                     ? (gapSkillNames.length > 0
-                        ? recommendations.filter(rec =>
-                            gapSkillNames.some(skill => rec.toLowerCase().includes(skill))
-                          )
+                        ? recommendations.filter(rec => {
+                            const recStr = typeof rec === 'string' ? rec : (rec?.recommendation || rec?.text || rec?.desc || String(rec || ''));
+                            return gapSkillNames.some(skill => recStr.toLowerCase().includes(skill));
+                          })
                         : recommendations)
                     : [];
 
-                  const recsToShow = perCareerRecs.length > 0
+                  const recsToShow = (perCareerRecs.length > 0
                     ? perCareerRecs
                     : filteredRecs.length > 0
                       ? filteredRecs
-                      : recommendations?.slice(0, 4) || [];
+                      : recommendations?.slice(0, 4) || []
+                  ).map(rec => typeof rec === 'string' ? rec : (rec?.recommendation || rec?.text || rec?.desc || String(rec || '')));
 
                   if (recsToShow.length === 0) return null;
 

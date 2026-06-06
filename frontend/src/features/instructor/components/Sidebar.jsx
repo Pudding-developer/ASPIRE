@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, BookOpen, Archive, LogOut, ChevronUp, ChevronDown, PanelLeftClose, Menu } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Archive, LogOut, ChevronUp, ChevronDown, PanelLeftClose, Menu, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import aspireLogo from '../../../assets/aspire-logo.png';
 import useAuth from '../../auth/hooks/useAuth';
@@ -55,6 +55,19 @@ export default function Sidebar({ activeView, setActiveView, onLogout, classes =
         >
           <LayoutDashboard size={20} className={`shrink-0 ${activeView === 'instructor-portal' ? 'text-white' : 'text-white/60'}`} />
           {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap min-w-[150px] text-left">Dashboard</span>}
+        </button>
+
+        {/* My Advisees */}
+        <button
+          onClick={() => setActiveView('my-advisees')}
+          title={isMinimized ? "My Advisees" : undefined}
+          className={`w-full flex items-center border border-transparent ${isMinimized ? 'justify-center px-0' : 'gap-4 px-4'} py-3 rounded-xl transition-all ${activeView === 'my-advisees' || activeView.startsWith('advisee-')
+            ? 'bg-white/20 text-white border-white/20 backdrop-blur-md shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_8px_20px_rgba(0,0,0,0.15)]'
+            : 'text-white/70 hover:text-white hover:bg-white/5'
+            }`}
+        >
+          <GraduationCap size={20} className={`shrink-0 ${activeView === 'my-advisees' || activeView.startsWith('advisee-') ? 'text-white' : 'text-white/60'}`} />
+          {!isMinimized && <span className="font-medium text-[15px] whitespace-nowrap min-w-[150px] text-left">My Advisees</span>}
         </button>
 
         <div>

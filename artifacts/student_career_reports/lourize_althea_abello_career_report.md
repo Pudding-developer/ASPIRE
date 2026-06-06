@@ -10,17 +10,17 @@ This document details the AI-generated Career Coach report and readiness assessm
 - **Email:** `lourize@gmail.com`
 - **GitHub Account:** *Not Connected*
 - **Chosen Career:** Backend Developer
-- **Report Date:** 2026-05-22 05:10:47.899523
-- **Report ID:** `64` (Job ID: `981614bd-b43a-4c83-95ed-c9e96261249f`)
+- **Report Date:** 2026-05-22 17:01:33.231316
+- **Report ID:** `88` (Job ID: `12162174-1d32-422b-9305-371ce36d88ea`)
 
 ---
 
 ## 📝 Executive Summary
-This report provides a comprehensive overview of your career readiness, highlighting your strengths and areas for growth based on your academic performance. You demonstrate advanced proficiency in areas like Cost Analysis and Calculus, with an outstanding overall academic performance of 92.0. While your academic record is strong, there is no significant GitHub activity to evaluate practical coding skills.
+Based on your academic performance, you demonstrate a strong foundation in core Computer Engineering principles. You show advanced proficiency in 'Cost Analysis' and 'Differential Equations', both exceeding expectations. Your academic record highlights consistent excellence across various subjects, indicating a solid theoretical understanding.
 
-Based on your current skill set, the role of Data Scientist is the top recommendation, with a match score of 25. This career aligns well with your strong foundation in Statistics and Machine Learning. Alternative career paths include AI Engineer, though it requires a more specialized focus on advanced AI tools.
+Your strongest career match is a 'Machine Learning Engineer' with a match score of 56%. This path aligns well with your existing strengths in 'Machine Learning' and 'Statistics'. Other promising avenues include 'IoT Systems Engineer' and 'Data Scientist', both scoring 44%, which leverage your foundational programming and mathematical skills.
 
-To bridge the identified gaps, focus on developing your Python and pandas skills, which are estimated to take a combined 16 weeks. Your strong analytical background and existing Machine Learning knowledge provide an excellent foundation, making these next steps well within reach.
+To fully prepare for a Machine Learning Engineer role, focus on closing the top two identified gaps: 'Python' and 'scikit-learn', which are estimated to take a combined 16 weeks. You can strengthen these areas through dedicated practice in your 'Object Oriented Programming' and 'Machine Learning (Cognate/Elective)' courses. Your strong analytical background means these next steps are well within your grasp, building directly on your current academic success.
 
 ---
 
@@ -30,39 +30,39 @@ Below is the compatibility analysis across all assessed career paths, sorted by 
 
 | Career Title | Match Score | Matched Skills | Key Gaps |
 | :--- | :---: | :--- | :--- |
-| **Data Scientist** | `43%` | Statistics (via Engineering Data Analysis), Machine Learning (via Cognate/Elective Course 1) | Python, pandas, scikit-learn, SQL, data visualization, Jupyter |
-| **AI Engineer** | `24%` | Machine Learning (via Cognate/Elective Course 1) | Python, PyTorch or TensorFlow, LLMs, prompt engineering, vector databases, RAG pipelines |
-| **Machine Learning Engineer** | `18%` | python (via Object Oriented Programming), scikit-learn (via Cognate/Elective Course 1) | tensorflow, pytorch, feature engineering, model deployment, docker, rest apis for ml |
-| **Full Stack Developer** | `9%` | *None* | React, Node.js or Python, PostgreSQL, REST APIs, Git, Docker, basic DevOps, HTML/CSS/JavaScript |
-| **Frontend Developer** | `8%` | *None* | HTML, CSS, JavaScript, React or Vue, TypeScript, Git, REST API integration, responsive design, accessibility |
-| **Backend Developer** | `0%` | *None* | Python or JavaScript, REST APIs, PostgreSQL, Docker, Git, Linux, Redis, CI/CD pipelines |
-| **Cybersecurity Analyst** | `0%` | *None* | Networking, Linux, ethical hacking, penetration testing, SIEM tools, incident response, security frameworks, cryptography |
-| **IoT Systems Engineer** | `0%` | *None* | Embedded C, Wireless protocols (LoRaWAN, Zigbee, BLE), Cloud integration (AWS IoT, Google Cloud IoT), Sensors, MQTT |
-| **DevOps Engineer** | `0%` | *None* | Linux, Docker, Kubernetes, CI/CD, AWS or GCP, Terraform, monitoring tools, bash scripting, networking |
+| **Machine Learning Engineer** | `62%` | Machine Learning (via Cognate/Elective Course 1), Statistics (via Engineering Data Analysis), Algorithm Design (via Computer Programming 1, Programming Logic and Design), Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), OOP (via Object Oriented Programming), Numerical Analysis (via Numerical Methods) | Python, scikit-learn, TensorFlow or PyTorch, feature engineering, model deployment, Docker |
+| **Data Scientist** | `62%` | Machine Learning (via Cognate/Elective Course 1), Statistics (via Engineering Data Analysis), Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), OOP (via Object Oriented Programming), Numerical Analysis (via Numerical Methods), Mathematical Reasoning (via Mathematics in the Modern World) | Python, pandas, scikit-learn, SQL, data visualization, statistical analysis |
+| **IoT Systems Engineer** | `57%` | Electronic Devices (via Electronic Circuits: Devices and Analysis), Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), OOP (via Object Oriented Programming), Algorithm Design (via Computer Programming 1, Programming Logic and Design), Circuit Analysis (via Fundamentals of Electrical Engineering) | Embedded C, Wireless protocols (LoRaWAN, Zigbee, BLE), Cloud integration (AWS IoT, Google Cloud IoT), Sensors, MQTT |
+| **AI Engineer** | `56%` | Machine Learning (via Cognate/Elective Course 1), Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), OOP (via Object Oriented Programming), Algorithm Design (via Computer Programming 1, Programming Logic and Design), Statistics (via Engineering Data Analysis), Numerical Analysis (via Numerical Methods) | Python, PyTorch or TensorFlow, LLMs, prompt engineering, vector databases, RAG pipelines |
+| **Frontend Developer** | `41%` | Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), OOP (via Object Oriented Programming), Algorithm Design (via Computer Programming 1, Programming Logic and Design) | HTML, CSS, JavaScript, React or Vue, TypeScript, Git |
+| **Embedded Systems Engineer** | `35%` | *None* | C/C++, RTOS (FreeRTOS/Zephyr), Microcontrollers (STM32, ESP32, AVR), I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes |
+| **Full Stack Developer** | `33%` | Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), OOP (via Object Oriented Programming), Algorithm Design (via Computer Programming 1, Programming Logic and Design) | React, Node.js or Python, PostgreSQL, REST APIs, Git, Docker |
+| **Backend Developer** | `33%` | Programming Fundamentals (via Computer Programming 1, Programming Logic and Design), OOP (via Object Oriented Programming), Algorithm Design (via Computer Programming 1, Programming Logic and Design) | Python or JavaScript, REST APIs, PostgreSQL, Docker, Git, Linux |
+| **Software Architect** | `33%` | Engineering Design Process (via Introduction to Engineering), Algorithm Design (via Computer Programming 1, Programming Logic and Design), OOP (via Object Oriented Programming) | System design, microservices, distributed systems, cloud architecture, API design patterns, database design |
 | **FPGA Engineer** | `0%` | *None* | HDL (Verilog/VHDL), FPGA Architecture (Xilinx/Altera), Digital Signal Processing, High-speed interfaces, Timing closure |
-| **Embedded Systems Engineer** | `0%` | *None* | C/C++, RTOS (FreeRTOS/Zephyr), Microcontrollers (STM32, ESP32, AVR), I2C/SPI/UART protocols, PCB design basics, debugging with Oscilloscopes |
 | **VLSI Design Engineer** | `0%` | *None* | Verilog/SystemVerilog, VHDL, Digital Logic Design, CMOS fundamentals, EDA tools (Cadence, Synopsys), Static Timing Analysis |
-| **Software Architect** | `0%` | *None* | System design, microservices, distributed systems, cloud architecture, API design patterns, database design, security architecture, performance optimization |
+| **Cybersecurity Analyst** | `0%` | *None* | Networking, Linux, ethical hacking, penetration testing, SIEM tools, incident response |
+| **DevOps Engineer** | `0%` | *None* | Linux, Docker, Kubernetes, CI/CD, AWS or GCP, Terraform |
 
 ---
 
 ## 🛠️ Skill Profile
 
-LOURIZE ALTHEA ABELLO has **34 total assessed skills** split between academic coursework and GitHub history.
+LOURIZE ALTHEA ABELLO has **18 total assessed skills** split between academic coursework and GitHub history.
 
 ### Summary Metrics
-- 🌟 **Exceeding Expectations:** 33
+- 🌟 **Exceeding Expectations:** 18
 - 🟢 **On Track:** 0
 - 🟡 **Needs Attention:** 0
-- 🔴 **Critical:** 1
+- 🔴 **Critical:** 0
 
 ### Strongest & Weakest Areas
 > [!NOTE]
 > Strongest skills are primarily academic/mathematical, while weaker skills represent niche technologies not yet fully explored.
 
-- **Strongest Skills:** Cost Analysis, Calculus, Differential Equations
+- **Strongest Skills:** Cost Analysis, Differential Equations, Algorithm Design
 - **Weakest Skills (Needs Attention):**
-  - General engineering competency (27.9%)
+  - *None*
 
 ---
 
@@ -72,11 +72,11 @@ Based on the recommended career paths, the AI Career Coach recommends the follow
 
 | Skill | Priority | Est. Time | Actionable Recommendation / Reason |
 | :--- | :---: | :---: | :--- |
-| **Python** | **High** | 10 Weeks | Python is the primary programming language for Data Scientists, used for data manipulation, analysis, and machine learning model development. |
-| **pandas** | **High** | 6 Weeks | pandas is an essential library for Data Scientists, providing high-performance, easy-to-use data structures and data analysis tools for Python. |
-| **scikit-learn** | **High** | 6 Weeks | scikit-learn is the foundational machine learning library in Python, critical for Data Scientists to implement various ML algorithms and workflows. |
-| **SQL** | **Medium** | 3 Weeks | Data Scientists frequently use SQL to query and retrieve data from relational databases, which is a prerequisite for most data analysis tasks. |
-| **data visualization** | **Medium** | 3 Weeks | Data visualization is crucial for Data Scientists to explore data, identify patterns, and effectively communicate insights and findings to stakeholders. |
+| **Python** | **High** | 10 Weeks | Python is the primary programming language for Machine Learning Engineering, essential for implementing algorithms, using ML frameworks, and data manipulation. |
+| **scikit-learn** | **High** | 6 Weeks | scikit-learn is a fundamental library for traditional machine learning algorithms, data preprocessing, and model evaluation, critical for any Machine Learning Engineer. |
+| **TensorFlow/PyTorch** | **High** | 6 Weeks | TensorFlow and PyTorch are the leading deep learning frameworks, indispensable for developing and deploying neural network models in Machine Learning Engineering. |
+| **Docker** | **Medium** | 3 Weeks | Machine Learning Engineers use Docker to containerize models and their dependencies, ensuring consistent deployment environments and simplifying scaling for production. |
+| **model deployment** | **Medium** | 10 Weeks | Model deployment is crucial for Machine Learning Engineers to transition trained models from development to production, making them accessible and usable by end-users or other systems. |
 
 ### 📚 Recommended Academic Subjects to Prioritize (for Backend Developer)
 These upcoming subjects in the BSCpE curriculum align directly with this career path. Prioritize these in your study plan:
@@ -90,7 +90,7 @@ These upcoming subjects in the BSCpE curriculum align directly with this career 
 ---
 
 ## 📈 Progression & Trends
-- **Career Readiness Score:** `43 / 100`
+- **Career Readiness Score:** `62 / 100`
 - **Readiness Score Change:** `0`
 - **Trend:** Baseline
 - **Progress Summary:** This is the student's first career readiness assessment.

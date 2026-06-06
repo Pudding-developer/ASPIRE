@@ -3,13 +3,18 @@ import { studentService } from '../../../../services/studentService';
 
 const DEFAULT_POLL_MS = 30000;
 
-export default function useActivityFeed(limit = 3, { pollMs = DEFAULT_POLL_MS } = {}) {
+export default function useActivityFeed(limit = 3, { pollMs = DEFAULT_POLL_MS, disabled = false } = {}) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const latestSilent = useRef(false);
 
   const fetchFeed = useCallback(async ({ silent = false } = {}) => {
+    if (disabled) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
     if (!silent) setLoading(true);
     latestSilent.current = silent;
     setError(null);
@@ -22,14 +27,14 @@ export default function useActivityFeed(limit = 3, { pollMs = DEFAULT_POLL_MS } 
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [limit]);
+  }, [limit, disabled]);
 
   useEffect(() => { fetchFeed(); }, [fetchFeed]);
 
   // Poll while the tab is visible. Pauses when the tab is hidden so we don't
   // burn requests on a backgrounded page.
   useEffect(() => {
-    if (!pollMs) return;
+    if (!pollMs || disabled) return;
 
     let id = null;
     const start = () => {
@@ -55,7 +60,7 @@ export default function useActivityFeed(limit = 3, { pollMs = DEFAULT_POLL_MS } 
       stop();
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [fetchFeed, pollMs]);
+  }, [fetchFeed, pollMs, disabled]);
 
   return { items, loading, error, refetch: fetchFeed };
 }

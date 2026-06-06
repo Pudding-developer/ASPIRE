@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { roadmapService } from '../../../../services/roadmapService'
 
-export function useRoadmap(careerTitle) {
+export function useRoadmap(careerTitle, studentId = null) {
   const [roadmap, setRoadmap] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -18,7 +18,9 @@ export function useRoadmap(careerTitle) {
       setLoading(true)
       setError(null)
       try {
-        const data = await roadmapService.getRoadmap(encodeURIComponent(careerTitle))
+        const data = studentId
+          ? await roadmapService.getAdviseeRoadmap(studentId, encodeURIComponent(careerTitle))
+          : await roadmapService.getRoadmap(encodeURIComponent(careerTitle))
         setRoadmap(data)
       } catch (err) {
         setError('Could not load roadmap')
@@ -28,7 +30,7 @@ export function useRoadmap(careerTitle) {
     }
 
     fetchRoadmap()
-  }, [careerTitle])
+  }, [careerTitle, studentId])
 
   return { roadmap, loading, error }
 }

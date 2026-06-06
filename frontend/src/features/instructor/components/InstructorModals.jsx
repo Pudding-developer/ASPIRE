@@ -3,9 +3,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Copy, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 
-import curriculumData from '../../../data/curriculum.json';
+import { request } from '../../../services/api';
 
 export function CreateClassModal({ isOpen, onClose, onSubmit }) {
+  const [curricula, setCurricula] = useState([]);
+  const [selectedCurriculumId, setSelectedCurriculumId] = useState('');
+  const [curriculumData, setCurriculumData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [year, setYear] = useState('1');
   const [semester, setSemester] = useState('1');
   const [selectedCourseCode, setSelectedCourseCode] = useState('');
@@ -21,19 +25,62 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
   useEffect(() => {
     if (!isOpen) return;
     setYear('1'); setSemester('1'); setSelectedCourseCode(''); setSection(''); setFormError('');
+    
     const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+
+    // Fetch curriculum versions
+    const fetchCurricula = async () => {
+      try {
+        setLoading(true);
+        const data = await request('GET', '/api/curriculum');
+        setCurricula(data || []);
+        if (data && data.length > 0) {
+          setSelectedCurriculumId(data[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load curricula:', err);
+        setFormError('Failed to load curriculum versions.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCurricula();
+
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+    };
   }, [isOpen, onClose]);
 
-  // Reset selected course when filters change
+  // Fetch subjects whenever the selected curriculum version changes
+  useEffect(() => {
+    if (!selectedCurriculumId || !isOpen) return;
+    const fetchSubjects = async () => {
+      try {
+        setLoading(true);
+        const data = await request('GET', `/api/curriculum/${selectedCurriculumId}/subjects`);
+        setCurriculumData(data || []);
+      } catch (err) {
+        console.error('Failed to load curriculum subjects:', err);
+        setFormError('Failed to load curriculum subjects.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSubjects();
+  }, [selectedCurriculumId, isOpen]);
+
+  // Reset/update selected course when filters or curriculum data change
   useEffect(() => {
     if (availableSubjects.length > 0) {
-      setSelectedCourseCode(availableSubjects[0].code);
+      const isStillAvailable = availableSubjects.some(s => s.code === selectedCourseCode);
+      if (!isStillAvailable) {
+        setSelectedCourseCode(availableSubjects[0].code);
+      }
     } else {
       setSelectedCourseCode('');
     }
-  }, [year, semester]); // We intentionally do not include availableSubjects as a dependency
+  }, [year, semester, curriculumData]);
 
   if (!isOpen) return null;
 
@@ -55,6 +102,7 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
         year_level: parseInt(year),
         semester: parseInt(semester),
         section,
+        curriculum_id: selectedCurriculumId,
       });
     } catch (err) {
       setFormError(err.message || 'Failed to create class.');
@@ -62,6 +110,7 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
       setSubmitting(false);
     }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -79,6 +128,22 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
         </div>
 
         <form className="p-6 space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Curriculum Version</label>
+            <select
+              value={selectedCurriculumId}
+              onChange={(e) => setSelectedCurriculumId(Number(e.target.value))}
+              disabled={loading || curricula.length === 0}
+              className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#70170f] focus:ring-1 focus:ring-[#70170f] disabled:opacity-50 font-medium"
+            >
+              {curricula.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">Filter Year Level</label>
@@ -112,16 +177,20 @@ export function CreateClassModal({ isOpen, onClose, onSubmit }) {
             <select 
               value={selectedCourseCode} 
               onChange={(e) => setSelectedCourseCode(e.target.value)} 
-              className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#70170f] focus:ring-1 focus:ring-[#70170f]"
+              disabled={loading}
+              className="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:border-[#70170f] focus:ring-1 focus:ring-[#70170f] disabled:opacity-50"
             >
-              {availableSubjects.length === 0 && (
+              {loading ? (
+                <option value="" disabled>Loading subjects...</option>
+              ) : availableSubjects.length === 0 ? (
                 <option value="" disabled>No subjects found for this term</option>
+              ) : (
+                availableSubjects.map((subject) => (
+                  <option key={subject.code} value={subject.code}>
+                    {subject.code} — {subject.title}
+                  </option>
+                ))
               )}
-              {availableSubjects.map((subject) => (
-                <option key={subject.code} value={subject.code}>
-                  {subject.code} — {subject.title}
-                </option>
-              ))}
             </select>
           </div>
           

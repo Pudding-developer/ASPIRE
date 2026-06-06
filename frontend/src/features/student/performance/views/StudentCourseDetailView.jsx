@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Target, Award, BarChart2, CheckCircle2, ChevronRight, Info, TrendingUp, Zap, Compass, Trophy, Star, AlertCircle, GraduationCap, Sparkles } from 'lucide-react';
 import { studentService } from '../../../../services/studentService';
+import { request } from '../../../../services/api';
 /* ─── Shared UI Components ─── */
 const Skeleton = () => (
   <div className="p-10 space-y-8 bg-[#f8fafc] min-h-screen animate-pulse">
@@ -459,7 +460,7 @@ const COURSE_ILO_SO_MAP = {
   },
 };
 
-export default function StudentCourseDetailView({ courseName, user, onBack }) {
+export default function StudentCourseDetailView({ courseName, user, studentId = null, onBack }) {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -478,10 +479,15 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
     setData(null);
     setAssessments([]);
 
-    Promise.all([
-      studentService.getCourseDashboard(courseName),
-      studentService.getScores()
-    ])
+    const fetchDashboard = studentId
+      ? request('GET', `/api/instructor/advisees/${studentId}/dashboard?course=${encodeURIComponent(courseName)}`)
+      : studentService.getCourseDashboard(courseName);
+
+    const fetchScores = studentId
+      ? request('GET', `/api/instructor/advisees/${studentId}/scores`)
+      : studentService.getScores();
+
+    Promise.all([fetchDashboard, fetchScores])
       .then(([dashRes, scoresRes]) => {
         setData(dashRes.data);
 
@@ -509,7 +515,7 @@ export default function StudentCourseDetailView({ courseName, user, onBack }) {
         setErrorKind(classifyError(msg));
         setLoading(false);
       });
-  }, [courseName]);
+  }, [courseName, studentId]);
 
   if (loading) return <Skeleton />;
   if (error) {

@@ -1,0 +1,404 @@
+[
+  {
+    "year": "1",
+    "semester": "1",
+    "code": "ENGG 401",
+    "title": "Introduction to Engineering"
+  },
+  {
+    "year": "1",
+    "semester": "1",
+    "code": "GEd 101",
+    "title": "Understanding the Self"
+  },
+  {
+    "year": "1",
+    "semester": "1",
+    "code": "GEd 102",
+    "title": "Mathematics in the Modern World"
+  },
+  {
+    "year": "1",
+    "semester": "1",
+    "code": "GEd 105",
+    "title": "Readings in Philippine History"
+  },
+  {
+    "year": "1",
+    "semester": "1",
+    "code": "GEd 106",
+    "title": "Purposive Communication"
+  },
+  {
+    "year": "1",
+    "semester": "1",
+    "code": "MATH 401",
+    "title": "Differential Calculus"
+  },
+  {
+    "year": "1",
+    "semester": "1",
+    "code": "SCI 401",
+    "title": "General Chemistry"
+  },
+  {
+    "year": "1",
+    "semester": "1",
+    "code": "PE 101",
+    "title": "Physical Fitness, Gymnastics and Aerobics"
+  },
+  {
+    "year": "1",
+    "semester": "1",
+    "code": "NSTP 111",
+    "title": "National Service Training Program"
+  },
+  {
+    "year": "1",
+    "semester": "2",
+    "code": "CpE 401",
+    "title": "Computer Programming 1"
+  },
+  {
+    "year": "1",
+    "semester": "2",
+    "code": "ENGG 402",
+    "title": "Engineering Drawing"
+  },
+  {
+    "year": "1",
+    "semester": "2",
+    "code": "GEd 104",
+    "title": "Contemporary World"
+  },
+  {
+    "year": "1",
+    "semester": "2",
+    "code": "GEd 108",
+    "title": "Art Appreciation"
+  },
+  {
+    "year": "1",
+    "semester": "2",
+    "code": "GEd 109",
+    "title": "Science, Technology and Society"
+  },
+  {
+    "year": "1",
+    "semester": "2",
+    "code": "MATH 402",
+    "title": "Integral Calculus"
+  },
+  {
+    "year": "1",
+    "semester": "2",
+    "code": "SCI 403",
+    "title": "Physics 1"
+  },
+  {
+    "year": "1",
+    "semester": "2",
+    "code": "PE 102",
+    "title": "Rhythmic Activities"
+  },
+  {
+    "year": "1",
+    "semester": "2",
+    "code": "NSTP 121",
+    "title": "National Service Training Program"
+  },
+  {
+    "year": "1",
+    "semester": "3",
+    "code": "GEd 103",
+    "title": "Life and Works of Rizal"
+  },
+  {
+    "year": "1",
+    "semester": "3",
+    "code": "GEd 107",
+    "title": "Ethics"
+  },
+  {
+    "year": "1",
+    "semester": "3",
+    "code": "SCI 402",
+    "title": "Modern Biology"
+  },
+  {
+    "year": "2",
+    "semester": "1",
+    "code": "CpE 403",
+    "title": "Computer Engineering as a Discipline"
+  },
+  {
+    "year": "2",
+    "semester": "1",
+    "code": "CpE 404",
+    "title": "Programming Logic and Design"
+  },
+  {
+    "year": "2",
+    "semester": "1",
+    "code": "CpE 405",
+    "title": "Discrete Mathematics"
+  },
+  {
+    "year": "2",
+    "semester": "1",
+    "code": "EE 423",
+    "title": "Fundamentals of Electrical Engineering"
+  },
+  {
+    "year": "2",
+    "semester": "1",
+    "code": "ENGG 403",
+    "title": "Computer-Aided Design"
+  },
+  {
+    "year": "2",
+    "semester": "1",
+    "code": "ENGG 404",
+    "title": "Engineering Economics"
+  },
+  {
+    "year": "2",
+    "semester": "1",
+    "code": "MATH 403",
+    "title": "Engineering Data Analysis"
+  },
+  {
+    "year": "2",
+    "semester": "1",
+    "code": "MATH 404",
+    "title": "Differential Equations"
+  },
+  {
+    "year": "2",
+    "semester": "1",
+    "code": "PE 103",
+    "title": "Individual and Dual Sports"
+  },
+  {
+    "year": "2",
+    "semester": "2",
+    "code": "CpE 406",
+    "title": "Object Oriented Programming"
+  },
+  {
+    "year": "2",
+    "semester": "2",
+    "code": "CpE 407",
+    "title": "CpE Laws and Professional Practice"
+  },
+  {
+    "year": "2",
+    "semester": "2",
+    "code": "CpE 408",
+    "title": "Advanced Engineering Mathematics for CpE"
+  },
+  {
+    "year": "2",
+    "semester": "2",
+    "code": "CpEE 401",
+    "title": "Cognate/Elective Course 1"
+  },
+  {
+    "year": "2",
+    "semester": "2",
+    "code": "ECE 421",
+    "title": "Electronic Circuits: Devices and Analysis"
+  },
+  {
+    "year": "2",
+    "semester": "2",
+    "code": "ENGG 411",
+    "title": "Basic Occupational Health and Safety"
+  },
+  {
+    "year": "2",
+    "semester": "2",
+    "code": "ENGG 414",
+    "title": "Numerical Methods"
+  },
+  {
+    "year": "2",
+    "semester": "2",
+    "code": "Fili 101",
+    "title": "Kontekstwalisadong Komunikasyon sa Filipino"
+  },
+  {
+    "year": "2",
+    "semester": "2",
+    "code": "PE 104",
+    "title": "Team Sports"
+  },
+  {
+    "year": "3",
+    "semester": "1",
+    "code": "CpE 410",
+    "title": "Logic Circuits and Design"
+  },
+  {
+    "year": "3",
+    "semester": "1",
+    "code": "CpE 411",
+    "title": "Data Structures and Algorithms"
+  },
+  {
+    "year": "3",
+    "semester": "1",
+    "code": "CpE 412",
+    "title": "Introduction to Networks, Data and Digital Communications (CISCO 1)"
+  },
+  {
+    "year": "3",
+    "semester": "1",
+    "code": "CpE 413",
+    "title": "Fundamentals of Mixed Signals and Sensors"
+  },
+  {
+    "year": "3",
+    "semester": "1",
+    "code": "CpE 414",
+    "title": "Feedback and Control Systems"
+  },
+  {
+    "year": "3",
+    "semester": "1",
+    "code": "CpE 415",
+    "title": "Introduction to HDL"
+  },
+  {
+    "year": "3",
+    "semester": "1",
+    "code": "ENGG 416",
+    "title": "Research Methods"
+  },
+  {
+    "year": "3",
+    "semester": "1",
+    "code": "Fili 102",
+    "title": "Filipino sa Iba't Ibang Disiplina"
+  },
+  {
+    "year": "3",
+    "semester": "2",
+    "code": "CpE 417",
+    "title": "Microprocessors"
+  },
+  {
+    "year": "3",
+    "semester": "2",
+    "code": "CpE 418",
+    "title": "Software Design"
+  },
+  {
+    "year": "3",
+    "semester": "2",
+    "code": "CpE 419",
+    "title": "Routing and Switching (CISCO 2)"
+  },
+  {
+    "year": "3",
+    "semester": "2",
+    "code": "CpE 420",
+    "title": "Digital Signal Processing"
+  },
+  {
+    "year": "3",
+    "semester": "2",
+    "code": "CpE 421",
+    "title": "Emerging Technologies in CpE"
+  },
+  {
+    "year": "3",
+    "semester": "2",
+    "code": "CpE 422",
+    "title": "CpE Practice and Design 1"
+  },
+  {
+    "year": "3",
+    "semester": "2",
+    "code": "CpEE 402",
+    "title": "Cognate/Elective Course 2"
+  },
+  {
+    "year": "3",
+    "semester": "3",
+    "code": "CpE 423",
+    "title": "Scaling Networks (CISCO 3)"
+  },
+  {
+    "year": "3",
+    "semester": "3",
+    "code": "CpE 424",
+    "title": "Operating Systems"
+  },
+  {
+    "year": "3",
+    "semester": "3",
+    "code": "CpE 425",
+    "title": "Computer Architecture and Organization"
+  },
+  {
+    "year": "4",
+    "semester": "1",
+    "code": "CpE 426",
+    "title": "Computer Engineering Drafting and Design"
+  },
+  {
+    "year": "4",
+    "semester": "1",
+    "code": "CpE 427",
+    "title": "Connecting Networks and Security (CISCO 4)"
+  },
+  {
+    "year": "4",
+    "semester": "1",
+    "code": "CpE 428",
+    "title": "Embedded Systems"
+  },
+  {
+    "year": "4",
+    "semester": "1",
+    "code": "CpE 429",
+    "title": "Seminars and Fieldtrips"
+  },
+  {
+    "year": "4",
+    "semester": "1",
+    "code": "IE 424",
+    "title": "Manufacturing and Quality Control"
+  },
+  {
+    "year": "4",
+    "semester": "1",
+    "code": "CpEE 403",
+    "title": "Cognate/Elective Course 3 (Data Mining / AI Track)"
+  },
+  {
+    "year": "4",
+    "semester": "1",
+    "code": "Litr 102",
+    "title": "ASEAN Literature"
+  },
+  {
+    "year": "4",
+    "semester": "2",
+    "code": "ENGG 405",
+    "title": "Technopreneurship"
+  },
+  {
+    "year": "4",
+    "semester": "2",
+    "code": "ENGG 417",
+    "title": "On-the-Job Training"
+  },
+  {
+    "year": "4",
+    "semester": "2",
+    "code": "CpE 430",
+    "title": "CpE Practice and Design 2"
+  }
+]

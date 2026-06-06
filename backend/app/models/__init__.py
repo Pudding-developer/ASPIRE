@@ -11,6 +11,7 @@ from app.models.knowledge import KnowledgeChunk, EmbeddingCache
 from app.models.roadmap import RoadmapCache
 from app.models.chat import ChatSession, ChatMessage
 from app.models.activity import ActivityEvent
+from app.models.curriculum import Curriculum, CurriculumSubject
 
 __all__ = [
     "User", "Instructor", "InstructorInviteToken", "Admin",
@@ -22,4 +23,6 @@ __all__ = [
     "RoadmapCache",
     "ChatSession", "ChatMessage",
     "ActivityEvent",
+    "Curriculum", "CurriculumSubject",
 ]
+

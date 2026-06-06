@@ -8,6 +8,8 @@ import ArchivedClassesView from '../../features/instructor/views/ArchivedClasses
 import ClassDetailView from '../../features/instructor/views/ClassDetailView';
 import { CreateClassModal, ClassCodeModal, ConfirmationModal } from '../../features/instructor/components/InstructorModals';
 import { useInstructorClasses } from '../../features/instructor/hooks/useInstructorClasses';
+import MyAdviseesView from '../../features/instructor/views/MyAdviseesView';
+import AdviseeProfileView from '../../features/instructor/views/AdviseeProfileView';
 
 const InstructorDashboard = () => {
   const { token, logout } = useAuth();
@@ -86,6 +88,20 @@ const InstructorDashboard = () => {
             classes={classes}
           />
         )}
+
+        {activeView === 'my-advisees' && (
+          <MyAdviseesView onSelectAdvisee={(id) => setActiveView(`advisee-${id}`)} />
+        )}
+
+        {activeView.startsWith('advisee-') && (() => {
+          const studentId = parseInt(activeView.replace('advisee-', ''));
+          return (
+            <AdviseeProfileView 
+              studentId={studentId} 
+              onBack={() => setActiveView('my-advisees')} 
+            />
+          );
+        })()}
 
         {activeView === 'my-classes' && (
           <MyClassesView

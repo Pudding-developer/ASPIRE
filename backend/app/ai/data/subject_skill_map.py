@@ -9,37 +9,37 @@ SUBJECT_SKILL_MAP = {
     "Computer Programming 1": {
         "primary_skills": ["Programming Fundamentals", "Problem Solving", "Algorithm Design"],
         "skillset_categories": ["Programming & Software Development"],
-        "abet_sos": ["SO1", "SO5", "SO11"],
+        "abet_sos": ["SO3(R)", "SO4(R)", "SO11(D)", "SO12(R)"],
         "career_relevance": ["Backend Developer", "Full Stack Developer", "Software Architect"]
     },
     "Programming Logic and Design": {
         "primary_skills": ["Algorithm Design", "Logic Formulation", "Programming Fundamentals"],
         "skillset_categories": ["Programming & Software Development"],
-        "abet_sos": ["SO1", "SO5"],
+        "abet_sos": ["SO3(R)", "SO4(R)", "SO11(D)", "SO12(R)"],
         "career_relevance": ["Backend Developer", "Full Stack Developer"]
     },
     "Object Oriented Programming": {
         "primary_skills": ["OOP", "Software Design Patterns", "Python", "Java"],
         "skillset_categories": ["Programming & Software Development"],
-        "abet_sos": ["SO1", "SO5", "SO11"],
+        "abet_sos": ["SO3(R)", "SO4(R)", "SO11(D)", "SO12(R)"],
         "career_relevance": ["Backend Developer", "Full Stack Developer", "Software Architect"]
     },
     "Data Structures and Algorithms": {
         "primary_skills": ["Algorithm Design", "Data Structures", "Computational Thinking"],
         "skillset_categories": ["Programming & Software Development", "Mathematics & Science Foundations"],
-        "abet_sos": ["SO1", "SO5"],
+        "abet_sos": ["SO5(R)", "SO11(D)"],
         "career_relevance": ["Backend Developer", "Software Architect", "AI Engineer"]
     },
     "Software Design": {
         "primary_skills": ["Software Architecture", "Design Patterns", "SOLID Principles", "UML"],
         "skillset_categories": ["Programming & Software Development", "Engineering Design & Research"],
-        "abet_sos": ["SO1", "SO3", "SO5", "SO11"],
+        "abet_sos": ["SO3(D)", "SO7(D)"],
         "career_relevance": ["Software Architect", "Backend Developer", "Full Stack Developer"]
     },
     "Discrete Mathematics": {
         "primary_skills": ["Mathematical Logic", "Set Theory", "Graph Theory", "Combinatorics"],
         "skillset_categories": ["Mathematics & Science Foundations", "Programming & Software Development"],
-        "abet_sos": ["SO1", "SO5"],
+        "abet_sos": ["SO1(R)", "SO5(R)"],
         "career_relevance": ["AI Engineer", "Data Scientist", "Software Architect"]
     },
 
@@ -53,31 +53,31 @@ SUBJECT_SKILL_MAP = {
     "Integral Calculus": {
         "primary_skills": ["Calculus", "Mathematical Analysis", "Numerical Integration"],
         "skillset_categories": ["Mathematics & Science Foundations"],
-        "abet_sos": ["SO1"],
+        "abet_sos": ["SO1(I)"],
         "career_relevance": ["Data Scientist", "AI Engineer", "Machine Learning Engineer"]
     },
     "Differential Equations": {
         "primary_skills": ["Differential Equations", "Mathematical Modeling", "Numerical Methods"],
         "skillset_categories": ["Mathematics & Science Foundations"],
-        "abet_sos": ["SO1"],
+        "abet_sos": ["SO1(I)", "SO5(R)"],
         "career_relevance": ["Data Scientist", "Machine Learning Engineer"]
     },
     "Engineering Data Analysis": {
         "primary_skills": ["Statistics", "Data Analysis", "Probability", "Statistical Modeling"],
         "skillset_categories": ["Mathematics & Science Foundations", "Data Science & AI/ML"],
-        "abet_sos": ["SO1", "SO2"],
+        "abet_sos": ["SO2(R)", "SO5(R)"],
         "career_relevance": ["Data Scientist", "AI Engineer", "Machine Learning Engineer"]
     },
     "Advanced Engineering Mathematics for CpE": {
         "primary_skills": ["Advanced Mathematics", "Linear Algebra", "Complex Analysis"],
         "skillset_categories": ["Mathematics & Science Foundations"],
-        "abet_sos": ["SO1"],
+        "abet_sos": ["SO1(R)", "SO5(R)"],
         "career_relevance": ["AI Engineer", "Machine Learning Engineer", "Data Scientist"]
     },
     "Numerical Methods": {
         "primary_skills": ["Numerical Analysis", "Computational Methods", "Python for Scientific Computing"],
         "skillset_categories": ["Mathematics & Science Foundations", "Data Science & AI/ML"],
-        "abet_sos": ["SO1", "SO5", "SO11"],
+        "abet_sos": ["SO1(R)", "SO5(R)"],
         "career_relevance": ["Data Scientist", "AI Engineer", "Machine Learning Engineer"]
     },
     "Mathematics in the Modern World": {
@@ -91,25 +91,25 @@ SUBJECT_SKILL_MAP = {
     "Introduction to Networks, Data and Digital Communications (CISCO 1)": {
         "primary_skills": ["Networking Fundamentals", "TCP/IP", "OSI Model", "LAN Design"],
         "skillset_categories": ["Networking & Communications"],
-        "abet_sos": ["SO1", "SO2", "SO3", "SO5", "SO11"],
+        "abet_sos": ["SO2(I)", "SO5(I)", "SO11(I)"],
         "career_relevance": ["DevOps Engineer", "Cybersecurity Analyst", "Network Engineer"]
     },
     "Routing and Switching (CISCO 2)": {
         "primary_skills": ["Routing Protocols", "VLANs", "Switching", "OSPF"],
         "skillset_categories": ["Networking & Communications"],
-        "abet_sos": ["SO1", "SO2", "SO3", "SO5", "SO11"],
+        "abet_sos": ["SO2(R)", "SO5(R)", "SO11(R)"],
         "career_relevance": ["DevOps Engineer", "Cybersecurity Analyst", "Network Engineer"]
     },
     "Scaling Networks (CISCO 3)": {
         "primary_skills": ["Advanced Routing", "EIGRP", "BGP", "Network Scaling"],
         "skillset_categories": ["Networking & Communications"],
-        "abet_sos": ["SO1", "SO2", "SO3", "SO5", "SO11"],
+        "abet_sos": ["SO2(D)", "SO5(D)", "SO11(D)"],
         "career_relevance": ["DevOps Engineer", "Cybersecurity Analyst"]
     },
     "Connecting Networks and Security (CISCO 4)": {
         "primary_skills": ["Network Security", "VPN", "Firewall", "Security Protocols"],
         "skillset_categories": ["Networking & Communications", "Operating Systems & Architecture"],
-        "abet_sos": ["SO1", "SO2", "SO3", "SO5", "SO6", "SO11"],
+        "abet_sos": ["SO2(D)", "SO5(D)", "SO11(D)"],
         "career_relevance": ["Cybersecurity Analyst", "DevOps Engineer"]
     },
 
@@ -117,13 +117,13 @@ SUBJECT_SKILL_MAP = {
     "Operating Systems": {
         "primary_skills": ["OS Concepts", "Process Management", "Memory Management", "Linux"],
         "skillset_categories": ["Operating Systems & Architecture"],
-        "abet_sos": ["SO1", "SO5", "SO11"],
+        "abet_sos": ["SO5(D)", "SO9(D)"],
         "career_relevance": ["DevOps Engineer", "Backend Developer", "Software Architect"]
     },
     "Computer Architecture and Organization": {
         "primary_skills": ["CPU Architecture", "Memory Hierarchy", "Assembly Language", "Pipelining"],
         "skillset_categories": ["Operating Systems & Architecture"],
-        "abet_sos": ["SO1", "SO5"],
+        "abet_sos": ["SO2(D)", "SO5(D)"],
         "career_relevance": ["Embedded Systems Engineer", "Software Architect"]
     },
 
@@ -131,19 +131,19 @@ SUBJECT_SKILL_MAP = {
     "Fundamentals of Electrical Engineering": {
         "primary_skills": ["Circuit Analysis", "Electrical Fundamentals", "Ohm's Law", "AC/DC Circuits"],
         "skillset_categories": ["Hardware & Circuit Design"],
-        "abet_sos": ["SO1", "SO3", "SO11"],
+        "abet_sos": ["SO1(R)", "SO2(R)", "SO5(R)"],
         "career_relevance": ["Embedded Systems Engineer"]
     },
     "Electronic Circuits: Devices and Analysis": {
         "primary_skills": ["Electronic Devices", "Circuit Design", "Transistors", "Amplifiers"],
         "skillset_categories": ["Hardware & Circuit Design"],
-        "abet_sos": ["SO1", "SO3", "SO11"],
+        "abet_sos": ["SO1(R)", "SO2(I)", "SO11(R)"],
         "career_relevance": ["Embedded Systems Engineer"]
     },
     "Logic Circuits and Design": {
         "primary_skills": ["Digital Logic", "Boolean Algebra", "Logic Gates", "Circuit Design"],
         "skillset_categories": ["Hardware & Circuit Design"],
-        "abet_sos": ["SO1", "SO3", "SO11"],
+        "abet_sos": ["SO2(R)", "SO5(R)", "SO11(D)"],
         "career_relevance": ["Embedded Systems Engineer", "Software Architect"]
     },
     "Introduction to HDL": {
@@ -155,7 +155,7 @@ SUBJECT_SKILL_MAP = {
     "Computer Engineering Drafting and Design": {
         "primary_skills": ["CAD", "Engineering Drawing", "System Design", "Prototyping"],
         "skillset_categories": ["Hardware & Circuit Design", "Engineering Design & Research"],
-        "abet_sos": ["SO1", "SO3"],
+        "abet_sos": ["SO9(D)", "SO11(D)"],
         "career_relevance": ["Embedded Systems Engineer"]
     },
 
@@ -163,19 +163,19 @@ SUBJECT_SKILL_MAP = {
     "Microprocessors": {
         "primary_skills": ["Microprocessor Architecture", "Assembly Language", "Embedded C", "Interfacing"],
         "skillset_categories": ["Embedded & Microprocessor Systems"],
-        "abet_sos": ["SO1", "SO3", "SO5", "SO11"],
+        "abet_sos": ["SO2(D)", "SO5(D)"],
         "career_relevance": ["Embedded Systems Engineer", "IoT Developer"]
     },
     "Embedded Systems": {
         "primary_skills": ["RTOS", "Embedded C", "Sensor Integration", "Firmware Development"],
         "skillset_categories": ["Embedded & Microprocessor Systems"],
-        "abet_sos": ["SO1", "SO3", "SO5", "SO11"],
+        "abet_sos": ["SO3(D)", "SO4(D)"],
         "career_relevance": ["Embedded Systems Engineer", "IoT Developer"]
     },
     "Fundamentals of Mixed Signals and Sensors": {
         "primary_skills": ["Sensor Technology", "Signal Conditioning", "ADC/DAC", "IoT Basics"],
         "skillset_categories": ["Embedded & Microprocessor Systems", "Signal Processing & Control Systems"],
-        "abet_sos": ["SO1", "SO2", "SO3"],
+        "abet_sos": ["SO1(I)", "SO2(I)", "SO5(I)"],
         "career_relevance": ["Embedded Systems Engineer", "IoT Developer"]
     },
 
@@ -183,17 +183,29 @@ SUBJECT_SKILL_MAP = {
     "Feedback and Control Systems": {
         "primary_skills": ["Control Theory", "PID Control", "System Modeling", "Stability Analysis"],
         "skillset_categories": ["Signal Processing & Control Systems"],
-        "abet_sos": ["SO1", "SO2", "SO5"],
+        "abet_sos": ["SO1(I)", "SO2(D)", "SO5(D)", "SO11(I)"],
         "career_relevance": ["Embedded Systems Engineer", "Robotics Engineer"]
     },
     "Digital Signal Processing": {
         "primary_skills": ["DSP Algorithms", "Filter Design", "FFT", "Signal Analysis"],
         "skillset_categories": ["Signal Processing & Control Systems"],
-        "abet_sos": ["SO1", "SO2", "SO5"],
+        "abet_sos": ["SO1(D)", "SO5(D)"],
         "career_relevance": ["Signal Processing Engineer", "AI Engineer"]
     },
 
     # ── Data Science & AI/ML ─────────────────────────────────────────
+    "Cognate/Elective Course 1": {
+        "primary_skills": ["Machine Learning", "Data Mining", "Python for ML", "scikit-learn"],
+        "skillset_categories": ["Data Science & AI/ML", "Programming & Software Development"],
+        "abet_sos": ["SO1", "SO2", "SO3", "SO5"],
+        "career_relevance": ["Data Scientist", "AI Engineer", "Machine Learning Engineer"]
+    },
+    "Cognate/Elective Course 2": {
+        "primary_skills": ["Machine Learning", "Data Mining", "Python for ML", "scikit-learn"],
+        "skillset_categories": ["Data Science & AI/ML", "Programming & Software Development"],
+        "abet_sos": ["SO1", "SO2", "SO3", "SO5"],
+        "career_relevance": ["Data Scientist", "AI Engineer", "Machine Learning Engineer"]
+    },
     "Cognate/Elective Course 3 (Data Mining / AI Track)": {
         "primary_skills": ["Machine Learning", "Data Mining", "Python for ML", "scikit-learn"],
         "skillset_categories": ["Data Science & AI/ML", "Programming & Software Development"],
@@ -205,25 +217,25 @@ SUBJECT_SKILL_MAP = {
     "CpE Practice and Design 1": {
         "primary_skills": ["System Design", "Project Management", "Research Methodology", "Prototyping"],
         "skillset_categories": ["Engineering Design & Research", "Programming & Software Development"],
-        "abet_sos": ["SO1", "SO2", "SO3", "SO4", "SO5", "SO12"],
+        "abet_sos": ["SO1(D)", "SO2(D)", "SO3(D)", "S04(D)", "SO7(D)", "SO12(D)"],
         "career_relevance": ["Software Architect", "Full Stack Developer"]
     },
     "CpE Practice and Design 2": {
         "primary_skills": ["Capstone Design", "Full System Implementation", "Technical Documentation"],
         "skillset_categories": ["Engineering Design & Research", "Programming & Software Development"],
-        "abet_sos": ["SO1", "SO2", "SO3", "SO4", "SO5", "SO6", "SO7", "SO12", "SO13"],
+        "abet_sos": ["SO1(D)", "SO2(D)", "SO5(D)", "SO6(D)", "SO7(D)", "SO12(D)", "SO13(D)"],
         "career_relevance": ["Software Architect", "Full Stack Developer", "Backend Developer"]
     },
     "Research Methods": {
         "primary_skills": ["Research Methodology", "Technical Writing", "Literature Review"],
         "skillset_categories": ["Engineering Design & Research"],
-        "abet_sos": ["SO1", "SO2", "SO7"],
+        "abet_sos": ["SO1(R)", "SO3(R)", "SO6(R)", "SO7(R)"],
         "career_relevance": ["AI Engineer", "Data Scientist"]
     },
     "Computer Engineering as a Discipline": {
         "primary_skills": ["Engineering Ethics", "CpE Overview", "Professional Practice"],
         "skillset_categories": ["Engineering Design & Research", "Modern Engineering Tools"],
-        "abet_sos": ["SO3", "SO6", "SO10"],
+        "abet_sos": ["SO9(I)", "SO10(I)"],
         "career_relevance": ["All careers"]
     },
     "Introduction to Engineering": {
@@ -243,7 +255,7 @@ SUBJECT_SKILL_MAP = {
     "Emerging Technologies in CpE": {
         "primary_skills": ["IoT", "Cloud Computing", "AI Trends", "Industry 4.0"],
         "skillset_categories": ["Modern Engineering Tools", "Data Science & AI/ML"],
-        "abet_sos": ["SO11"],
+        "abet_sos": ["SO9(D)", "SO10(R)", "SO13(R)"],
         "career_relevance": ["AI Engineer", "DevOps Engineer", "Full Stack Developer"]
     },
 
@@ -251,25 +263,25 @@ SUBJECT_SKILL_MAP = {
     "Engineering Economics": {
         "primary_skills": ["Cost Analysis", "Project Economics", "ROI", "Budget Planning"],
         "skillset_categories": ["Project Management"],
-        "abet_sos": ["SO12"],
+        "abet_sos": ["SO5(R)", "SO9(R)", "SO12(I)"],
         "career_relevance": ["Software Architect", "Engineering Manager"]
     },
     "Technopreneurship": {
         "primary_skills": ["Entrepreneurship", "Business Planning", "Tech Startup", "Innovation"],
         "skillset_categories": ["Entrepreneurial Mindset", "Project Management"],
-        "abet_sos": ["SO3", "SO4", "SO7", "SO8", "SO13"],
+        "abet_sos": ["SO3(D)", "SO4(D)", "SO7(D)", "S08(D)", "SO13(D)"],
         "career_relevance": ["Full Stack Developer", "Software Architect"]
     },
     "On-the-Job Training": {
         "primary_skills": ["Professional Practice", "Industry Experience", "Communication"],
-        "skillset_categories": ["Technical Communication", "Ethics & Professionalism"],
-        "abet_sos": ["SO6", "SO7", "SO9", "SO10", "SO13"],
+        "skillset_categories": ["Communication", "Ethics & Professionalism"],
+        "abet_sos": ["S06(D)", "S07(D)", "SO9(D)", "SO10(D)", "SO13(D)"],
         "career_relevance": ["All careers"]
     },
     "Seminars and Fieldtrips": {
         "primary_skills": ["Industry Awareness", "Professional Networking", "Lifelong Learning"],
         "skillset_categories": ["Lifelong Learning", "Cultural & Global Competence"],
-        "abet_sos": ["SO9", "SO10"],
+        "abet_sos": ["SO6(D)", "SO8(D)", "SO10(D)", "SO13(D)"],
         "career_relevance": ["All careers"]
     },
 }
@@ -330,10 +342,12 @@ def build_subject_skill_context(enrolled_subjects: list[str]) -> str:
         if mapping:
             skills = ", ".join(mapping["primary_skills"])
             cats = ", ".join(mapping["skillset_categories"])
+            sos = ", ".join(mapping.get("abet_sos", []))
             lines.append(
                 f"Subject: {subject}\n"
                 f"  Primary skills: {skills}\n"
                 f"  BSCpE categories: {cats}\n"
+                f"  ABET Student Outcomes: {sos or 'unspecified'}\n"
                 f"  Career relevance: {', '.join(mapping['career_relevance'])}"
             )
         else:

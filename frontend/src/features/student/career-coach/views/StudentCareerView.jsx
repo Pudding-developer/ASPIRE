@@ -1,20 +1,43 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Target, TrendingUp, Layers, ChevronRight, Activity, Zap, CheckCircle2, ChevronDown, ListEnd, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Layers, Zap, AlertCircle, Bot, CheckCircle2, Lightbulb, AlertTriangle, RefreshCw, Clock, ArrowRight } from 'lucide-react';
 import useCareerCoach from '../hooks/useCareerCoach';
-import { chatService } from '../../../../services/chatService';
 
 import CareerEmptyState from '../components/CareerEmptyState';
+import CareerPicker from '../components/CareerPicker';
 import CareerPathCard from '../components/CareerPathCard';
 import CareerMatchDonut from '../components/CareerMatchDonut';
 import CareerAllPathsModal from '../components/CareerAllPathsModal';
 import CareerSectionHeading from '../components/CareerSectionHeading';
+import RoadmapViewer from '../components/RoadmapViewer';
+import AnalysisLoadingCard from '../components/AnalysisLoadingCard';
+import PipelineResultModal from '../components/PipelineResultModal';
 
-const CHAT_SUGGESTIONS = [
-  'How do I improve my match score?',
-  'What should I focus on first?',
-  'Which path fits me best?',
-  'Show me my skill gaps',
-];
+
+
+/* Map raw backend/litellm errors to messages a student can act on. */
+function friendlyPipelineError(raw) {
+  const s = String(raw);
+  if (
+    s.includes('RESOURCE_EXHAUSTED') ||
+    s.includes('RateLimitError') ||
+    s.includes('429') ||
+    /Timeout: Connection timed out after None/i.test(s)
+  ) {
+    return 'The AI service hit its rate limit. Wait ~60 seconds and try again.';
+  }
+  if (s.includes('BILLING_DISABLED') || s.includes('billing to be enabled')) {
+    return 'AI Pipeline error: Google Cloud billing is disabled for this project. Please enable billing in the Google Cloud Console.';
+  }
+  if (/network|ECONNRESET|ENETUNREACH|fetch failed/i.test(s)) {
+    return 'Network error talking to the AI service. Check your connection and try again.';
+  }
+  if (s.includes('VertexAIException') || s.length > 200) {
+    return 'AI Pipeline execution failed. Please check backend logs or configuration.';
+  }
+  return s;
+}
+
+
 
 export default function StudentCareerView({ user }) {
   const [showAllPaths, setShowAllPaths] = useState(false);
@@ -22,62 +45,54 @@ export default function StudentCareerView({ user }) {
 
   const {
     pipelineData,
+    reportCreatedAt,
     loading,
     error,
     careerMatches,
     selectedPath,
     selectedIndex,
     setSelectedIndex,
+    activeTitle,
     optimalIndex,
     gaps,
     skills,
     insights,
+    recommendations,
     runPipeline,
     pipelineStatus,
     isRunning,
-    progression,
     chosenCareer,
     setChosenCareer,
     careerLoading,
+    visibleCareerTitles,
+    showCareer,
+    hideCareer,
+    pipelineResult,
+    clearPipelineResult,
+    careerOptions,
+    cancelPipeline,
   } = useCareerCoach(user.id);
 
-  // ── AI Chat state ──────────────────────────────────────────────────────────
-  const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatSending, setChatSending] = useState(false);
-  const [chatError, setChatError] = useState(null);
-  const chatEndRef = useRef(null);
+  const [toast, setToast] = useState(null);
+  const seenReportRef = useRef(undefined);
 
+  // Auto-dismiss toast
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [chatMessages, chatSending]);
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
-  const sendChat = async (textOverride) => {
-    const text = (textOverride ?? chatInput).trim();
-    if (!text || chatSending) return;
-    const nextMessages = [...chatMessages, { role: 'user', content: text }];
-    setChatMessages(nextMessages);
-    setChatInput('');
-    setChatError(null);
-    setChatSending(true);
-    try {
-      const { reply } = await chatService.sendCareerMessage(
-        nextMessages,
-        {
-          career_matches: careerMatches,
-          skill_profile: pipelineData?.skill_profile,
-          gap_analysis: pipelineData?.gap_analysis,
-          summary: pipelineData?.summary,
-          chosen_career: chosenCareer,
-        },
-      );
-      setChatMessages([...nextMessages, { role: 'assistant', content: reply }]);
-    } catch (e) {
-      setChatError(e.message || 'Failed to reach the AI coach.');
-    } finally {
-      setChatSending(false);
+  // Show toast on pipeline error
+  useEffect(() => {
+    if (error) {
+      setToast({ message: friendlyPipelineError(error), type: 'error' });
     }
-  };
+  }, [error]);
+
+
+
+  if (!user) return null;
 
   if (loading) {
     return (
@@ -90,482 +105,510 @@ export default function StudentCareerView({ user }) {
     );
   }
 
-  // If pipeline hasn't run yet or data is completely missing
-  if (!pipelineData || careerMatches.length === 0) {
+  if (!pipelineData || !careerMatches || careerMatches.length === 0) {
+    if (isRunning) {
+      return (
+        <CareerEmptyState
+          onGenerate={runPipeline}
+          isRunning={isRunning}
+          pipelineStatus={pipelineStatus}
+          error={error}
+          onCancel={cancelPipeline}
+        />
+      );
+    }
     return (
-      <CareerEmptyState 
-        onGenerate={runPipeline} 
-        isRunning={isRunning} 
-        pipelineStatus={pipelineStatus} 
-        error={error}
+      <CareerPicker
+        chosenCareer={chosenCareer}
+        onChoose={setChosenCareer}
+        careerLoading={careerLoading}
+        onGenerateReport={runPipeline}
+        isRunning={isRunning}
+        pipelineError={error}
+        careerOptions={careerOptions}
       />
     );
   }
 
-  const optimalPath = careerMatches[optimalIndex];
-
   return (
-    <div className="p-6 lg:p-8 space-y-6 pb-24 h-full overflow-y-auto custom-scrollbar bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(188,19,19,0.35)]">
-        {/* ── New Screenshot Design Implementation ── */}
-        <div className="flex flex-col mb-4">
-          <h1 className="text-[26px] font-extrabold text-gray-900 mb-1 leading-none">Choose Your Path</h1>
-          <p className="text-[12px] text-gray-500 mb-6">Select a specialized trajectory to align your skill acquisition with global market demands. Each path is curated by AI intelligence and heritage expertise.</p>
-          
-          {/* Progress Banner */}
-          {progression && (
-            <div className="mb-6">
-              {progression.first_run ? (
-                <div className="bg-emerald-50/90 border border-emerald-200 p-5 rounded-2xl shadow-[0_10px_24px_-16px_rgba(16,185,129,0.35)]">
-                  <h3 className="font-extrabold text-emerald-900 text-[14px] mb-1">Welcome to ASPIRE!</h3>
-                  <p className="text-[12px] text-emerald-700">{progression.motivational_insight}</p>
-                </div>
-              ) : (
-                <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] border border-[#f1d7d7] p-6 rounded-2xl shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)]">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-extrabold text-gray-900 text-[16px]">Your progress — {progression.chosen_career}</h3>
-                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded border border-emerald-200">
-                      +{progression.readiness_change}% since last report ({progression.days_since_last_report} days ago)
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex-1 bg-[#f4e8e8] h-2 rounded-full overflow-hidden">
-                      <div className="bg-[#bc1313] h-full" style={{ width: `${Math.max(0, Math.min(100, progression.career_readiness_score))}%` }}></div>
-                    </div>
-                    <span className="text-[12px] font-bold text-gray-900">{progression.career_readiness_score}% career ready</span>
-                  </div>
+    <div className="p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)] min-h-screen">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-2 h-2 rounded-full bg-[#70170f] animate-pulse"></div>
+            <span className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em]">AI CAREER COACH ACTIVE</span>
+          </div>
+          <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">Career Strategy Engine</h1>
+          <p className="text-[12px] text-gray-500 mt-2 font-medium">Personalized roadmap based on your academic performance & GitHub activity</p>
+        </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                    <div>
-                      {progression.closed_gaps?.map((gap, i) => (
-                        <div key={i} className="flex items-center gap-2 mb-1.5 text-[12px] text-gray-700">
-                          <CheckCircle2 size={14} className="text-emerald-500" />
-                          <span><strong>{gap}</strong> — gap closed</span>
-                        </div>
-                      ))}
-                      {progression.improved_skills?.map((sk, i) => (
-                        <div key={i} className="flex items-center gap-2 mb-1.5 text-[12px] text-gray-700">
-                          <TrendingUp size={14} className="text-blue-500" />
-                          <span><strong>{sk.skill}</strong> +{sk.change}% ({sk.previous_score}% → {sk.current_score}%)</span>
-                        </div>
-                      ))}
-                    </div>
-                    {progression.next_milestone ? (
-                      <div className="bg-[#fff6f6] border border-[#efd7d7] p-3 rounded-xl">
-                        <span className="text-[10px] font-bold text-gray-500 uppercase">Next milestone: Learn {progression.next_milestone.skill}</span>
-                        <p className="text-[11px] text-gray-700 font-medium mt-1">→ {progression.next_milestone.impact}</p>
-                      </div>
-                    ) : null}
-                  </div>
-                  
-                  <div className="text-[12px] font-medium text-gray-600 italic border-l-2 border-gray-300 pl-3">
-                    "{progression.motivational_insight}"
-                  </div>
-                </div>
-              )}
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowAllPaths(true)}
+              className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[12px] font-bold text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2 shadow-xs"
+            >
+              <Layers size={14} className="text-[#70170f]" /> VIEW ALL PATHS
+            </button>
+            <button
+              onClick={() => runPipeline()}
+              disabled={isRunning}
+              className="px-5 py-2.5 bg-[#70170f] text-white rounded-xl text-[12px] font-bold hover:bg-[#4a0e09] transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
+            >
+              <Zap size={14} className={isRunning ? 'animate-pulse' : ''} /> {isRunning ? 'ANALYZING...' : 'REFRESH ANALYSIS'}
+            </button>
+          </div>
+
+          {isRunning && pipelineStatus && pipelineStatus.status !== 'failed' && (
+            <div className="w-full max-w-xs bg-white border border-gray-200 rounded-lg p-2.5 shadow-sm">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10px] font-bold text-gray-700 truncate pr-2">
+                  {pipelineStatus.current_step || 'Starting...'}
+                </span>
+                <span className="text-[10px] font-bold text-[#70170f]">
+                  {pipelineStatus.percentage ?? 0}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#70170f] transition-all duration-500"
+                  style={{ width: `${pipelineStatus.percentage ?? 0}%` }}
+                />
+              </div>
             </div>
           )}
 
-          <div className="flex justify-between items-end border-b border-[#ead4d4] pb-0">
-            <div className="flex gap-8 font-bold text-[12px]">
-              <span onClick={() => setActiveTab('Roadmap')} className={`cursor-pointer pb-3 px-1 border-b-[3px] transition-colors ${activeTab === 'Roadmap' ? 'text-[#bc1313] border-[#bc1313]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>Roadmap</span>
-              <span onClick={() => setActiveTab('Insights')} className={`cursor-pointer pb-3 px-1 border-b-[3px] transition-colors ${activeTab === 'Insights' ? 'text-[#bc1313] border-[#bc1313]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>Insights</span>
-              <span onClick={() => setActiveTab('AI Chat')} className={`cursor-pointer pb-3 px-1 border-b-[3px] transition-colors ${activeTab === 'AI Chat' ? 'text-[#bc1313] border-[#bc1313]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>AI Chat</span>
-            </div>
-            <span className="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer mb-3 font-semibold transition-colors">View All Trajectories</span>
-          </div>
-        </div>
 
-        {/* Path Metadata Strip */}
-        <div className="flex items-center gap-4 mb-4 mt-8">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active Path:</span>
-          <div className="flex items-center gap-3 border border-[#ead4d4] rounded-lg px-3 py-2 cursor-pointer bg-white/80 hover:bg-[#fff4f4] transition-colors shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)]">
-            <span className="text-[12px] font-bold text-gray-900">{careerMatches[selectedIndex]?.title || 'Embedded Systems Engineer'}</span>
-            <ChevronDown size={14} className="text-gray-500" />
-          </div>
-          <button className="text-[12px] font-bold text-[#6f4a4a] bg-white/80 border border-[#ead4d4] rounded-lg px-4 py-2 hover:bg-[#fff4f4] shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)] transition-colors">
-            View All Paths
+        </div>
+      </div>
+
+      {/* TAB NAVIGATION */}
+      <div className="flex border-b border-gray-100 mb-8 overflow-x-auto">
+        {['Roadmap', 'Insights'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-8 py-4 text-[13px] font-bold transition-all relative whitespace-nowrap ${activeTab === tab ? 'text-[#70170f]' : 'text-gray-400 hover:text-gray-600'
+              }`}
+          >
+            {tab}
+            {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.75 bg-[#70170f] rounded-t-full"></div>}
           </button>
-        </div>
+        ))}
+      </div>
 
-        <div className="flex items-center gap-2 text-[12px] mb-6 border-b border-[#f1dfdf] pb-4">
-          <span className="text-gray-500">Selected path:</span>
-          <span className="font-extrabold text-gray-900 ml-1">{careerMatches[selectedIndex]?.title}</span>
-          <span className={`${selectedIndex === optimalIndex ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'} font-bold px-2 py-0.5 text-[11px] rounded flex items-center ml-1`}>
-            {careerMatches[selectedIndex]?.match_score}% Match
-          </span>
-          <span className="text-[#bc1313] hover:text-[#9e1010] cursor-pointer font-semibold underline underline-offset-2 ml-1">Change path</span>
-        </div>
-
-        {/* Dynamic AI Recommendation Warning */}
-        {selectedIndex !== optimalIndex && (
-          <div className="bg-[#fff4f4] border border-[#f2cdcd] p-3.5 mb-6 rounded-lg flex items-start gap-3 shadow-[0_10px_24px_-18px_rgba(188,19,19,0.45)]">
-            <div className="w-4.5 h-4.5 rounded-full bg-[#bc1313] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm text-[11px] font-extrabold italic">!</div>
-            <p className="text-[12px] text-gray-800 leading-relaxed">
-              <strong>AI Recommendation:</strong> Your academic data shows stronger performance in hardware-related subjects (<strong className="text-[#bc1313]">{careerMatches[optimalIndex]?.title}</strong> match: {careerMatches[optimalIndex]?.match_score}%). To succeed in <strong className="text-[#bc1313]">{careerMatches[selectedIndex]?.title}</strong>, focus on: <strong>SQL Databases</strong> and <strong>Data Visualization</strong>. Check Learning Recommendations below.
-            </p>
-          </div>
-        )}
-
-        {/* Path Cards Box */}
-        <div className="relative mb-8 mt-4">
-          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x">
-            {careerMatches.map((match, idx) => (
-               <CareerPathCard
-                 key={idx}
-                 match={match}
-                 index={idx}
-                 selected={selectedIndex === idx}
-                 optimal={idx === optimalIndex}
-                 onSelect={setSelectedIndex}
-                 isChosenGoal={chosenCareer === match.title}
-                 onSetAsGoal={() => setChosenCareer(match.title)}
-                 careerLoading={careerLoading}
-               />
-            ))}
-          </div>
-        </div>
-
-        {/* --- ROADMAP TAB CONTENT --- */}
-        {activeTab === 'Roadmap' && (
+      <div className="min-h-[600px]">
+        {/* Path Card Warning & Selection (Show for all tabs except Chat maybe? No, show always) */}
+        {activeTab !== 'AI Chat' && (
           <>
-            {/* PRIMARY OBJECTIVE */}
-        <CareerSectionHeading title="PRIMARY OBJECTIVE" />
-        <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-2xl border border-[#f1d7d7] shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)] p-8 mb-6 flex flex-col lg:flex-row items-center gap-10">
-          
-          {/* Left: Info Grid */}
-          <div className="flex-1 space-y-4">
-            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest border border-[#eed8d8] rounded-full px-3 py-1 bg-[#fff3f3]">PRIMARY OBJECTIVE</span>
-            <div>
-              <h2 className="text-[22px] font-extrabold text-gray-900 leading-tight">Senior {careerMatches[selectedIndex]?.title || 'Embedded Systems Architect'}</h2>
-              <p className="text-[12px] text-gray-500 mt-1 font-medium">{selectedIndex === 0 ? 'Specializing in Real-Time Systems & IoT Infrastructure' : 'Specializing in Engineering Analytics & Business Intelligence'}</p>
-            </div>
-            
-            <div className="flex gap-3 pt-3">
-              <div className="bg-[#fff5f5] border border-[#efd8d8] rounded-xl p-3 flex-1">
-                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block mb-1">MEDIAN TENURE</span>
-                <span className="text-[13px] font-bold text-gray-900">{selectedIndex === 0 ? '4.1 Years' : '3.6 Years'}</span>
+            {selectedIndex >= 0 && selectedIndex !== optimalIndex && (
+              <div className="bg-[#fff4f4] border border-[#f2cdcd] p-3.5 mb-6 rounded-lg flex items-start gap-3">
+                <div className="w-4.5 h-4.5 rounded-full bg-[#70170f] text-white flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-extrabold italic">!</div>
+                <p className="text-[12px] text-gray-800 leading-relaxed">
+                  <strong>AI Recommendation:</strong> Your data shows stronger alignment with <strong className="text-[#70170f]">{careerMatches[optimalIndex]?.title}</strong>.
+                </p>
               </div>
-            </div>
-          </div>
+            )}
+            {(() => {
+              if (visibleCareerTitles.size === 0) {
+                return (
+                  <div className="bg-white border border-dashed border-gray-200 rounded-2xl p-8 mb-8 text-center">
+                    <p className="text-[12px] text-gray-500 mb-3">
+                      No career paths pinned yet. Open <strong>View All Paths</strong> to add one.
+                    </p>
+                    <button
+                      onClick={() => setShowAllPaths(true)}
+                      className="px-4 py-2 bg-[#70170f] text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#4a0e09] transition-colors inline-flex items-center gap-2"
+                    >
+                      <Layers size={12} /> Browse All Paths
+                    </button>
+                  </div>
+                );
+              }
 
-          {/* Center: Donut */}
-          <div className="shrink-0 flex flex-col items-center justify-center -mt-2">
-             <div className="scale-125 mb-3"><CareerMatchDonut score={careerMatches[selectedIndex]?.match_score || 92} /></div>
-             <p className="text-[9px] text-gray-400 font-medium text-center max-w-30 leading-tight mt-1">Based on ILO/SO attainment and GitHub activity</p>
-          </div>
+              // Build a card entry for every pinned title. If the AI scored
+              // that title we use the analysis; otherwise we render a stub
+              // card flagged as `unanalyzed` so the student still sees what
+              // they pinned.
+              const matchByTitle = new Map(careerMatches.map((m, i) => [m.title, { match: m, idx: i }]));
+              const visibleEntries = [...visibleCareerTitles].map((title) => {
+                const hit = matchByTitle.get(title);
+                if (hit) return { ...hit, unanalyzed: false };
+                return {
+                  match: { title, match_score: null, matched_skills: [], gap_skills: [], reasoning: '' },
+                  idx: -1,
+                  unanalyzed: true,
+                };
+              }).sort((a, b) => {
+                // 1. Chosen goal always first
+                if (a.match.title === chosenCareer) return -1;
+                if (b.match.title === chosenCareer) return 1;
+                // 2. Analyzed (with scores) before unanalyzed
+                if (a.unanalyzed !== b.unanalyzed) return a.unanalyzed ? 1 : -1;
+                // 3. By score descending
+                const scoreA = a.match.match_score || 0;
+                const scoreB = b.match.match_score || 0;
+                if (scoreA !== scoreB) return scoreB - scoreA;
+                // 4. Alphabetical
+                return a.match.title.localeCompare(b.match.title);
+              });
 
-          {/* Right: Gap Analysis */}
-          <div className="flex-[1.5] w-full flex flex-col">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">GAP ANALYSIS</span>
-            
-            <div className="space-y-4 mb-8">
-              {/* Acquired 1 */}
-              <div>
-                <div className="flex justify-between items-end mb-1.5">
-                  <span className="text-[12px] font-extrabold text-gray-900">Circuit Analysis</span>
-                  <span className="text-[11px] font-bold text-emerald-600">Acquired</span>
+              return (
+                <div className="flex items-stretch gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x mb-8">
+                  {visibleEntries.map(({ match, idx, unanalyzed }) => (
+                    <CareerPathCard
+                      key={match.title}
+                      match={match}
+                      index={idx}
+                      selected={selectedIndex === idx && !unanalyzed
+                        ? true
+                        : selectedIndex === -1 && unanalyzed && match.title === activeTitle}
+                      optimal={!unanalyzed && idx === optimalIndex}
+                      onSelect={() => setSelectedIndex(match.title)}
+                      isChosenGoal={chosenCareer === match.title}
+                      onSetAsGoal={() => setChosenCareer(match.title)}
+                      onHide={() => hideCareer(match.title)}
+                      unanalyzed={unanalyzed}
+                      careerLoading={careerLoading}
+                      careerOptions={careerOptions}
+                    />
+                  ))}
                 </div>
-                <div className="w-full bg-gray-100 h-1.5 rounded-full"><div className="bg-emerald-600 h-full rounded-full w-full"></div></div>
-              </div>
-              
-              {/* Acquired 2 */}
-              <div>
-                <div className="flex justify-between items-end mb-1.5">
-                  <span className="text-[12px] font-extrabold text-gray-900">Embedded C/C++</span>
-                  <span className="text-[11px] font-bold text-emerald-600">Acquired</span>
-                </div>
-                <div className="w-full bg-gray-100 h-1.5 rounded-full"><div className="bg-emerald-600 h-full rounded-full w-[88%]"></div></div>
-              </div>
-              
-              {/* Developing */}
-              <div>
-                <div className="flex justify-between items-end mb-1.5">
-                  <span className="text-[12px] font-extrabold text-gray-900">RTOS Concepts</span>
-                  <span className="text-[11px] font-bold text-amber-500">Developing</span>
-                </div>
-                <div className="w-full bg-gray-100 h-1.5 rounded-full"><div className="bg-amber-400 h-full rounded-full w-[65%]"></div></div>
-              </div>
-              
-              {/* Critical Gap */}
-              <div>
-                <div className="flex justify-between items-end mb-1.5">
-                  <span className="text-[12px] font-extrabold text-gray-900">FPGA/VHDL</span>
-                  <span className="text-[11px] font-bold text-[#bc1313]">Critical Gap</span>
-                </div>
-                <div className="w-full bg-gray-100 h-1.5 rounded-full"><div className="bg-[#bc1313] h-full rounded-full w-[15%]"></div></div>
-              </div>
-            </div>
-
-            <button className="w-full py-2.5 border-2 border-gray-200 text-gray-800 text-[11px] font-extrabold uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-colors">
-              EXPORT REPORT
-            </button>
-          </div>
-        </div>
-
-        {/* ACADEMIC JOURNEY VISUALIZATION */}
-        <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-2xl border border-[#f1d7d7] shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)] p-8 mb-6 mt-10">
-          <div className="flex justify-between items-start mb-12">
-            <div>
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-2">ACADEMIC JOURNEY VISUALIZATION</span>
-              <h2 className="text-[18px] font-extrabold text-gray-900">Scholastic Milestones Remaining</h2>
-            </div>
-            <div className="flex items-center gap-4 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-               <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-gray-900 rounded-full"/> COMPLETED</span>
-               <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-white border-2 border-gray-300 rounded-full"/> PROJECTED</span>
-            </div>
-          </div>
-          
-          <div className="relative flex justify-between items-center px-6">
-            {/* Horizontal Line Connector */}
-            <div className="absolute top-1/2 left-6 right-6 h-0.5 bg-linear-to-r from-gray-200 via-gray-200 to-gray-100 -translate-y-1/2 z-0"></div>
-            
-            {/* Nodes */}
-            <div className="relative z-10 flex flex-col items-center gap-3">
-               <div className="w-8 h-8 rounded-full bg-[#1a0505] flex items-center justify-center shadow-md text-white"><CheckCircle2 size={16} /></div>
-               <div className="text-center absolute top-12 whitespace-nowrap"><p className="text-[11px] font-bold text-gray-900">CORE CURRICULUM</p><p className="text-[9px] text-gray-400">Finished Sem 1, 2024</p></div>
-            </div>
-            
-            <div className="relative z-10 flex flex-col items-center gap-3">
-               <div className="w-8 h-8 rounded-full bg-[#1a0505] flex items-center justify-center shadow-md text-white"><CheckCircle2 size={16} /></div>
-               <div className="text-center absolute top-12 whitespace-nowrap"><p className="text-[11px] font-bold text-gray-900">DIGITAL ELECTRONICS</p><p className="text-[9px] text-gray-400">Finished Sem 2, 2024</p></div>
-            </div>
-            
-            <div className="relative z-10 flex flex-col items-center gap-3">
-               <div className="w-10 h-10 rounded-full bg-red-50 border-[3px] border-[#bc1313] flex items-center justify-center shadow-lg"><span className="w-3 h-3 rounded-full bg-[#bc1313] animate-pulse"></span></div>
-               <div className="text-center absolute top-12 whitespace-nowrap mt-1"><p className="text-[11px] font-extrabold text-[#bc1313] uppercase tracking-wider">MICROPROCESSORS LAB</p><p className="text-[9px] text-gray-500 font-medium">In progress (Est. Dec 2024)</p></div>
-            </div>
-            
-            <div className="relative z-10 flex flex-col items-center gap-3">
-               <div className="w-8 h-8 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center"></div>
-               <div className="text-center absolute top-12 whitespace-nowrap"><p className="text-[11px] font-bold text-gray-600">EMBEDDED SYSTEMS</p><p className="text-[9px] text-gray-400">Projected Sum 2025</p></div>
-            </div>
-            
-            <div className="relative z-10 flex flex-col items-center gap-3">
-               <div className="w-8 h-8 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center"></div>
-               <div className="text-center absolute top-12 whitespace-nowrap"><p className="text-[11px] font-bold text-gray-600">CAPSTONE DESIGN</p><p className="text-[9px] text-gray-400">Projected Dec 2025</p></div>
-            </div>
-          </div>
-          <div className="h-20"></div> {/* Spacer for absolute text */}
-        </div>
-
-        {/* CURATED RECOMMENDATIONS */}
-        <div className="flex items-center gap-2 mb-4 mt-12">
-          <div className="w-0.75 h-3.5 bg-[#bc1313] rounded-sm shrink-0" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-500 flex items-center gap-1.5"><Star size={12} className="text-[#bc1313]" fill="#bc1313" /> CURATED RECOMMENDATIONS</span>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Card 1 */}
-          <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-2xl border border-[#f1d7d7] shadow-[0_12px_30px_-18px_rgba(188,19,19,0.4)] p-6 hover:shadow-[0_16px_34px_-18px_rgba(188,19,19,0.5)] transition-shadow flex flex-col h-full cursor-pointer">
-            <span className="text-[9px] font-bold text-[#bc1313] uppercase tracking-widest mb-3">ELECTIVE COURSE</span>
-            <h4 className="text-[14px] font-extrabold text-gray-900 leading-snug mb-2">CPEN 315: Microcontrollers & Embedded</h4>
-            <p className="text-[11px] text-gray-500 leading-relaxed mb-6 flex-1">Closes RTOS gap with hands-on ARM Cortex-M firmware development.</p>
-            <div className="flex justify-between items-end mt-auto text-gray-400">
-               <span className="text-[10px] uppercase font-bold tracking-widest">Prof. Santos</span>
-               <ChevronRight size={14} className="text-gray-300" />
-            </div>
-          </div>
-
-          {/* Card 2 */}
-          <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-2xl border border-[#f1d7d7] shadow-[0_12px_30px_-18px_rgba(188,19,19,0.4)] p-6 hover:shadow-[0_16px_34px_-18px_rgba(188,19,19,0.5)] transition-shadow flex flex-col h-full cursor-pointer">
-            <span className="text-[9px] font-bold text-[#bc1313] uppercase tracking-widest mb-3">INDUSTRY PROJECT</span>
-            <h4 className="text-[14px] font-extrabold text-gray-900 leading-snug mb-2">Arduino IoT Monitoring System</h4>
-            <p className="text-[11px] text-gray-500 leading-relaxed mb-6 flex-1">Validates embedded skills with a deployable hardware project.</p>
-            <div className="flex justify-between items-end mt-auto text-gray-400">
-               <span className="text-[10px] uppercase font-bold tracking-widest">GitHub Collaborative</span>
-               <ChevronRight size={14} className="text-gray-300" />
-            </div>
-          </div>
-
-        </div>
-        </>
-        )}
-
-        {/* --- INSIGHTS TAB CONTENT --- */}
-        {activeTab === 'Insights' && (
-          <>
-            <CareerSectionHeading title="CAREER MATCH RESULTS" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              {careerMatches.slice(0, 4).map((match, i) => (
-                <div key={i} className={`rounded-xl border p-5 shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)] relative ${selectedIndex === i ? 'border-red-200 bg-[#fff4f4]' : 'border-[#f1d7d7] bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3]'}`}>
-                   <h4 className="text-[13px] font-extrabold text-gray-900 mb-1">{match.title}</h4>
-                   <div className={`text-[18px] font-bold mb-3 ${i === 0 ? 'text-emerald-700' : 'text-[#bc1313]'}`}>{match.match_score}%</div>
-                   <div className="w-full bg-gray-100 h-1.5 rounded-full mb-3">
-                     <div className={`h-full rounded-full ${i === 0 ? 'bg-emerald-600' : 'bg-[#bc1313]'}`} style={{ width: `${match.match_score}%` }}></div>
-                   </div>
-                   {i === optimalIndex && <span className="text-[9px] font-bold bg-emerald-50 text-emerald-600 px-2 py-1 rounded">Best fit</span>}
-                   {i === selectedIndex && i !== optimalIndex && <span className="text-[9px] font-bold bg-red-50 text-[#bc1313] px-2 py-1 rounded border border-red-100">Selected</span>}
-                </div>
-              ))}
-            </div>
-
-            <CareerSectionHeading title="SKILL GAP ANALYSIS" />
-            <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-xl border border-[#f1d7d7] p-6 shadow-[0_12px_30px_-18px_rgba(188,19,19,0.4)] mb-8">
-              <div className="flex gap-4 text-[10px] font-bold text-gray-500 mb-8">
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-600"></div> Strong</span>
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Needs Improvement</span>
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#bc1313]"></div> Missing</span>
-              </div>
-              <div className="space-y-4">
-                {[
-                  { name: 'Mathematics/Stats', val: 90, status: 'Strong', color: 'bg-emerald-600', bg: 'bg-emerald-50', text: 'text-emerald-700' },
-                  { name: 'Excel / Sheets', val: 70, status: 'Needs Improvement', color: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' },
-                  { name: 'Python Scripting', val: 55, status: 'Needs Improvement', color: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' },
-                  { name: 'SQL Databases', val: 5, status: 'Missing', color: 'bg-[#bc1313]', bg: 'bg-[#fff0f0]', text: 'text-[#bc1313]' },
-                  { name: 'Data Visualization', val: 10, status: 'Missing', color: 'bg-[#bc1313]/60', bg: 'bg-[#fff0f0]', text: 'text-[#bc1313]' },
-                  { name: 'Power BI / Tableau', val: 0, status: 'Missing', color: 'bg-[#bc1313]/40', bg: 'bg-[#fff0f0]', text: 'text-[#bc1313]' },
-                ].map(sk => (
-                   <div key={sk.name} className="flex items-center justify-between gap-4">
-                     <span className="w-36 text-[11px] font-extrabold text-gray-900 shrink-0">{sk.name}</span>
-                     <div className="flex-1 bg-white h-1.5 rounded-full"><div className={`${sk.color} h-full rounded-full`} style={{ width: `${Math.max(sk.val, 2)}%` }}></div></div>
-                     <span className={`w-8 text-right text-[11px] font-bold ${sk.text}`}>{sk.val}%</span>
-                     <span className={`w-28 text-center text-[9px] font-bold px-2 py-0.5 rounded ${sk.bg} ${sk.text}`}>{sk.status}</span>
-                   </div>
-                ))}
-              </div>
-            </div>
-
-            <CareerSectionHeading title="AI INSIGHTS & RECOMMENDATIONS" />
-            <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-xl border border-[#f1d7d7] shadow-[0_12px_30px_-18px_rgba(188,19,19,0.4)] overflow-hidden mb-8">
-              <div className="p-4 border-b border-gray-100 flex gap-3 items-center">
-                <span className="text-emerald-600 shrink-0 font-bold">✓</span>
-                <p className="text-[11px] text-gray-600">Your <strong className="text-gray-900">Mathematics score (90%)</strong> is the strongest prerequisite for data analyst roles.</p>
-              </div>
-              <div className="p-4 border-b border-gray-100 flex gap-3 items-center">
-                <strong className="text-[#bc1313] shrink-0 font-extrabold">!</strong>
-                <p className="text-[11px] text-gray-600 flex items-center gap-2">Learning <strong className="text-gray-900">SQL basics</strong> will increase your Data Analyst match by +18%. <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold text-[9px]">+18%</span></p>
-              </div>
-              <div className="p-4 flex gap-3 items-center">
-                <span className="text-amber-500 shrink-0 font-[10px]">△</span>
-                <p className="text-[11px] text-gray-600">Data Visualization tools are absent from your ILO attainment. Self-study via Kaggle recommended.</p>
-              </div>
-            </div>
-
-            <CareerSectionHeading title="LEARNING RECOMMENDATIONS" />
-            <div className="space-y-3 mb-12">
-              <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-xl border border-[#f1d7d7] p-5 shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)] flex justify-between items-center">
-                <div>
-                  <h4 className="text-[13px] font-extrabold text-gray-900 mb-0.5">Database Systems (CPEN 405)</h4>
-                  <p className="text-[11px] text-gray-500">Directly builds SQL proficiency — closes your largest skill gap.</p>
-                </div>
-                <span className="text-[9px] font-bold bg-[#fff0f0] text-[#bc1313] border border-red-100 px-2 py-1 rounded shrink-0">Missing skill</span>
-              </div>
-              <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-xl border border-[#f1d7d7] p-5 shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)] flex justify-between items-center">
-                <div>
-                  <h4 className="text-[13px] font-extrabold text-gray-900 mb-0.5">Data Science Elective</h4>
-                  <p className="text-[11px] text-gray-500">Introduces data wrangling, Pandas, and visualization with Python.</p>
-                </div>
-                <span className="text-[9px] font-bold bg-[#fff0f0] text-[#bc1313] border border-red-100 px-2 py-1 rounded shrink-0">Missing skill</span>
-              </div>
-              <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] rounded-xl border border-[#f1d7d7] p-5 shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)] flex justify-between items-center">
-                <div>
-                  <h4 className="text-[13px] font-extrabold text-gray-900 mb-0.5">Practice: Kaggle Learn (SQL)</h4>
-                  <p className="text-[11px] text-gray-500">Free micro-courses in Python, SQL, and Data Visualization.</p>
-                </div>
-                <span className="text-[9px] font-bold bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded shrink-0">Self-study</span>
-              </div>
-            </div>
+              );
+            })()}
           </>
         )}
 
-
-        {/* --- AI CHAT TAB CONTENT --- */}
-        {activeTab === 'AI Chat' && (
-          <div className="mt-8">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-0.75 h-3.5 bg-[#bc1313] rounded-sm shrink-0" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-500">AI CAREER ASSISTANT</span>
-            </div>
-
-            {/* Pill Recommendations */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {CHAT_SUGGESTIONS.map(q => (
-                <button
-                  key={q}
-                  type="button"
-                  disabled={chatSending}
-                  onClick={() => sendChat(q)}
-                  className="px-3 py-1.5 bg-white/80 border border-[#ead4d4] text-[#6f4a4a] text-[11px] font-medium rounded hover:bg-[#fff4f4] cursor-pointer shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            {/* Chat History */}
-            <div className="flex flex-col gap-4 mb-6 pt-2 max-h-[420px] overflow-y-auto pr-1">
-              {/* Initial greeting (always shown first) */}
-              <div className="flex items-start gap-4">
-                <div className="w-8 h-8 rounded-full bg-[#bc1313] text-white flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1">A</div>
-                <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] border border-[#f1d7d7] p-4 rounded-xl rounded-tl-none shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)] text-[13px] text-gray-700 leading-relaxed max-w-[85%]">
-                  Hello {user?.full_name?.split(' ')[0] || 'there'}! I've analyzed your ILO/SO attainment and GitHub activity. You're aligned with <strong>{careerMatches[selectedIndex]?.title}</strong> ({careerMatches[selectedIndex]?.match_score}% match). Your strongest fit is <strong>{careerMatches[optimalIndex]?.title}</strong> at {careerMatches[optimalIndex]?.match_score}%. What would you like to explore?
+        {activeTab === 'Roadmap' && (
+          <div className="space-y-8">
+            {!selectedPath && activeTitle && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
+                <AlertCircle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-[13px] font-bold text-amber-900 mb-1">
+                    Aspirational career goal
+                  </p>
+                  <p className="text-[12px] text-amber-800 leading-relaxed mb-3">
+                    {activeTitle} hasn't been analyzed yet for your profile. The roadmap below shows the standard learning path, but you'll need to run the AI analyzer to get a personalized match score, skill breakdown, and gap analysis.
+                  </p>
+                  <button
+                    onClick={() => runPipeline()}
+                    disabled={isRunning}
+                    className="px-4 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Zap size={11} className={isRunning ? 'animate-pulse' : ''} />
+                    {isRunning ? 'ANALYZING...' : 'RUN AI ANALYZER'}
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              {/* Top Left: Chosen Path */}
+              <div className="space-y-4">
+                <CareerSectionHeading title="CHOSEN PATH" />
+                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm min-h-[210px] flex flex-col">
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="flex-1 space-y-4">
+                      <h2 className="text-[20px] font-extrabold text-gray-900 leading-tight">{activeTitle}</h2>
+                      <ul className="space-y-2 mt-3">
+                        {(selectedPath?.reasoning || 'Your currently selected focus path. All roadmap and insight data are tailored to this trajectory.').split('.').map(s => s.trim()).filter(s => s.length > 0).map((point, idx) => (
+                          <li key={idx} className="flex gap-2 text-[11px] text-gray-500 leading-relaxed">
+                            <span className="text-[#70170f] font-bold mt-1">•</span>
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="shrink-0 scale-100 pr-12">
+                      <CareerMatchDonut score={selectedPath?.match_score || 0} />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {chatMessages.map((m, i) => (
-                m.role === 'user' ? (
-                  <div key={i} className="flex items-start gap-4 justify-end">
-                    <div className="bg-[#bc1313] text-white p-4 rounded-xl rounded-tr-none text-[13px] leading-relaxed max-w-[85%] shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)]">
-                      {m.content}
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1">
-                      {user?.full_name?.[0]?.toUpperCase() || 'U'}
-                    </div>
-                  </div>
-                ) : (
-                  <div key={i} className="flex items-start gap-4">
-                    <div className="w-8 h-8 rounded-full bg-[#bc1313] text-white flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1">A</div>
-                    <div className="bg-linear-to-br from-white via-[#fffbfb] to-[#fff3f3] border border-[#f1d7d7] p-4 rounded-xl rounded-tl-none shadow-[0_12px_30px_-20px_rgba(188,19,19,0.4)] text-[13px] text-gray-700 leading-relaxed max-w-[85%] whitespace-pre-wrap">
-                      {m.content}
-                    </div>
-                  </div>
-                )
-              ))}
-
-              {chatSending && (
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-[#bc1313] text-white flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm mt-1">A</div>
-                  <div className="bg-white/80 border border-[#f1d7d7] p-4 rounded-xl rounded-tl-none text-[13px] text-gray-500 italic">
-                    Thinking…
+              {/* Top Right: Skill Gap Analysis */}
+              <div className="space-y-4">
+                <CareerSectionHeading title="SKILL GAP ANALYSIS" />
+                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm min-h-[210px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {gaps.map((g, i) => (
+                      <div key={i} className="bg-gray-50/50 border border-gray-100 rounded-xl p-3 flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-gray-700">{g.name}</span>
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${g.status === 'acquired' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                          {g.status.toUpperCase()}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
 
-              {chatError && (
-                <div className="text-[12px] text-red-600 px-2">{chatError}</div>
-              )}
+              {/* Bottom Left: Learning Roadmap */}
+              <div className="space-y-4">
+                <CareerSectionHeading title="LEARNING ROADMAP" />
+                <RoadmapViewer careerTitle={activeTitle} />
+              </div>
 
-              <div ref={chatEndRef} />
-            </div>
+              {/* Bottom Right: AI Recommendations */}
+              <div className="space-y-4">
+                {(() => {
+                  // Priority 1: per-career recommendations generated by the backend
+                  // from gap_skills — available for ALL careers, not just fallbacks.
+                  const perCareerRecs = selectedPath?.career_recommendations || [];
 
-            {/* Input Box */}
-            <div className="relative mt-8 mb-12">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendChat();
-                  }
-                }}
-                disabled={chatSending}
-                placeholder="Ask about your career, skills, roadmap..."
-                className="w-full bg-white/90 border border-[#ead4d4] text-[13px] text-gray-900 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-1 focus:ring-[#bc1313] focus:border-[#bc1313] shadow-[0_10px_24px_-20px_rgba(188,19,19,0.45)] pr-20 transition-all font-medium placeholder:text-gray-400 placeholder:font-normal disabled:opacity-60"
-              />
-              <button
-                type="button"
-                onClick={() => sendChat()}
-                disabled={chatSending || !chatInput.trim()}
-                className="absolute right-1.5 top-1.5 bottom-1.5 bg-[#bc1313] hover:bg-[#9e1010] text-white text-[12px] font-bold px-5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {chatSending ? '...' : 'Send'}
-              </button>
+                  // Priority 2: top-level AI recommendations filtered by gap skill keywords
+                  const gapSkillNames = (selectedPath?.gap_skills || [])
+                    .map(s => (typeof s === 'string' ? s : s?.name || '').toLowerCase())
+                    .filter(Boolean);
+
+                  const filteredRecs = recommendations && recommendations.length > 0
+                    ? (gapSkillNames.length > 0
+                        ? recommendations.filter(rec => {
+                            const recStr = typeof rec === 'string' ? rec : (rec?.recommendation || rec?.text || rec?.desc || String(rec || ''));
+                            return gapSkillNames.some(skill => recStr.toLowerCase().includes(skill));
+                          })
+                        : recommendations)
+                    : [];
+
+                  const recsToShow = (perCareerRecs.length > 0
+                    ? perCareerRecs
+                    : filteredRecs.length > 0
+                      ? filteredRecs
+                      : recommendations?.slice(0, 4) || []
+                  ).map(rec => typeof rec === 'string' ? rec : (rec?.recommendation || rec?.text || rec?.desc || String(rec || '')));
+
+                  if (recsToShow.length === 0) return null;
+
+                  const isFallback = selectedPath?.reasoning?.includes('Fallback');
+
+                  return (
+                    <>
+                      <CareerSectionHeading title="AI RECOMMENDATIONS" />
+                      <div className="space-y-3">
+                        {recsToShow.map((rec, i) => (
+                          <div
+                            key={i}
+                            className="bg-white border border-gray-100 rounded-xl p-4 flex items-start gap-3 shadow-xs"
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#70170f]/10 flex items-center justify-center shrink-0 mt-0.5">
+                              <ArrowRight size={12} className="text-[#70170f]" />
+                            </div>
+                            <p className="text-[12px] text-gray-700 leading-relaxed">{rec}</p>
+                          </div>
+                        ))}
+                        {isFallback && (
+                          <p className="text-[10px] text-gray-400 pt-1">
+                            Recommendations are based on your skill gap analysis. Run a full AI analysis to get deeper personalized insights.
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         )}
+
+        {activeTab === 'Insights' && (
+          <InsightsTab
+            insights={insights}
+            activeTitle={activeTitle}
+            selectedPath={selectedPath}
+            reportCreatedAt={reportCreatedAt}
+            runPipeline={runPipeline}
+            isRunning={isRunning}
+          />
+        )}
+
+
       </div>
-    );
-  }
+
+      {showAllPaths && (
+        <CareerAllPathsModal
+          matches={careerMatches}
+          optimalIndex={optimalIndex}
+          visibleTitles={visibleCareerTitles}
+          onSelect={(idx) => {
+            const title = careerMatches[idx]?.title;
+            if (title) showCareer(title);
+            setSelectedIndex(idx);
+          }}
+          onPin={(title) => showCareer(title)}
+          onUnpin={(title) => hideCareer(title)}
+          onClose={() => setShowAllPaths(false)}
+          careerOptions={careerOptions}
+        />
+      )}
+
+
+
+      {/* ── Pipeline result modal ── */}
+      <PipelineResultModal result={pipelineResult} onClose={clearPipelineResult} onForceRun={() => runPipeline({ force: true })} />
+
+      {/* ── Refresh-analysis loading overlay ── */}
+      {isRunning && (
+        <div className="fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4">
+          <AnalysisLoadingCard isRunning={isRunning} pipelineStatus={pipelineStatus} onCancel={cancelPipeline} />
+        </div>
+      )}
+
+      {/* ── Toast notification ── */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-xl text-[12px] font-medium shadow-xl border ${toast.type === 'error'
+          ? 'bg-red-50 border-red-200 text-red-700'
+          : 'bg-green-50 border-green-200 text-green-700'
+          }`}>
+          <div className="flex items-center gap-2">
+            {toast.type === 'error' && <AlertCircle size={16} />}
+            <span className="leading-relaxed break-words max-w-sm">{toast.message}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Insights tab ───────────────────────────────────────────────── */
+
+const INSIGHT_TYPE_META = {
+  pos: {
+    label: 'Strengths',
+    icon: CheckCircle2,
+    iconColor: 'text-emerald-500',
+    accent: 'border-emerald-100 bg-emerald-50/50',
+    chipColor: 'bg-emerald-100 text-emerald-700',
+  },
+  tip: {
+    label: 'Focus areas',
+    icon: Lightbulb,
+    iconColor: 'text-amber-500',
+    accent: 'border-amber-100 bg-amber-50/50',
+    chipColor: 'bg-amber-100 text-amber-700',
+  },
+  warn: {
+    label: 'Watchouts',
+    icon: AlertTriangle,
+    iconColor: 'text-red-500',
+    accent: 'border-red-100 bg-red-50/50',
+    chipColor: 'bg-red-100 text-red-700',
+  },
+};
+
+function formatTimeAgo(iso) {
+  if (!iso) return null;
+  const then = new Date(iso);
+  if (isNaN(then.getTime())) return null;
+  const diffMs = Date.now() - then.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return then.toLocaleDateString();
+}
+
+function InsightItem({ insight, meta }) {
+  const Icon = meta.icon;
+  return (
+    <div className={`p-5 flex gap-4 items-start border rounded-xl ${meta.accent}`}>
+      <Icon className={`${meta.iconColor} mt-0.5 shrink-0`} size={18} />
+      <div className="flex-1 min-w-0">
+        {insight.badge && (
+          <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded mb-1.5 ${meta.chipColor}`}>
+            {insight.badge}
+          </span>
+        )}
+        <p
+          className="text-[13px] text-gray-700 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: insight.text }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function InsightsTab({ insights, activeTitle, selectedPath, reportCreatedAt, runPipeline, isRunning }) {
+  const grouped = ['pos', 'tip', 'warn'].map(type => ({
+    type,
+    meta: INSIGHT_TYPE_META[type],
+    items: insights.filter(i => i.type === type),
+  })).filter(g => g.items.length > 0);
+
+  const hasAny = insights.length > 0;
+  const timeAgo = formatTimeAgo(reportCreatedAt);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <CareerSectionHeading title="AI CAREER INSIGHTS" />
+        {hasAny && (
+          <div className="flex items-center gap-3">
+            {timeAgo && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+                <Clock size={12} /> Last analyzed {timeAgo}
+              </span>
+            )}
+            <button
+              onClick={() => runPipeline()}
+              disabled={isRunning}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 text-gray-700 rounded-lg text-[11px] font-bold transition-colors"
+            >
+              <RefreshCw size={12} className={isRunning ? 'animate-spin' : ''} />
+              {isRunning ? 'ANALYZING...' : 'RE-ANALYZE'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {hasAny ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {grouped.map(({ type, meta, items }) => (
+            <section key={type} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-[12px] font-bold uppercase tracking-wider text-gray-700">
+                  {meta.label}
+                </h3>
+                <span className="text-[11px] font-semibold text-gray-400">
+                  ({items.length})
+                </span>
+              </div>
+              <div className="space-y-2">
+                {items.map((ins, i) => (
+                  <InsightItem key={i} insight={ins} meta={meta} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-100 rounded-xl">
+          <div className="p-10 flex flex-col items-center text-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+              <Zap size={20} className="text-[#70170f]" />
+            </div>
+            <p className="text-[14px] font-bold text-gray-900">
+              No insights yet for {activeTitle}
+            </p>
+            <p className="text-[12px] text-gray-500 max-w-md leading-relaxed">
+              {selectedPath
+                ? "Insights will appear here once the AI completes its analysis of this career path."
+                : `${activeTitle} hasn't been analyzed yet. Run the AI analyzer to get a match score, skill breakdown, and personalized insights for this career.`}
+            </p>
+            <button
+              onClick={() => runPipeline()}
+              disabled={isRunning}
+              className="mt-2 px-5 py-2 bg-[#70170f] text-white rounded-lg text-[11px] font-bold hover:bg-[#4a0e09] transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              <Zap size={12} className={isRunning ? 'animate-pulse' : ''} />
+              {isRunning ? 'ANALYZING...' : 'RUN AI ANALYZER'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -11,7 +11,7 @@ export default function PageLoadingSkeleton() {
         {/* Text Skeleton */}
         <div className="space-y-3 w-64 max-w-full">
           <div className="h-2 bg-white/10 rounded-full w-full"></div>
-          <div className="h-2 bg-[#bc1313]/30 rounded-full w-2/3 mx-auto"></div>
+          <div className="h-2 bg-[#70170f]/30 rounded-full w-2/3 mx-auto"></div>
         </div>
       </div>
 

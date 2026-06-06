@@ -7,6 +7,7 @@ class Class(SQLModel, table=True):
     __tablename__ = "classes"
     id: Optional[int] = Field(default=None, primary_key=True)
     instructor_id: int = Field(foreign_key="instructor.id", index=True)
+    curriculum_id: Optional[int] = Field(default=None, foreign_key="curricula.id")
     subject_name: str
     course_code: str
     year_level: int  # 1-4
@@ -24,6 +25,7 @@ class ClassEnrollment(SQLModel, table=True):
     class_id: int = Field(foreign_key="classes.id", index=True)
     student_id: int = Field(foreign_key="user.id", index=True)
     enrolled_at: datetime = Field(default_factory=datetime.utcnow)
+    is_class_rep: bool = Field(default=False)
 
 
 class Assessment(SQLModel, table=True):

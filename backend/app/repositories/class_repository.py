@@ -1,5 +1,6 @@
 import random
 import string
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func
@@ -45,6 +46,7 @@ async def create_class(session: AsyncSession, instructor_id: int, data: ClassCre
         semester=data.semester,
         section=data.section,
         class_code=class_code,
+        curriculum_id=data.curriculum_id,
     )
     session.add(new_class)
     await session.commit()
@@ -65,11 +67,53 @@ async def archive_class(session: AsyncSession, class_id: int) -> Class:
     return cls
 
 
+async def restore_class(session: AsyncSession, class_id: int) -> Class:
+    result = await session.execute(select(Class).where(Class.id == class_id))
+    cls = result.scalar_one_or_none()
+    if not cls:
+        raise ValueError(f"Class {class_id} not found")
+    cls.is_archived = False
+    cls.archived_at = None
+    session.add(cls)
+    await session.commit()
+    await session.refresh(cls)
+    return cls
+
+
 async def delete_class(session: AsyncSession, class_id: int) -> None:
     result = await session.execute(select(Class).where(Class.id == class_id))
     cls = result.scalar_one_or_none()
     if not cls:
         raise ValueError(f"Class {class_id} not found")
+    
+    from sqlalchemy import delete
+    from app.models.class_model import ClassEnrollment, Assessment, AssessmentILO, StudentScore
+
+    # Fetch assessment IDs for this class
+    assessments_res = await session.execute(
+        select(Assessment.id).where(Assessment.class_id == class_id)
+    )
+    assessment_ids = assessments_res.scalars().all()
+
+    if assessment_ids:
+        # Delete dependent scores and ILOs
+        await session.execute(
+            delete(StudentScore).where(StudentScore.assessment_id.in_(assessment_ids))
+        )
+        await session.execute(
+            delete(AssessmentILO).where(AssessmentILO.assessment_id.in_(assessment_ids))
+        )
+        # Delete assessments
+        await session.execute(
+            delete(Assessment).where(Assessment.class_id == class_id)
+        )
+
+    # Delete enrollments
+    await session.execute(
+        delete(ClassEnrollment).where(ClassEnrollment.class_id == class_id)
+    )
+
+    # Delete class
     await session.delete(cls)
     await session.commit()
 
@@ -101,6 +145,7 @@ async def get_students_by_class(session: AsyncSession, class_id: int) -> list[di
             "email": user.email,
             "avatar_url": user.avatar_url,
             "enrolled_at": enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None,
+            "is_class_rep": bool(enrollment.is_class_rep),
         })
 
     return students
@@ -149,6 +194,129 @@ async def get_dashboard_stats(session: AsyncSession, instructor_id: int) -> dict
     }
 
 
+async def get_student_performance_rows(
+    session: AsyncSession, instructor_id: int
+) -> list[dict]:
+    """Per (student, class) average score percentage across an instructor's active classes."""
+    active_classes = await get_classes_by_instructor(session, instructor_id)
+    active_ids = [c.id for c in active_classes]
+    if not active_ids:
+        return []
+
+    avg_pct = func.avg(StudentScore.score / AssessmentILO.max_score * 100).label("avg_pct")
+
+    result = await session.execute(
+        select(
+            User.id,
+            User.full_name,
+            User.avatar_url,
+            User.sr_code,
+            Class.id,
+            Class.course_code,
+            Class.subject_name,
+            Class.year_level,
+            Class.semester,
+            avg_pct,
+        )
+        .join(StudentScore, StudentScore.student_id == User.id)
+        .join(AssessmentILO, StudentScore.ilo_id == AssessmentILO.id)
+        .join(Assessment, StudentScore.assessment_id == Assessment.id)
+        .join(Class, Assessment.class_id == Class.id)
+        .where(
+            Assessment.class_id.in_(active_ids),
+            AssessmentILO.max_score > 0,
+        )
+        .group_by(
+            User.id, User.full_name, User.avatar_url, User.sr_code,
+            Class.id, Class.course_code, Class.subject_name,
+            Class.year_level, Class.semester,
+        )
+    )
+
+    rows = []
+    for sid, name, avatar, sr_code, cid, course_code, subject, year, sem, pct in result.all():
+        if pct is None:
+            continue
+        rows.append({
+            "student_id": sid,
+            "full_name": name,
+            "avatar_url": avatar,
+            "sr_code": sr_code,
+            "class_id": cid,
+            "course_code": course_code,
+            "subject_name": subject,
+            "year_level": year,
+            "semester": sem,
+            "avg_percentage": round(float(pct), 1),
+        })
+    return rows
+
+
+async def get_class_representatives(
+    session: AsyncSession, instructor_id: int
+) -> list[dict]:
+    """Students appointed as class representative across the instructor's active classes."""
+    active_classes = await get_classes_by_instructor(session, instructor_id)
+    active_ids = [c.id for c in active_classes]
+    if not active_ids:
+        return []
+
+    result = await session.execute(
+        select(
+            User.id,
+            User.full_name,
+            User.avatar_url,
+            User.sr_code,
+            Class.id,
+            Class.course_code,
+            Class.subject_name,
+            Class.year_level,
+            Class.semester,
+        )
+        .join(ClassEnrollment, ClassEnrollment.student_id == User.id)
+        .join(Class, ClassEnrollment.class_id == Class.id)
+        .where(
+            ClassEnrollment.class_id.in_(active_ids),
+            ClassEnrollment.is_class_rep == True,  # noqa: E712
+        )
+        .order_by(Class.course_code.asc(), User.full_name.asc())
+    )
+
+    return [
+        {
+            "student_id": sid,
+            "full_name": name,
+            "avatar_url": avatar,
+            "sr_code": sr_code,
+            "class_id": cid,
+            "course_code": course_code,
+            "subject_name": subject,
+            "year_level": year,
+            "semester": sem,
+        }
+        for sid, name, avatar, sr_code, cid, course_code, subject, year, sem in result.all()
+    ]
+
+
+async def set_class_representative(
+    session: AsyncSession, class_id: int, student_id: int, is_rep: bool
+) -> ClassEnrollment | None:
+    result = await session.execute(
+        select(ClassEnrollment).where(
+            ClassEnrollment.class_id == class_id,
+            ClassEnrollment.student_id == student_id,
+        )
+    )
+    enrollment = result.scalar_one_or_none()
+    if not enrollment:
+        return None
+    enrollment.is_class_rep = is_rep
+    session.add(enrollment)
+    await session.commit()
+    await session.refresh(enrollment)
+    return enrollment
+
+
 async def get_assessments_by_class(session: AsyncSession, class_id: int) -> list[Assessment]:
     result = await session.execute(
         select(Assessment)
@@ -156,6 +324,32 @@ async def get_assessments_by_class(session: AsyncSession, class_id: int) -> list
         .order_by(Assessment.created_at.desc())
     )
     return list(result.scalars().all())
+
+
+async def get_graded_student_ids_per_assessment(
+    session: AsyncSession, class_id: int
+) -> dict[int, set[int]]:
+    """Return {assessment_id: {student_ids who have at least one score}} for a class."""
+    result = await session.execute(
+        select(StudentScore.assessment_id, StudentScore.student_id)
+        .join(Assessment, StudentScore.assessment_id == Assessment.id)
+        .where(
+            Assessment.class_id == class_id,
+            StudentScore.score > 0
+        )
+        .distinct()
+    )
+    mapping: dict[int, set[int]] = {}
+    for aid, sid in result.all():
+        mapping.setdefault(aid, set()).add(sid)
+    return mapping
+
+
+async def get_enrolled_student_ids(session: AsyncSession, class_id: int) -> set[int]:
+    result = await session.execute(
+        select(ClassEnrollment.student_id).where(ClassEnrollment.class_id == class_id)
+    )
+    return {sid for (sid,) in result.all()}
 
 
 async def get_assessment_by_id(session: AsyncSession, assessment_id: int) -> Assessment | None:

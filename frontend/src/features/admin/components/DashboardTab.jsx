@@ -12,13 +12,13 @@ export default function DashboardTab({ stats }) {
     <div>
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Overview</h1>
-          <p className="mt-1 text-sm text-gray-400">Monitor platform activity, instructor access, and invite token health.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Overview</h1>
+          <p className="mt-1 text-sm text-gray-500">Monitor platform activity, instructor access, and invite token health.</p>
         </div>
         {stats && (
-          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur-sm">
-            <span className="text-[11px] uppercase tracking-wide text-gray-500">Token usage</span>
-            <span className="text-sm font-semibold text-white">{usedRate}%</span>
+          <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/80 px-3 py-2 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Token usage</span>
+            <span className="text-sm font-black text-gray-900">{usedRate}%</span>
           </div>
         )}
       </div>

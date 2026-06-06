@@ -9,9 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.repositories import class_repository
-from app.schemas.class_schema import ClassCreate, ClassOut, DashboardStats, AssessmentBatchSubmit, AssessmentSummary, AssessmentBatchDetail
+from app.schemas.class_schema import ClassCreate, ClassOut, DashboardStats, StudentPerformanceRow, ClassRepresentativeRow, AssessmentBatchSubmit, AssessmentSummary, AssessmentBatchDetail, CSVImportBatch
 from app.models.class_model import Assessment, AssessmentILO, ClassEnrollment, StudentScore
 from app.models.user import User
+from app.services import activity_service
 
 
 def _get_school_year() -> str:
@@ -32,6 +33,7 @@ async def _to_class_out(session: AsyncSession, cls) -> ClassOut:
         section=cls.section,
         class_code=cls.class_code,
         is_archived=cls.is_archived,
+        curriculum_id=getattr(cls, "curriculum_id", None),
         student_count=count,
         created_at=cls.created_at,
     )
@@ -66,6 +68,11 @@ async def archive_class(session: AsyncSession, instructor_id: int, class_id: int
     await class_repository.archive_class(session, class_id)
 
 
+async def restore_class(session: AsyncSession, instructor_id: int, class_id: int) -> None:
+    await _verify_ownership(session, instructor_id, class_id)
+    await class_repository.restore_class(session, class_id)
+
+
 async def delete_class(session: AsyncSession, instructor_id: int, class_id: int) -> None:
     await _verify_ownership(session, instructor_id, class_id)
     await class_repository.delete_class(session, class_id)
@@ -73,11 +80,15 @@ async def delete_class(session: AsyncSession, instructor_id: int, class_id: int)
 
 async def get_dashboard_stats(session: AsyncSession, instructor_id: int) -> DashboardStats:
     stats = await class_repository.get_dashboard_stats(session, instructor_id)
+    performance_rows = await class_repository.get_student_performance_rows(session, instructor_id)
+    rep_rows = await class_repository.get_class_representatives(session, instructor_id)
     return DashboardStats(
         total_students=stats["total_students"],
         active_courses=stats["active_courses"],
         school_year=_get_school_year(),
         avg_performance=stats["avg_performance"],
+        student_performance=[StudentPerformanceRow(**row) for row in performance_rows],
+        class_representatives=[ClassRepresentativeRow(**row) for row in rep_rows],
     )
 
 
@@ -90,14 +101,33 @@ async def get_class_students(
     return await class_repository.get_students_by_class(session, class_id)
 
 
+async def set_class_representative(
+    session: AsyncSession,
+    instructor_id: int,
+    class_id: int,
+    student_id: int,
+    is_rep: bool,
+) -> dict:
+    await _verify_ownership(session, instructor_id, class_id)
+    enrollment = await class_repository.set_class_representative(
+        session, class_id, student_id, is_rep
+    )
+    if not enrollment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student is not enrolled in this class.",
+        )
+    return {"student_id": student_id, "class_id": class_id, "is_class_rep": is_rep}
+
+
 async def submit_assessment_scores(
     session: AsyncSession,
     instructor_id: int,
     class_id: int,
     data: AssessmentBatchSubmit,
 ) -> None:
-    await _verify_ownership(session, instructor_id, class_id)
-    
+    cls = await _verify_ownership(session, instructor_id, class_id)
+
     # 1. Create Assessment
     assessment = Assessment(
         class_id=class_id,
@@ -120,6 +150,7 @@ async def submit_assessment_scores(
         ilo_records[ilo_number] = ilo.id
 
     # 3. Create StudentScores
+    scored_student_ids: set[int] = set()
     for student_id, scores in data.scores.items():
         for ilo_number, score_val in scores.items():
             if ilo_number in ilo_records:
@@ -130,7 +161,17 @@ async def submit_assessment_scores(
                     score=score_val,
                 )
                 session.add(student_score)
-                
+                scored_student_ids.add(student_id)
+
+    await activity_service.emit_grade_released(
+        session,
+        student_ids=list(scored_student_ids),
+        subject_name=cls.subject_name,
+        assessment_name=data.name,
+        class_id=class_id,
+        assessment_id=assessment.id,
+    )
+
     await session.commit()
 
 
@@ -139,12 +180,28 @@ async def get_class_assessments(
 ) -> list[AssessmentSummary]:
     await _verify_ownership(session, instructor_id, class_id)
     assessments = await class_repository.get_assessments_by_class(session, class_id)
-    return [
-        AssessmentSummary(
-            id=a.id, name=a.name, type=a.type, created_at=a.created_at
+    enrolled_ids = await class_repository.get_enrolled_student_ids(session, class_id)
+    graded_map = await class_repository.get_graded_student_ids_per_assessment(session, class_id)
+    total_enrolled = len(enrolled_ids)
+
+    results = []
+    for a in assessments:
+        graded = graded_map.get(a.id, set()) & enrolled_ids
+        ungraded = enrolled_ids - graded
+        is_partial = len(ungraded) > 0
+        results.append(
+            AssessmentSummary(
+                id=a.id,
+                name=a.name,
+                type=a.type,
+                created_at=a.created_at,
+                graded_student_ids=sorted(graded),
+                ungraded_student_ids=sorted(ungraded),
+                total_enrolled=total_enrolled,
+                is_partial=is_partial,
+            )
         )
-        for a in assessments
-    ]
+    return results
 
 
 async def get_class_assessment_detail(
@@ -229,7 +286,159 @@ async def update_assessment_scores(
                 session.add(student_score)
                 
     await session.commit()
-    
+
+
+MAX_ASSESSMENTS_PER_IMPORT = 100
+MAX_SCORE_CELLS_PER_IMPORT = 50_000
+
+
+async def upsert_assessment_batch(
+    session: AsyncSession,
+    instructor_id: int,
+    class_id: int,
+    data: CSVImportBatch,
+) -> None:
+    """
+    Upsert a batch of assessments from a CSV import.
+
+    For each assessment in data.assessments:
+      - If an assessment with the same name (case-insensitive) already exists
+        for the class → delete its ILOs and scores, then rewrite.
+      - Otherwise → create a new assessment.
+    Emits a grade_released notification per assessment that has scored students.
+    """
+    from sqlalchemy import delete as sa_delete
+
+    cls = await _verify_ownership(session, instructor_id, class_id)
+
+    # ── Payload-size limits ────────────────────────────────────────────────────
+    if len(data.assessments) > MAX_ASSESSMENTS_PER_IMPORT:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Too many assessments in one import ({len(data.assessments)}). Maximum is {MAX_ASSESSMENTS_PER_IMPORT}.",
+        )
+    total_cells = sum(
+        sum(len(scores) for scores in a.scores.values()) for a in data.assessments
+    )
+    if total_cells > MAX_SCORE_CELLS_PER_IMPORT:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Too many score cells in one import ({total_cells}). Maximum is {MAX_SCORE_CELLS_PER_IMPORT}.",
+        )
+
+    # ── Enrollment lookup for this class ───────────────────────────────────────
+    enrolled_result = await session.execute(
+        select(ClassEnrollment.student_id).where(ClassEnrollment.class_id == class_id)
+    )
+    enrolled_ids: set[int] = {row for row in enrolled_result.scalars().all()}
+
+    # ── Per-assessment validation (bounds, max_score, enrollment) ─────────────
+    for assessment_data in data.assessments:
+        if not assessment_data.ilos:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'Assessment "{assessment_data.name}" has no ILOs.',
+            )
+        for ilo_number, max_score in assessment_data.ilos.items():
+            if max_score is None or max_score <= 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f'Max score for "{assessment_data.name}" ILO {ilo_number} must be greater than 0 (got {max_score}).',
+                )
+        for student_id, scores in assessment_data.scores.items():
+            if student_id not in enrolled_ids:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f'Student id {student_id} is not enrolled in this class — cannot submit scores for assessment "{assessment_data.name}".',
+                )
+            for ilo_number, score_val in scores.items():
+                if ilo_number not in assessment_data.ilos:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f'Score for student {student_id} references unknown ILO {ilo_number} in assessment "{assessment_data.name}".',
+                    )
+                if score_val is None or score_val < 0:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f'Score for student {student_id} on "{assessment_data.name}" ILO {ilo_number} is {score_val}. Scores must be ≥ 0.',
+                    )
+                max_score = assessment_data.ilos[ilo_number]
+                if score_val > max_score:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f'Score {score_val} for student {student_id} on "{assessment_data.name}" ILO {ilo_number} exceeds the max of {max_score}.',
+                    )
+
+    # Index existing assessments by lower-cased name for O(1) lookup
+    existing_list = await class_repository.get_assessments_by_class(session, class_id)
+    existing_by_name: dict[str, Assessment] = {
+        a.name.lower().strip(): a for a in existing_list
+    }
+
+    for assessment_data in data.assessments:
+        name_key = assessment_data.name.lower().strip()
+        existing = existing_by_name.get(name_key)
+
+        if existing:
+            # Wipe old ILOs and scores then reuse the same Assessment row
+            await session.execute(
+                sa_delete(StudentScore).where(StudentScore.assessment_id == existing.id)
+            )
+            await session.execute(
+                sa_delete(AssessmentILO).where(AssessmentILO.assessment_id == existing.id)
+            )
+            existing.name = assessment_data.name  # preserve original casing from CSV
+            existing.type = assessment_data.type
+            session.add(existing)
+            await session.flush()
+            assessment = existing
+        else:
+            assessment = Assessment(
+                class_id=class_id,
+                name=assessment_data.name,
+                type=assessment_data.type,
+            )
+            session.add(assessment)
+            await session.flush()
+
+        # Write ILOs
+        ilo_records: dict[int, int] = {}  # ilo_number -> AssessmentILO.id
+        for ilo_number, max_score in assessment_data.ilos.items():
+            ilo = AssessmentILO(
+                assessment_id=assessment.id,
+                ilo_number=ilo_number,
+                max_score=max_score,
+            )
+            session.add(ilo)
+            await session.flush()
+            ilo_records[ilo_number] = ilo.id
+
+        # Write student scores
+        scored_ids: set[int] = set()
+        for student_id, scores in assessment_data.scores.items():
+            for ilo_number, score_val in scores.items():
+                if ilo_number in ilo_records:
+                    session.add(StudentScore(
+                        assessment_id=assessment.id,
+                        ilo_id=ilo_records[ilo_number],
+                        student_id=student_id,
+                        score=score_val,
+                    ))
+                    scored_ids.add(student_id)
+
+        # Notify students for this assessment
+        if scored_ids:
+            await activity_service.emit_grade_released(
+                session,
+                student_ids=list(scored_ids),
+                subject_name=cls.subject_name,
+                assessment_name=assessment_data.name,
+                class_id=class_id,
+                assessment_id=assessment.id,
+            )
+
+    await session.commit()
+
 
 async def delete_assessment(
     session: AsyncSession, instructor_id: int, class_id: int, assessment_id: int

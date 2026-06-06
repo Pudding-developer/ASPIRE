@@ -9,6 +9,7 @@ class ClassCreate(BaseModel):
     year_level: int
     semester: int
     section: str
+    curriculum_id: Optional[int] = None
 
 
 class ClassOut(BaseModel):
@@ -20,8 +21,34 @@ class ClassOut(BaseModel):
     section: str
     class_code: str
     is_archived: bool
+    curriculum_id: Optional[int] = None
     student_count: int = 0
     created_at: datetime
+
+
+class StudentPerformanceRow(BaseModel):
+    student_id: int
+    full_name: str
+    avatar_url: Optional[str] = None
+    sr_code: Optional[str] = None
+    class_id: int
+    course_code: str
+    subject_name: str
+    year_level: int
+    semester: int
+    avg_percentage: float
+
+
+class ClassRepresentativeRow(BaseModel):
+    student_id: int
+    full_name: str
+    avatar_url: Optional[str] = None
+    sr_code: Optional[str] = None
+    class_id: int
+    course_code: str
+    subject_name: str
+    year_level: int
+    semester: int
 
 
 class DashboardStats(BaseModel):
@@ -29,6 +56,8 @@ class DashboardStats(BaseModel):
     active_courses: int
     school_year: str
     avg_performance: Optional[float]
+    student_performance: list[StudentPerformanceRow] = []
+    class_representatives: list[ClassRepresentativeRow] = []
 
 
 class AssessmentCreate(BaseModel):
@@ -53,8 +82,21 @@ class AssessmentSummary(BaseModel):
     name: str
     type: str
     created_at: datetime
+    graded_student_ids: list[int] = []
+    ungraded_student_ids: list[int] = []
+    total_enrolled: int = 0
+    is_partial: bool = False
 
 
 class AssessmentBatchDetail(AssessmentBatchSubmit):
     id: int
     created_at: datetime
+
+
+class CSVImportBatch(BaseModel):
+    """Payload for the CSV batch-import endpoint.
+
+    Each item in ``assessments`` follows the same shape as
+    AssessmentBatchSubmit so the upsert service can reuse existing logic.
+    """
+    assessments: list[AssessmentBatchSubmit]

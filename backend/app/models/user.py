@@ -27,3 +27,6 @@ class User(SQLModel, table=True):
     # Career tracking — set by student via PATCH /api/student/career
     chosen_career: Optional[str] = Field(default=None)
     career_chosen_at: Optional[datetime] = Field(default=None)
+
+    # Advisement relationship
+    advisor_id: Optional[int] = Field(default=None, foreign_key="instructor.id", nullable=True)

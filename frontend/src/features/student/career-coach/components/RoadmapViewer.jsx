@@ -22,41 +22,11 @@ function RoadmapSkeleton() {
 
 /* ─── Node pill ─────────────────────────────────────────────────── */
 function NodePill({ node }) {
-  const { status, label, score, recently_closed, improvement, is_next_milestone } = node
-
-  const statusMeta = {
-    has_skill:   { icon: '✓', cls: 'rm-pill--has'   },
-    gap_skill:   { icon: '✗', cls: 'rm-pill--gap'   },
-    weak_skill:  { icon: '⚡', cls: 'rm-pill--weak'  },
-    unassessed:  { icon: '?', cls: 'rm-pill--none'  },
-  }
-  const { icon, cls } = statusMeta[status] || statusMeta.unassessed
+  const { label } = node
 
   return (
-    <div
-      className={[
-        'rm-pill',
-        cls,
-        is_next_milestone && status === 'gap_skill' ? 'rm-pill--milestone' : '',
-      ].join(' ').trim()}
-    >
-      {recently_closed && (
-        <span className="rm-badge rm-badge--closed">🎉 Just closed</span>
-      )}
-      {improvement && (
-        <span className="rm-badge rm-badge--improvement">
-          +{improvement.change ?? improvement.score_change ?? ''}%
-        </span>
-      )}
-      {is_next_milestone && status === 'gap_skill' && (
-        <span className="rm-badge rm-badge--milestone">⚡ Learn next</span>
-      )}
-
-      <span className="rm-pill__icon">{icon}</span>
+    <div className="rm-pill rm-pill--none">
       <span className="rm-pill__label">{label}</span>
-      {status === 'weak_skill' && score !== null && (
-        <span className="rm-pill__score">{score}%</span>
-      )}
     </div>
   )
 }
@@ -85,8 +55,8 @@ function ReadinessBar({ pct, change, daysSince, firstRun }) {
 }
 
 /* ─── Main component ────────────────────────────────────────────── */
-export default function RoadmapViewer({ careerTitle }) {
-  const { roadmap, loading, error } = useRoadmap(careerTitle)
+export default function RoadmapViewer({ careerTitle, studentId = null }) {
+  const { roadmap, loading, error } = useRoadmap(careerTitle, studentId)
 
   if (!careerTitle) {
     return (
@@ -130,7 +100,7 @@ export default function RoadmapViewer({ careerTitle }) {
   }, {})
 
   return (
-    <div className="rm-viewer">
+    <div className="rm-viewer rm-viewer--boxed">
 
       <div className="rm-header">
         <div className="rm-header__top">
@@ -162,6 +132,8 @@ export default function RoadmapViewer({ careerTitle }) {
         />
       </div>
 
+
+
       {next_milestone && next_milestone.skill && (
         <div className="rm-milestone-card">
           <div className="rm-milestone-card__header">⚡ Next milestone</div>
@@ -190,12 +162,7 @@ export default function RoadmapViewer({ careerTitle }) {
         ))}
       </div>
 
-      <div className="rm-legend">
-        <span className="rm-legend__item rm-legend__item--has">✓ Has skill</span>
-        <span className="rm-legend__item rm-legend__item--gap">✗ Gap skill</span>
-        <span className="rm-legend__item rm-legend__item--weak">⚡ Needs work</span>
-        <span className="rm-legend__item rm-legend__item--none">? Not assessed</span>
-      </div>
+
 
       {motivational_insight && (
         <div className="rm-insight">

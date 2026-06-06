@@ -1,5 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
+
 import Navbar from '../../features/landing/components/Navbar';
 import HeroSection from '../../features/landing/components/HeroSection';
 import DashboardPreview from '../../features/landing/components/DashboardPreview';
@@ -8,13 +12,17 @@ import FeaturesSection from '../../features/landing/components/FeaturesSection';
 import HowItWorksSection from '../../features/landing/components/HowItWorksSection';
 import FaqSection from '../../features/landing/components/FaqSection';
 import Footer from '../../features/landing/components/Footer';
+
 import RegisterModal from '../../features/auth/components/RegisterModal';
 import LoginModal from '../../features/auth/components/LoginModal';
 import SelectRoleModal from '../../features/auth/components/SelectRoleModal';
 
+gsap.registerPlugin(ScrollTrigger);
+
 export default function LandingPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const mainContentRef = useRef(null);
 
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -25,7 +33,6 @@ export default function LandingPage() {
     if (location.state?.showRoleSelection && location.state?.token) {
       setRoleSelectionToken(location.state.token);
       setIsSelectRoleModalOpen(true);
-      // Clear the state so it doesn't reopen on refresh
       navigate('/', { replace: true, state: {} });
     }
   }, [location.state, navigate]);
@@ -37,46 +44,59 @@ export default function LandingPage() {
     }
   };
 
-  const handleGetStarted = () => {
-    setIsRegisterModalOpen(true);
-  };
+  const handleGetStarted = () => setIsRegisterModalOpen(true);
+  const handleLogin = () => setIsLoginModalOpen(true);
 
-  const handleLogin = () => {
-    setIsLoginModalOpen(true);
-  };
+  useGSAP(() => {
+    // True Curtain Reveal:
+    // The main content section is pinned/parallaxed to "lift" like a curtain
+    // while the footer is revealed from underneath.
+    gsap.to(mainContentRef.current, {
+      y: -100, // Parallax lift
+      scrollTrigger: {
+        trigger: mainContentRef.current,
+        start: "bottom bottom",
+        end: "bottom top",
+        scrub: true,
+      }
+    });
+  }, { scope: mainContentRef });
 
   return (
-    <div className="min-h-screen bg-[#0a0101] text-white overflow-x-hidden font-sans scroll-smooth">
-      <Navbar scrollToSection={scrollToSection} onLogin={handleLogin} />
-      <HeroSection scrollToSection={scrollToSection} onGetStarted={handleGetStarted} />
-      <DashboardPreview />
-      <StatsStrip />
-      <FeaturesSection />
-      
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#bc1313] to-transparent my-12 opacity-50"></div>
-      </div>
-      
-      <HowItWorksSection />
-      
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#bc1313] to-transparent my-12 opacity-50"></div>
-      </div>
-      
-      <FaqSection />
-      <Footer onGetStarted={handleGetStarted} />
+    <div className="min-h-screen bg-white text-[#430202] overflow-x-hidden font-sans scroll-smooth">
 
-      <RegisterModal 
-        isOpen={isRegisterModalOpen} 
-        onClose={() => setIsRegisterModalOpen(false)} 
+      {/* Main Content "Curtain" Layer */}
+      <div ref={mainContentRef} className="relative z-10 bg-white mb-[600px]">
+        <Navbar scrollToSection={scrollToSection} onLogin={handleLogin} />
+        <HeroSection scrollToSection={scrollToSection} onGetStarted={handleGetStarted} />
+
+        <div className="-mt-48 relative z-10">
+          <DashboardPreview />
+        </div>
+        <StatsStrip />
+        <FeaturesSection />
+
+        <HowItWorksSection />
+
+        <FaqSection />
+      </div>
+
+      {/* Fixed Footer "Underneath" the Curtain */}
+      <div className="fixed bottom-0 left-0 w-full h-[600px] z-0">
+        <Footer onGetStarted={handleGetStarted} />
+      </div>
+
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
         onSwitchToLogin={() => {
           setIsRegisterModalOpen(false);
           setIsLoginModalOpen(true);
         }}
       />
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
-        onClose={() => setIsLoginModalOpen(false)} 
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
         onSwitchToRegister={() => {
           setIsLoginModalOpen(false);
           setIsRegisterModalOpen(true);

@@ -18,6 +18,10 @@ export default function usePipeline(studentId) {
   const [pipelineStatus, setPipelineStatus] = useState(null);
   const pollRef = useRef(null);
 
+  // Result modal state — set when a job finishes, cleared by the view
+  const [pipelineResult, setPipelineResult] = useState(null);
+  const clearPipelineResult = useCallback(() => setPipelineResult(null), []);
+
   // Fetch existing reports on mount
   const fetchReports = useCallback(async () => {
     if (!studentId) return;
@@ -41,13 +45,15 @@ export default function usePipeline(studentId) {
 
   useEffect(() => { fetchReports(); }, [fetchReports]);
 
-  // Start pipeline and poll for completion
-  const runPipeline = useCallback(async () => {
+  // Start pipeline and poll for completion. Pass { force: true } to bypass
+  // the cache when nothing has changed since the last run.
+  const runPipeline = useCallback(async ({ force = false } = {}) => {
     if (!studentId) return;
     try {
       setPipelineStatus({ status: 'starting', percentage: 0, current_step: 'Starting pipeline...' });
+      setPipelineResult(null);
       setError(null);
-      const res = await pipelineApi.run(studentId);
+      const res = await pipelineApi.run(studentId, { force });
       const newJobId = res.data.job_id;
       setJobId(newJobId);
 
@@ -60,22 +66,41 @@ export default function usePipeline(studentId) {
           if (job.status === 'completed' || job.status === 'failed') {
             clearInterval(pollRef.current);
             pollRef.current = null;
-            if (job.status === 'failed') {
-               setError(job.error || 'The AI pipeline encountered an error. Please try again.');
-            }
             setJobId(null);
-            if (job.status === 'completed') fetchReports();
+
+            if (job.status === 'failed') {
+              const errMsg = job.error || 'The AI pipeline encountered an error. Please try again.';
+              setError(errMsg);
+              setPipelineResult({ outcome: 'error', message: errMsg });
+            } else {
+              // Completed — distinguish between a real new report and a cache hit
+              const noChange = job.current_step === 'No new data — returning previous report';
+              setPipelineResult({
+                outcome: noChange ? 'no_change' : 'success',
+                message: null, // view builds the copy
+              });
+              fetchReports();
+            }
           }
         } catch {
           clearInterval(pollRef.current);
           pollRef.current = null;
-          setError('Lost connection to the analysis server. Please check your network.');
+          const networkErr = 'Lost connection to the analysis server. Please check your network.';
+          setError(networkErr);
+          setPipelineResult({ outcome: 'error', message: networkErr });
           setJobId(null);
         }
       }, 3000);
     } catch (e) {
-      setPipelineStatus({ status: 'failed', error: e.message });
-      setError(`Failed to start AI Pipeline: ${e.message}`);
+      const msg = String(e.message || '');
+      if (msg.includes('409')) {
+        setPipelineStatus(null);
+        setError('A previous analysis is still running. Please wait a moment and try again.');
+      } else {
+        setPipelineStatus({ status: 'failed', error: msg });
+        setError(`Failed to start AI Pipeline: ${msg}`);
+        setPipelineResult({ outcome: 'error', message: `Failed to start AI Pipeline: ${msg}` });
+      }
     }
   }, [studentId, fetchReports]);
 
@@ -83,6 +108,21 @@ export default function usePipeline(studentId) {
   useEffect(() => {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
+
+  const cancelPipeline = useCallback(async () => {
+    if (!studentId) return;
+    try {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      setJobId(null);
+      setPipelineStatus(null);
+      await pipelineApi.cancel(studentId);
+    } catch (e) {
+      console.error("Error cancelling pipeline:", e);
+    }
+  }, [studentId]);
 
   return {
     report,
@@ -93,5 +133,8 @@ export default function usePipeline(studentId) {
     pipelineStatus,
     isRunning: !!jobId,
     refetch: fetchReports,
+    pipelineResult,
+    clearPipelineResult,
+    cancelPipeline,
   };
 }

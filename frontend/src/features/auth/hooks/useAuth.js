@@ -5,6 +5,7 @@
  *   const { user, token, login, logout, isAuthenticated } = useAuth();
  */
 import { useState, useEffect, useCallback } from 'react';
+import { authApi } from '../api/authApi';
 
 const TOKEN_KEY = 'aspire_token';
 const USER_KEY = 'aspire_user';
@@ -50,6 +51,18 @@ export default function useAuth() {
     setUser(userData);
   }, []);
 
+  const localRegister = useCallback(async (data) => {
+    const response = await authApi.register(data);
+    login(response.access_token);
+    return response.redirect;
+  }, [login]);
+
+  const localLogin = useCallback(async (data) => {
+    const response = await authApi.login(data);
+    login(response.access_token);
+    return response.redirect;
+  }, [login]);
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -92,5 +105,5 @@ export default function useAuth() {
     };
   }, [token, logout]);
 
-  return { user, token, login, logout, isAuthenticated };
+  return { user, token, login, logout, isAuthenticated, localRegister, localLogin };
 }

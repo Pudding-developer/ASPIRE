@@ -1,21 +1,93 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Filter, Bell, Lightbulb, GraduationCap, Microscope,
-  ChevronRight, AlertCircle, CheckCircle2, ChevronDown, X, BookOpen, ArrowLeft
+  ChevronRight, AlertCircle, CheckCircle2, ChevronDown, X, BookOpen, ArrowLeft, Target,
+  TrendingUp, Github, Star, ShieldAlert, Award, Rocket, Compass, Zap, AlertTriangle, UserCheck, Activity, Search
 } from 'lucide-react';
 
 import useStudentData from '../../dashboard/hooks/useStudentData';
 import { StudentPerformanceSkeleton } from '../../shared/StudentPageSkeletons';
-import StudentCourseDetailView from './StudentCourseDetailView';
 
-const panelBase = 'bg-gradient-to-br from-white via-[#fffbfb] to-[#fff3f3] border border-[#f1d7d7] rounded-2xl shadow-[0_12px_30px_-18px_rgba(188,19,19,0.45)]';
+const GRADING_SYSTEM = [
+  { label: "Excellent", min: 98, color: "bg-purple-600", bg: "bg-purple-50/50", border: "border-purple-200", text: "text-purple-900" },
+  { label: "Superior", min: 94, color: "bg-violet-400", bg: "bg-violet-50/50", border: "border-violet-200", text: "text-violet-900" },
+  { label: "Very Good", min: 90, color: "bg-blue-600", bg: "bg-blue-50/50", border: "border-blue-200", text: "text-blue-900" },
+  { label: "Good", min: 88, color: "bg-sky-400", bg: "bg-sky-50/50", border: "border-sky-200", text: "text-sky-900" },
+  { label: "Meritorious", min: 85, color: "bg-teal-500", bg: "bg-teal-50/50", border: "border-teal-200", text: "text-teal-900" },
+  { label: "Very Satisfactory", min: 83, color: "bg-green-700", bg: "bg-green-50/50", border: "border-green-200", text: "text-green-900" },
+  { label: "Satisfactory", min: 80, color: "bg-emerald-500", bg: "bg-emerald-50/50", border: "border-emerald-200", text: "text-emerald-900" },
+  { label: "Fairly Satisfactory", min: 78, color: "bg-yellow-400", bg: "bg-yellow-50/50", border: "border-yellow-200", text: "text-yellow-900" },
+  { label: "Passing", min: 75, color: "bg-orange-500", bg: "bg-orange-50/50", border: "border-orange-200", text: "text-orange-900" },
+  { label: "Needs to Focus", min: 70, color: "bg-red-600", bg: "bg-red-50", border: "border-[#70170f]/30", text: "text-[#70170f]" },
+  { label: "Poor Performance", min: 0, color: "bg-red-900", bg: "bg-red-100/60", border: "border-red-900/40", text: "text-red-950" },
+];
+
+import useActivityFeed from '../../dashboard/hooks/useActivityFeed';
+import StudentCourseDetailView from './StudentCourseDetailView';
+import { studentService } from '../../../../services/studentService';
+import AllActivitiesModal from '../../dashboard/components/AllActivitiesModal';
+
+const NOTIF_VISUALS = {
+  grade_released: { icon: BookOpen, color: 'bg-emerald-100 text-emerald-600' },
+  career_updated: { icon: TrendingUp, color: 'bg-purple-100 text-purple-600' },
+  github_synced: { icon: Github, color: 'bg-blue-100 text-blue-600' },
+  skill_milestone: { icon: Star, color: 'bg-yellow-100 text-yellow-600' },
+};
+
+function formatNotifTime(iso) {
+  if (!iso) return '';
+  const then = new Date(iso);
+  if (isNaN(then.getTime())) return '';
+  const diffMs = Date.now() - then.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return then.toLocaleDateString();
+}
+
+const panelBase = 'bg-white border border-[#eed7d3] rounded-2xl shadow-[0_12px_30px_-18px_rgba(0,0,0,0.1)]';
 
 /* ─── Constants ─── */
-const SEMESTERS = ['All Semesters', '1st Semester 2024-2025', '2nd Semester 2024-2025', '1st Semester 2023-2024', '2nd Semester 2023-2024'];
+const SEMESTERS = [
+  'All Semesters',
+  '1st Year, 1st Sem', '1st Year, 2nd Sem',
+  '2nd Year, 1st Sem', '2nd Year, 2nd Sem',
+  '3rd Year, 1st Sem', '3rd Year, 2nd Sem',
+  '4th Year, 1st Sem', '4th Year, 2nd Sem',
+];
 const CATEGORIES = ['All Subjects', 'Mathematics', 'Engineering Core', 'General Education', 'Computer Science', 'Technical Electives'];
 
+const COURSE_SEMESTER_MAP = {
+  "Introduction to Engineering": 1, "Understanding the Self": 1, "Mathematics in the Modern World": 1,
+  "Readings in Philippine History": 1, "Purposive Communication": 1, "Differential Calculus": 1,
+  "General Chemistry": 1, "Computer Programming 1": 1, "Engineering Drawing": 2,
+  "Contemporary World": 2, "Art Appreciation": 2, "Science, Technology and Society": 2,
+  "Integral Calculus": 2, "Physics 1": 2, "Life and Works of Rizal": 3, "Ethics": 3,
+  "Modern Biology": 3, "Computer Engineering as a Discipline": 3, "Programming Logic and Design": 3,
+  "Discrete Mathematics": 3, "Fundamentals of Electrical Engineering": 3, "Computer-Aided Design": 3,
+  "Engineering Economics": 4, "Engineering Data Analysis": 4, "Differential Equations": 4,
+  "Object Oriented Programming": 4, "Advanced Engineering Mathematics for CpE": 4,
+  "Cognate/Elective Course 1": 4, "Electronic Circuits: Devices and Analysis": 4,
+  "Basic Occupational Health and Safety": 4, "Numerical Methods": 4, "Kontekstwalisadong Komunikasyon sa Filipino": 4,
+  "Logic Circuits and Design": 5, "Data Structures and Algorithms": 5, "Introduction to Networks, Data and Digital Communications (CISCO 1)": 5,
+  "Fundamentals of Mixed Signals and Sensors": 5, "Feedback and Control Systems": 5, "Introduction to HDL": 5,
+  "Research Methods": 5, "Filipino sa Iba't Ibang Disiplina": 5, "Microprocessors": 6,
+  "Software Design": 6, "Routing and Switching (CISCO 2)": 6, "Digital Signal Processing": 6,
+  "Emerging Technologies in CpE": 6, "CpE Practice and Design 1": 6, "Cognate/Elective Course 2": 6,
+  "Scaling Networks (CISCO 3)": 7, "Operating Systems": 7, "Computer Architecture and Organization": 7,
+  "Computer Engineering Drafting and Design": 7, "Connecting Networks and Security (CISCO 4)": 7,
+  "Embedded Systems": 7, "Seminars and Fieldtrips": 7, "Manufacturing and Quality Control": 7,
+  "Cognate/Elective Course 3 (Data Mining / AI Track)": 7, "ASEAN Literature": 7, "Technopreneurship": 8,
+  "On-the-Job Training": 8, "CpE Practice and Design 2": 8
+};
+
 /* ─── Filter Dropdown ─── */
-function FilterDropdown({ open, onClose, semester, setSemester, category, setCategory }) {
+function FilterDropdown({ open, onClose, semester, setSemester, category, setCategory, classes }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -24,10 +96,41 @@ function FilterDropdown({ open, onClose, semester, setSemester, category, setCat
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open, onClose]);
 
+  const enrolledSemesters = React.useMemo(() => {
+    if (!classes || classes.length === 0) return [];
+    const semestersSet = new Set();
+    classes.forEach(c => {
+      if (c.year_level && c.semester) {
+        const suffix = (num) => {
+          if (num === 1) return '1st';
+          if (num === 2) return '2nd';
+          if (num === 3) return '3rd';
+          return `${num}th`;
+        };
+        const semStr = `${suffix(c.year_level)} Year, ${suffix(c.semester)} Sem`;
+        semestersSet.add(semStr);
+      }
+    });
+    return Array.from(semestersSet).sort((a, b) => {
+      const aMatch = a.match(/(\d)(?:st|nd|rd|th)\sYear,\s(\d)(?:st|nd|rd|th)\sSem/);
+      const bMatch = b.match(/(\d)(?:st|nd|rd|th)\sYear,\s(\d)(?:st|nd|rd|th)\sSem/);
+      if (aMatch && bMatch) {
+        const aVal = parseInt(aMatch[1]) * 10 + parseInt(aMatch[2]);
+        const bVal = parseInt(bMatch[1]) * 10 + parseInt(bMatch[2]);
+        return aVal - bVal;
+      }
+      return 0;
+    });
+  }, [classes]);
+
+  const displayedSemesters = enrolledSemesters.length > 0
+    ? ['All Semesters', ...enrolledSemesters]
+    : SEMESTERS;
+
   if (!open) return null;
 
   return (
-    <div ref={ref} className="absolute right-0 top-full mt-2 w-72 bg-linear-to-br from-white via-[#fff9f9] to-[#fff3f3] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(188,19,19,0.45)] z-50 p-5 space-y-5">
+    <div ref={ref} className="absolute right-0 top-full mt-2 w-72 bg-linear-to-br from-white via-[#fff9f9] to-[#fcf4f2] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(0,0,0,0.25)] z-50 p-5 space-y-5">
       <div className="flex items-center justify-between">
         <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filters</h4>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={14} /></button>
@@ -36,13 +139,12 @@ function FilterDropdown({ open, onClose, semester, setSemester, category, setCat
       <div>
         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Semester</label>
         <div className="space-y-1">
-          {SEMESTERS.map(s => (
+          {displayedSemesters.map(s => (
             <button
               key={s}
               onClick={() => setSemester(s)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-medium transition-colors ${
-                semester === s ? 'bg-[#1a0505] text-white' : 'text-gray-700 hover:bg-[#fff5f5]'
-              }`}
+              className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-medium transition-colors ${semester === s ? 'bg-[#1a0505] text-white' : 'text-gray-700 hover:bg-[#fff5f5]'
+                }`}
             >
               {s}
             </button>
@@ -57,9 +159,8 @@ function FilterDropdown({ open, onClose, semester, setSemester, category, setCat
             <button
               key={c}
               onClick={() => setCategory(c)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-medium transition-colors ${
-                category === c ? 'bg-[#1a0505] text-white' : 'text-gray-700 hover:bg-[#fff5f5]'
-              }`}
+              className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-medium transition-colors ${category === c ? 'bg-[#1a0505] text-white' : 'text-gray-700 hover:bg-[#fff5f5]'
+                }`}
             >
               {c}
             </button>
@@ -78,9 +179,8 @@ function FilterDropdown({ open, onClose, semester, setSemester, category, setCat
 }
 
 /* ─── Notification Dropdown ─── */
-function NotificationDropdown({ open, onClose, notifications }) {
+function NotificationDropdown({ open, onClose, notifications, unreadCount, onShowAll }) {
   const ref = useRef(null);
-  const unreadCount = notifications.filter(n => n.unread).length;
 
   useEffect(() => {
     function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) onClose(); }
@@ -91,12 +191,12 @@ function NotificationDropdown({ open, onClose, notifications }) {
   if (!open) return null;
 
   return (
-    <div ref={ref} className="absolute right-0 top-full mt-2 w-80 bg-linear-to-br from-white via-[#fff9f9] to-[#fff3f3] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(188,19,19,0.45)] z-50 overflow-hidden">
-      <div className="p-4 border-b border-[#f2dfdf] flex items-center justify-between">
+    <div ref={ref} className="absolute right-0 top-full mt-2 w-80 bg-linear-to-br from-white via-[#fff9f9] to-[#fcf4f2] border border-[#efd4d4] rounded-2xl shadow-[0_20px_40px_-24px_rgba(0,0,0,0.25)] z-50 overflow-hidden flex flex-col">
+      <div className="p-4 border-b border-[#f2dfdf] flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <h4 className="text-[12px] font-bold text-gray-900">Score Updates</h4>
+          <h4 className="text-[12px] font-bold text-gray-900">Notifications</h4>
           {unreadCount > 0 && (
-            <span className="text-[9px] font-bold bg-[#bc1313] text-white px-1.5 py-0.5 rounded-full">{unreadCount} new</span>
+            <span className="text-[9px] font-bold bg-[#70170f] text-white px-1.5 py-0.5 rounded-full">{unreadCount} new</span>
           )}
         </div>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={14} /></button>
@@ -105,41 +205,68 @@ function NotificationDropdown({ open, onClose, notifications }) {
         {notifications.length === 0 ? (
           <div className="p-4 text-center text-gray-500 text-sm">No new notifications.</div>
         ) : (
-          notifications.map(n => (
-            <div key={n.id} className={`p-4 border-b border-[#f8ebeb] hover:bg-[#fff5f5]/70 transition-colors cursor-pointer ${n.unread ? 'bg-red-50/30' : ''}`}>
-              <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${n.unread ? 'bg-[#bc1313]/10 text-[#bc1313]' : 'bg-gray-100 text-gray-400'}`}>
-                  <BookOpen size={14} />
+          notifications.map(n => {
+            const visual = NOTIF_VISUALS[n.type] ?? { icon: Bell, color: 'bg-gray-100 text-gray-500' };
+            const Icon = visual.icon;
+            const accent = n.unread ? 'bg-[#70170f]/10 text-[#70170f]' : visual.color;
+            return (
+              <div key={n.id} className={`p-4 border-b border-[#f8ebeb] hover:bg-[#fff5f5]/70 transition-colors cursor-pointer ${n.unread ? 'bg-red-50/30' : ''}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${accent}`}>
+                    <Icon size={14} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-bold text-gray-900 leading-snug">{n.title}</p>
+                    {n.subtitle && <p className="text-[11px] text-gray-600 mt-0.5">{n.subtitle}</p>}
+                    <p className="text-[10px] text-gray-400 mt-1">{formatNotifTime(n.created_at)}</p>
+                  </div>
+                  {n.unread && <span className="w-2 h-2 bg-[#70170f] rounded-full shrink-0 mt-2" />}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-bold text-gray-900 leading-snug">{n.instructor}</p>
-                  <p className="text-[11px] text-gray-600 mt-0.5">{n.message}</p>
-                  <p className="text-[10px] text-gray-400 mt-1">{n.subject} &middot; {n.time}</p>
-                </div>
-                {n.unread && <span className="w-2 h-2 bg-[#bc1313] rounded-full shrink-0 mt-2" />}
               </div>
-            </div>
-          ))
+            );
+          })
         )}
+      </div>
+      <div className="p-3 border-t border-[#f2dfdf] bg-white shrink-0">
+        <button
+          onClick={() => { onClose(); onShowAll(); }}
+          className="w-full bg-[#9f0707] hover:bg-[#430202] text-white py-2 rounded-xl text-[13px] font-bold transition-all duration-300 shadow-lg shadow-[#9f0707]/10"
+        >
+          View all activities
+        </button>
       </div>
     </div>
   );
 }
 
 /* ─── Base Stat Card ─── */
-function StatCard({ label, main, sub, badge, progress }) {
+function StatCard({ label, main, sub, badge, badgeTone = 'green', progress, icon: Icon }) {
+  const toneClass = {
+    green: 'bg-green-50 text-green-600',
+    red: 'bg-red-50 text-red-600',
+    amber: 'bg-amber-50 text-amber-700',
+    indigo: 'bg-indigo-50 text-indigo-600',
+  }[badgeTone] || 'bg-green-50 text-green-600';
+
   return (
-    <div className={`${panelBase} p-6 flex flex-col justify-between`}>
-      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-4">{label}</p>
+    <div className={`${panelBase} p-6 flex flex-col justify-between min-h-[148px]`}>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">{label}</p>
+        {Icon && (
+          <div className="w-7 h-7 rounded-lg bg-[#fff2f2] text-[#70170f] flex items-center justify-center">
+            <Icon size={14} />
+          </div>
+        )}
+      </div>
       <div className="flex items-center gap-3">
         <h3 className="text-3xl font-extrabold text-gray-900 leading-none">{main}</h3>
         {badge && (
-          <span className="text-[11px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded-full">
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${toneClass}`}>
             {badge}
           </span>
         )}
       </div>
-      <p className="text-[11px] text-gray-400 font-medium mt-2">{sub}</p>
+      <p className="text-[11px] text-gray-400 font-medium mt-2 truncate" title={typeof sub === 'string' ? sub : undefined}>{sub}</p>
       {progress && (
         <div className="w-full h-1.5 bg-gray-100 rounded-full mt-3 overflow-hidden">
           <div className="h-full bg-gray-900 rounded-full" style={{ width: progress }} />
@@ -150,29 +277,31 @@ function StatCard({ label, main, sub, badge, progress }) {
 }
 
 /* ─── Radar Chart Component ─── */
-function CompetencyRadar({ skills }) {
-  if (!skills || Object.keys(skills).length === 0) {
-    return (
-      <div className={`${panelBase} p-6 h-full flex items-center justify-center`}>
-        <p className="text-gray-400 font-medium">Insufficient data for competency tracking</p>
-      </div>
-    );
-  }
+/* ─── Radar Chart Component (SO1-13) ─── */
+function CompetencyRadar({ soValues }) {
+  const [hoveredIdx, setHoveredIdx] = React.useState(null);
 
-  // Pick top 6 skills
-  const sortedSkills = Object.entries(skills).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  // Pad if less than 3
-  while (sortedSkills.length < 3) sortedSkills.push(['Pending Data', 0]);
+  const SO_INFO = [
+    { id: 'SO1', name: 'Discipline Knowledge' },
+    { id: 'SO2', name: 'Investigation' },
+    { id: 'SO3', name: 'Design/Dev. of Solutions' },
+    { id: 'SO4', name: 'Leadership' },
+    { id: 'SO5', name: 'Problem Analysis' },
+    { id: 'SO6', name: 'Ethics' },
+    { id: 'SO7', name: 'Communication' },
+    { id: 'SO8', name: 'Environment' },
+    { id: 'SO9', name: 'Lifelong Learning' },
+    { id: 'SO10', name: 'Engineering & Society' },
+    { id: 'SO11', name: 'Modern Tools' },
+    { id: 'SO12', name: 'Project Management' },
+    { id: 'SO13', name: 'Social Responsibility' },
+  ];
 
-  const labels = sortedSkills.map(s => s[0].toUpperCase().substring(0, 15));
-  // Normalize score up to max 100
-  const values = sortedSkills.map(s => Math.min(Math.max((s[1] || 0) / 100, 0), 1));
-
-  const size = 500;
+  const size = 420;
   const center = size / 2;
-  const radius = size / 2 - 80;
+  const radius = size / 2 - 50;
 
-  const angles = labels.map((_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / labels.length);
+  const angles = SO_INFO.map((_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / SO_INFO.length);
 
   const getPoint = (val, angle) => ({
     x: center + radius * val * Math.cos(angle),
@@ -187,308 +316,642 @@ function CompetencyRadar({ skills }) {
 
   const levels = [0.25, 0.5, 0.75, 1];
 
-  const dataPts = values.map((v, i) => getPoint(v, angles[i]));
+  const dataPts = soValues.map((v, i) => getPoint(v, angles[i]));
   const dataPolygon = dataPts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ') + ' Z';
 
   return (
-    <div className={`${panelBase} p-6 h-full relative`}>
-      <div className="mb-2">
-        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">OUTCOME PROFICIENCY</p>
-        <h3 className="text-[22px] font-extrabold text-gray-900 leading-tight">Core Competencies</h3>
+    <div className={`${panelBase} p-8 h-full relative overflow-hidden`}>
+      <div className="mb-8">
+        <p className="text-[10px] font-extrabold text-[#70170f] uppercase tracking-[0.2em] mb-2">STUDENT OUTCOME PROFICIENCY</p>
+        <h3 className="text-[24px] font-black text-gray-900 leading-tight"> Core Competencies</h3>
       </div>
 
-      <div className="flex justify-center items-center mt-2">
-        <svg width={size} height={size} className="overflow-visible">
-          {levels.map((level, i) => (
-            <path
-              key={`web-${i}`}
-              d={makePath(level)}
-              fill={level === 1 ? 'rgba(252,213,213,0.10)' : 'none'}
-              stroke="#f9a8a8"
-              strokeWidth={level === 1 ? 1.5 : 1}
-            />
-          ))}
-
-          <path
-            d={dataPolygon}
-            fill="rgba(200,200,200,0.30)"
-            stroke="#7a0d0d"
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-
-          {angles.map((angle, i) => {
-            const dist = radius * 1.3;
-            const x = center + dist * Math.cos(angle);
-            const y = center + dist * Math.sin(angle);
-            const cosA = Math.cos(angle);
-            const sinA = Math.sin(angle);
-            const anchor = cosA < -0.25 ? 'end' : cosA > 0.25 ? 'start' : 'middle';
-            const dy = sinA < -0.7 ? -5 : sinA > 0.7 ? 12 : 4;
-            return (
-              <text
-                key={`lbl-${i}`}
-                x={x}
-                y={y + dy}
-                textAnchor={anchor}
-                fill="#6b7280"
-                style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.07em', fontFamily: 'inherit' }}
-              >
-                {labels[i]}
-              </text>
-            );
-          })}
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Insight Alert ─── */
-function SmartInsight({ topSkills, weakSkills }) {
-  const top = topSkills?.[0] || 'Unknown Skill';
-  const weak = weakSkills?.[0] || 'Unknown Skill';
-
-  return (
-    <div className="bg-[#1a0505] rounded-2xl p-8 shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex flex-col justify-between h-full relative overflow-hidden group">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-[#bc1313] opacity-5 blur-[100px] rounded-full group-hover:opacity-10 transition-opacity duration-700" />
-
-      <div>
-        <div className="flex items-center gap-2 mb-6">
-          <Lightbulb size={14} className="text-[#bc1313]" />
-          <span className="text-[10px] font-bold text-[#bc1313] uppercase tracking-widest">SMART INSIGHT</span>
-        </div>
-
-        <p className="text-[20px] font-medium text-white leading-snug mb-3 pr-4">
-          "Surpassing target outcomes in <span className="font-bold underline decoration-[#bc1313] decoration-2 underline-offset-4">{top}</span>."
-        </p>
-
-        <p className="text-[15px] text-gray-400 font-light leading-relaxed pr-8">
-          Recommended: Focus on <span className="text-gray-200">"{weak}"</span> to bridge the gap in your overall competency profile.
-        </p>
-      </div>
-
-      <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mt-8">
-        — AI CAREER ROADMAP HELPER
-      </p>
-    </div>
-  );
-}
-
-/* ─── Outcome Badge helpers ─── */
-const OUTCOME_STYLES = {
-  'EXCEEDING EXPECTATIONS': 'bg-green-50 text-green-700 border-green-200',
-  'ON TRACK':               'bg-blue-50 text-blue-700 border-blue-200',
-  'NEEDS ATTENTION':        'bg-amber-50 text-amber-700 border-amber-200',
-  'CRITICAL':               'bg-red-50 text-red-700 border-red-200',
-};
-function outcomeChipClass(label) {
-  if (!label) return 'bg-gray-50 text-gray-600 border-gray-200';
-  const key = label.toUpperCase();
-  return OUTCOME_STYLES[key] || 'bg-gray-50 text-gray-600 border-gray-200';
-}
-
-/* ─── Expandable Course Card ─── */
-function CourseBreakdownCard({ course, onViewDetails }) {
-  const [open, setOpen] = useState(false);
-
-  const ilos      = course.ilo_scores || {};
-  const iloKeys   = Object.keys(ilos).sort();
-  const skills    = course.predicted_skills || {};
-  const topSkills = Object.entries(skills)
-    .filter(([, v]) => v > 1)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  const mastery   = Math.round(course.ilo_avg || 0);
-  const strongest = course.strongest_skill;
-  const weakest   = course.weakest_skill;
-
-  const potentialSkill = strongest;
-  const potentialNew   = course.scenario_high?.[potentialSkill];
-  const potentialNow   = skills[potentialSkill];
-  const showPotential  =
-    potentialSkill && typeof potentialNew === 'number' && typeof potentialNow === 'number';
-
-  return (
-    <div className="border border-[#f0dddd] rounded-2xl bg-white/75 overflow-hidden transition-shadow hover:shadow-[0_10px_24px_-18px_rgba(188,19,19,0.45)]">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#fff5f5]/60 transition-colors"
-      >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="text-[14px] font-bold text-gray-900 truncate">{course.course}</h4>
-            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${outcomeChipClass(course.outcome_label)}`}>
-              {course.outcome_label || 'No Data'}
-            </span>
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#1a0505] rounded-full transition-all"
-                style={{ width: `${Math.min(mastery, 100)}%` }}
+      <div className="max-w-[1000px] mx-auto flex flex-col lg:flex-row items-start justify-center gap-12">
+        {/* Left: Radar Chart */}
+        <div className="relative flex-shrink-0">
+          <svg width={size} height={size} className="overflow-visible">
+            {/* Web Levels */}
+            {levels.map((level, i) => (
+              <path
+                key={`web-${i}`}
+                d={makePath(level)}
+                fill={level === 1 ? 'rgba(112,23,15,0.02)' : 'none'}
+                stroke="#f2dfdf"
+                strokeWidth={level === 1 ? 1.5 : 1}
+                strokeDasharray={level < 1 ? "4 4" : "0"}
               />
+            ))}
+
+            {/* Axes */}
+            {angles.map((angle, i) => {
+              const p = getPoint(1, angle);
+              return (
+                <line
+                  key={`axis-${i}`}
+                  x1={center} y1={center}
+                  x2={p.x} y2={p.y}
+                  stroke="#f2dfdf"
+                  strokeWidth="1"
+                />
+              );
+            })}
+
+            {/* Data Polygon */}
+            <path
+              d={dataPolygon}
+              fill="rgba(159,7,7,0.15)"
+              stroke="#9f0707"
+              strokeWidth="3"
+              strokeLinejoin="round"
+            />
+
+            {/* Data Points with Tooltips */}
+            {dataPts.map((p, i) => (
+              <g key={`pt-group-${i}`}>
+                {/* Larger invisible hit area */}
+                <circle
+                  cx={p.x} cy={p.y} r="10"
+                  fill="transparent"
+                  className="cursor-pointer"
+                  onMouseEnter={() => setHoveredIdx(i)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                />
+                <circle
+                  cx={p.x} cy={p.y} r={hoveredIdx === i ? 5 : 3.5}
+                  fill="#9f0707"
+                  stroke="white"
+                  strokeWidth="2"
+                  className="pointer-events-none transition-all duration-200"
+                />
+                {hoveredIdx === i && (
+                  <g className="pointer-events-none">
+                    <rect
+                      x={p.x + 8} y={p.y - 14}
+                      width="38" height="20"
+                      rx="6" fill="rgba(26,5,5,0.95)"
+                      className="shadow-xl"
+                    />
+                    <text
+                      x={p.x + 27} y={p.y}
+                      textAnchor="middle"
+                      fill="white"
+                      className="text-[10px] font-black tabular-nums"
+                    >
+                      {Math.round(soValues[i] * 100)}%
+                    </text>
+                  </g>
+                )}
+              </g>
+            ))}
+
+            {/* Labels */}
+            {angles.map((angle, i) => {
+              const dist = radius * 1.08;
+              const x = center + dist * Math.cos(angle);
+              const y = center + dist * Math.sin(angle);
+              const cosA = Math.cos(angle);
+              const anchor = cosA < -0.25 ? 'end' : cosA > 0.25 ? 'start' : 'middle';
+
+              const shortLabels = [
+                'Discipline Knowledge', 'Investigation', 'Design', 'Leadership', 'Analysis',
+                'Ethics', 'Communication', 'Environment', 'Lifelong', 'Engineering & Society',
+                'Modern Tools', 'Project Management', 'Social Responsibility'
+              ];
+
+              const words = shortLabels[i].split(' ');
+              const lines = (words.length > 1 && shortLabels[i].length > 10)
+                ? [words.slice(0, Math.ceil(words.length / 2)).join(' '), words.slice(Math.ceil(words.length / 2)).join(' ')]
+                : [shortLabels[i]];
+
+              return (
+                <text
+                  key={`lbl-${i}`}
+                  x={x}
+                  y={y + (Math.sin(angle) > 0.5 ? 10 : -2) - (lines.length > 1 ? 5 : 0)}
+                  textAnchor={anchor}
+                  fill="#6b7280"
+                  className="text-[9px] font-bold tracking-tight uppercase"
+                >
+                  {lines.map((line, idx) => (
+                    <tspan key={idx} x={x} dy={idx === 0 ? 0 : '1.1em'}>{line}</tspan>
+                  ))}
+                </text>
+              );
+            })}
+          </svg>
+
+
+          {/* Legend */}
+          <div className="flex items-center gap-6 mt-8 ml-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-[#9f0707] rounded-sm" />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Student proficiency</span>
             </div>
-            <span className="text-[11px] font-bold text-gray-700 w-10 text-right">{mastery}%</span>
+            <div className="flex items-center gap-2">
+              <div className="w-0.5 h-3 bg-gray-300" />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Required level (75%)</span>
+            </div>
           </div>
         </div>
-        <ChevronDown
-          size={18}
-          className={`shrink-0 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
 
-      {open && (
-        <div className="px-5 pb-5 pt-1 border-t border-[#f7eaea] space-y-5">
-          {/* ILO chips */}
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">ILO Scores</p>
-            <div className="flex flex-wrap gap-2">
-              {iloKeys.length === 0 && <span className="text-[11px] text-gray-400">No ILO data.</span>}
-              {iloKeys.map(k => (
-                <span
-                  key={k}
-                  className="px-2.5 py-1 bg-[#fff1f1] border border-[#efd7d7] text-[#7b5656] text-[11px] font-bold rounded-lg"
-                >
-                  {k.toUpperCase()} · {Math.round(ilos[k])}%
-                </span>
+
+
+        {/* Right: SO List */}
+        <div className="flex-1 w-full max-w-md">
+
+
+
+          <div className="space-y-1">
+            {SO_INFO.map((so, i) => {
+              const val = Math.round(soValues[i] * 100);
+              const level = GRADING_SYSTEM.find(l => val >= l.min) || GRADING_SYSTEM[GRADING_SYSTEM.length - 1];
+              const colorClass = level.color;
+              const textClass = level.text;
+
+              return (
+                <div key={so.id} className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0 group hover:bg-gray-50/50 px-2 transition-colors">
+                  <div className="w-10 text-[9px] font-black text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded text-center shrink-0">
+                    {so.id}
+                  </div>
+                  <div className="w-[170px] shrink-0">
+                    <p className="text-[11px] font-bold text-gray-700 truncate">{so.name}</p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden relative">
+                      {/* 75% mark */}
+                      <div className="absolute left-[75%] top-0 bottom-0 w-px bg-gray-300 z-10" />
+                      <div className={`h-full ${colorClass} rounded-full transition-all duration-1000`} style={{ width: `${val}%` }} />
+                    </div>
+                    <span className={`w-8 text-right text-[11px] font-black tabular-nums ${textClass}`}>
+                      {val}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Full 11-level Grading Legend - 6 top, 5 bottom */}
+          <div className="mt-8">
+            <div className="grid grid-cols-6 gap-y-4 gap-x-1">
+              {GRADING_SYSTEM.map((level) => (
+                <div key={level.label} className="flex flex-col items-center gap-1.5 text-center group">
+                  <div className={`w-2 h-2 ${level.color} rounded-full shadow-sm group-hover:scale-125 transition-transform`} />
+                  <span className="text-[8.5px] font-bold text-gray-700 leading-tight group-hover:text-gray-900 transition-colors truncate w-full px-0.5" title={level.label}>
+                    {level.label}
+                  </span>
+                </div>
               ))}
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Strongest / Weakest */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50 border border-green-100">
-              <CheckCircle2 size={14} className="text-green-600 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[9px] font-bold text-green-700 uppercase tracking-widest">Strongest</p>
-                <p className="text-[12px] font-semibold text-gray-900 truncate">{strongest || '—'}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-100">
-              <AlertCircle size={14} className="text-red-600 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[9px] font-bold text-red-700 uppercase tracking-widest">Weakest</p>
-                <p className="text-[12px] font-semibold text-gray-900 truncate">{weakest || '—'}</p>
-              </div>
-            </div>
-          </div>
+    </div>
+  );
+}
 
-          {/* Predicted skill bars */}
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Predicted Skills</p>
-            {topSkills.length === 0 ? (
-              <p className="text-[11px] text-gray-400">No predicted skills above threshold.</p>
-            ) : (
-              <div className="space-y-3">
-                {topSkills.map(([name, val]) => (
-                  <div key={name}>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[12px] font-medium text-gray-800 truncate mr-2">{name}</span>
-                      <span className="text-[11px] font-bold text-gray-900">{val.toFixed(1)}</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#bc1313] rounded-full"
-                        style={{ width: `${Math.min(val, 100)}%` }}
-                      />
-                    </div>
+/* ─── Integrated AI Insights Panel ─── */
+function IntegratedInsights({ tech, nonTech, latestSem, techBoost, nonTechBoost, filterLabel }) {
+  const brandRed = '#70170f';
+
+  return (
+    <div
+      className={`${panelBase} p-6 flex flex-col h-full border-none text-white shadow-[0_20px_50px_-12px_rgba(112,23,15,0.4)] relative overflow-hidden group`}
+      style={{ backgroundColor: brandRed }}
+    >
+      <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-[0.05] blur-3xl rounded-full -mr-24 -mt-24" />
+
+      <div className="flex items-center gap-3 mb-6 relative z-10">
+        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm">
+          <Activity className="text-white" size={20} />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-[20px] font-black text-white leading-tight">AI Performance Diagnostic</h3>
+          <p className="text-[10px] text-white/50 tracking-widest uppercase mt-0.5">
+            {filterLabel ? `Scoped: ${filterLabel}` : 'Real-Time Insights · Whole Program'}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+        {/* Technical Insight (Left Column) */}
+        <div className="flex flex-col">
+          <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Technical Competency</p>
+          {tech.name ? (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-[9px] font-black text-amber-300 uppercase tracking-widest">
+                      Boost Improvement
+                    </span>
                   </div>
-                ))}
+                  <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={tech.name}>
+                    {tech.name}
+                  </h4>
+                  <p className="text-[12px] text-white/60 font-medium italic truncate">
+                    {tech.so?.so_id || 'ILO'}: {tech.so?.so_name || 'Alignment'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <div className="text-[24px] font-black text-white leading-none tracking-tighter tabular-nums">
+                    {Math.round(tech.val)}<span className="text-[12px] text-white/50 ml-0.5">%</span>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Potential hint */}
-          {showPotential && (
-            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-[#fff8e6] border border-[#f3e3a8]">
-              <Lightbulb size={14} className="text-[#a07b00] shrink-0 mt-0.5" />
-              <p className="text-[12px] text-[#5b4500] leading-snug">
-                <span className="font-bold">Potential if all ILOs = 90%:</span>{' '}
-                {potentialSkill} → <span className="font-bold">{potentialNew.toFixed(1)}</span>{' '}
-                <span className="text-[#866900]">(currently {potentialNow.toFixed(1)})</span>
+              <div className="mt-4 space-y-4">
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  {(() => {
+                    const courseName = tech.driver?.course;
+                    const getCourseSem = (name) => {
+                      if (!name) return 0;
+                      const normalized = name.trim();
+                      if (COURSE_SEMESTER_MAP[normalized]) return COURSE_SEMESTER_MAP[normalized];
+                      const key = Object.keys(COURSE_SEMESTER_MAP).find(
+                        k => k.toLowerCase() === normalized.toLowerCase()
+                      );
+                      return key ? COURSE_SEMESTER_MAP[key] : 0;
+                    };
+
+                    const courseSem = getCourseSem(courseName);
+                    const isMasteredInCourse = (tech.driver?.avg_score || 0) >= 75;
+                    const isCurrent = courseSem > 0 && courseSem === latestSem;
+                    const isPast = courseSem > 0 && courseSem < latestSem;
+                    const isFuture = courseSem > latestSem;
+
+                    if (isCurrent) {
+                      return <>Focus on improving <span className="font-bold text-white uppercase tracking-tight">{tech.name}</span> in <span className="font-bold text-white uppercase tracking-tight">{courseName}</span> since your score is currently lower here.</>;
+                    }
+                    if (isFuture) {
+                      return <>Strengthen <span className="font-bold text-white uppercase tracking-tight">{tech.name}</span> foundations to prepare for your next course: <span className="font-bold text-white uppercase tracking-tight">{courseName}</span>.</>;
+                    }
+                    if (isPast || isMasteredInCourse) {
+                      return <>Reinforce <span className="font-bold text-white uppercase tracking-tight">{tech.name}</span> concepts from <span className="font-bold text-white uppercase tracking-tight">{courseName || 'Past Courses'}</span> in your current projects.</>;
+                    }
+                    return <>Monitor performance in <span className="font-bold text-white uppercase tracking-tight">{courseName || 'Core Subjects'}</span> to reverse the trend.</>;
+                  })()}
+                </p>
+                <div className="">
+                  <p className="text-[11px] text-white/40 font-medium italic">
+                    Course alignment: <span className="text-white/60">{tech.driver?.course || 'General Curriculum'}</span> strengthens <span className="text-white/60">{tech.name}</span> via <span className="text-white/60">{tech.so?.so_id || 'SO'}</span>.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          ) : techBoost?.name ? (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-[9px] font-black text-emerald-300 uppercase tracking-widest">
+                      Boost Proficiency
+                    </span>
+                  </div>
+                  <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={techBoost.name}>
+                    {techBoost.name}
+                  </h4>
+                  <p className="text-[12px] text-white/60 font-medium italic truncate">
+                    {techBoost.so?.so_id || 'SO'}: {techBoost.so?.so_name || 'Lowest passing skill'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <div className="text-[24px] font-black text-white leading-none tracking-tighter tabular-nums">
+                    {Math.round(techBoost.val)}<span className="text-[12px] text-white/50 ml-0.5">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  {techBoost.driver?.course
+                    ? <>Push <span className="font-bold text-white uppercase tracking-tight">{techBoost.name}</span> toward <span className="font-bold text-emerald-300">EXCELLENT</span> by taking on more advanced problems in <span className="font-bold text-white uppercase tracking-tight">{techBoost.driver.course}</span> — this course offers the strongest opportunity to deepen this competency.</>
+                    : <>Aim higher in <span className="font-bold text-white uppercase tracking-tight">{techBoost.name}</span> — target an 85%+ standing by going beyond the rubric on upcoming assessments.</>}
+                </p>
+                <p className="text-[11px] text-white/40 font-medium italic">
+                  Lowest passing skill in your {filterLabel ? 'filtered' : 'technical'} scope · {(90 - techBoost.val).toFixed(1)}% remaining to reach the Excellent band (90%).
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col justify-center items-center border border-dashed border-white/10 rounded-2xl p-6 text-center">
+              <CheckCircle2 className="text-emerald-400 mb-2" size={24} />
+              <p className="text-[11px] text-white/60 font-bold tracking-wide">No Technical Signal</p>
+              <p className="text-[11px] text-white/55 mt-3 leading-relaxed">
+                No technical skills graded yet in this scope.
               </p>
             </div>
           )}
+        </div>
 
-          {/* View Details */}
-          <div className="flex justify-end pt-1">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewDetails(course.course);
-              }}
-              className="flex items-center gap-1.5 text-[12px] font-bold text-[#bc1313] hover:text-[#7a0d0d] transition-colors"
-            >
-              View Details <ChevronRight size={14} />
-            </button>
+        {/* Professional Insight (Right Column) */}
+        <div className="flex flex-col border-l border-white/10 pl-0 md:pl-8">
+          <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Professional Skills</p>
+          {nonTech.name ? (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-[9px] font-black text-amber-300 uppercase tracking-widest">
+                      Boost Improvement
+                    </span>
+                  </div>
+                  <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={nonTech.name}>
+                    {nonTech.name}
+                  </h4>
+                  <p className="text-[12px] text-white/60 font-medium italic truncate">
+                    {nonTech.so?.so_id || 'SO'}: {nonTech.so?.so_name || 'Alignment'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <div className="text-[24px] font-black text-white leading-none tracking-tighter tabular-nums">
+                    {Math.round(nonTech.val)}<span className="text-[12px] text-white/50 ml-0.5">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  {(() => {
+                    const courseName = nonTech.driver?.course;
+                    const getCourseSem = (name) => {
+                      if (!name) return 0;
+                      const normalized = name.trim();
+                      if (COURSE_SEMESTER_MAP[normalized]) return COURSE_SEMESTER_MAP[normalized];
+                      const key = Object.keys(COURSE_SEMESTER_MAP).find(
+                        k => k.toLowerCase() === normalized.toLowerCase()
+                      );
+                      return key ? COURSE_SEMESTER_MAP[key] : 0;
+                    };
+
+                    const courseSem = getCourseSem(courseName);
+                    const isMasteredInCourse = (nonTech.driver?.avg_score || 0) >= 75;
+                    const isCurrent = courseSem > 0 && courseSem === latestSem;
+                    const isPast = courseSem > 0 && courseSem < latestSem;
+                    const isFuture = courseSem > latestSem;
+
+                    if (isCurrent) {
+                      return <>Improve your <span className="font-bold text-white uppercase tracking-tight">{nonTech.name}</span> skills in <span className="font-bold text-white uppercase tracking-tight">{courseName}</span> since your performance is lower here.</>;
+                    }
+                    if (isFuture) {
+                      return <>Build <span className="font-bold text-white uppercase tracking-tight">{nonTech.name}</span> proficiency to prepare for your next course: <span className="font-bold text-white uppercase tracking-tight">{courseName}</span>.</>;
+                    }
+                    if (isPast || isMasteredInCourse) {
+                      return <>Reinforce <span className="font-bold text-white uppercase tracking-tight">{nonTech.name}</span> concepts from <span className="font-bold text-white uppercase tracking-tight">{courseName || 'Completed Subjects'}</span> in your current projects.</>;
+                    }
+                    return <>Continue focusing on <span className="font-bold text-white uppercase tracking-tight">{nonTech.name}</span> development.</>;
+                  })()}
+                </p>
+                <div className="">
+                  <p className="text-[11px] text-white/40 font-medium italic">
+                    Course alignment: <span className="text-white/60">{nonTech.driver?.course || 'General Curriculum'}</span> strengthens <span className="text-white/60">{nonTech.name}</span> via <span className="text-white/60">{nonTech.so?.so_id || 'SO'}</span>.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          ) : nonTechBoost?.name ? (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-[9px] font-black text-emerald-300 uppercase tracking-widest">
+                      Boost Proficiency
+                    </span>
+                  </div>
+                  <h4 className="text-[18px] font-black text-white leading-tight mb-1 truncate" title={nonTechBoost.name}>
+                    {nonTechBoost.name}
+                  </h4>
+                  <p className="text-[12px] text-white/60 font-medium italic truncate">
+                    {nonTechBoost.so?.so_id || 'SO'}: {nonTechBoost.so?.so_name || 'Lowest passing skill'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <div className="text-[24px] font-black text-white leading-none tracking-tighter tabular-nums">
+                    {Math.round(nonTechBoost.val)}<span className="text-[12px] text-white/50 ml-0.5">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  {nonTechBoost.driver?.course
+                    ? <>Lift <span className="font-bold text-white uppercase tracking-tight">{nonTechBoost.name}</span> toward <span className="font-bold text-emerald-300">EXCELLENT</span> by engaging more deeply in <span className="font-bold text-white uppercase tracking-tight">{nonTechBoost.driver.course}</span> — this course provides the strongest opportunity to develop this competency further.</>
+                    : <>Develop <span className="font-bold text-white uppercase tracking-tight">{nonTechBoost.name}</span> further through peer-led projects, presentations, or leadership roles in upcoming coursework.</>}
+                </p>
+                <p className="text-[11px] text-white/40 font-medium italic">
+                  Lowest passing skill in your {filterLabel ? 'filtered' : 'professional'} scope · {(90 - nonTechBoost.val).toFixed(1)}% remaining to reach the Excellent band (90%).
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col justify-center items-center border border-dashed border-white/10 rounded-2xl p-6 text-center">
+              <CheckCircle2 className="text-emerald-400 mb-2" size={24} />
+              <p className="text-[11px] text-white/60 font-bold tracking-wide">No Professional Signal</p>
+              <p className="text-[11px] text-white/55 mt-3 leading-relaxed">
+                No professional skills graded yet in this scope.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+/* ─── Proficiency Growth helpers ─── */
+/* ─── Proficiency Growth helpers ─── */
+
+
+function getCoursesForSkill(skill, perCourse) {
+  if (!skill || !Array.isArray(perCourse)) return [];
+  
+  const getSemester = (courseName) => {
+    if (!courseName) return 0;
+    const normalized = courseName.trim();
+    if (COURSE_SEMESTER_MAP[normalized]) return COURSE_SEMESTER_MAP[normalized];
+    const key = Object.keys(COURSE_SEMESTER_MAP).find(
+      k => k.toLowerCase() === normalized.toLowerCase()
+    );
+    return key ? COURSE_SEMESTER_MAP[key] : 0;
+  };
+
+  return perCourse
+    .map(c => ({
+      course: c.course,
+      score: c.predicted_skills?.[skill] ?? 0,
+      potential: c.scenario_high?.[skill] ?? 0,
+      avg_score: c.ilo_avg || 0,
+      semester: getSemester(c.course)
+    }))
+    .filter(r => r.score > 0.1 || r.potential > 0.1)
+    .sort((a, b) => b.score - a.score);
+}
+
+function RankedSkillsChart({ sortedSkills, animated, perCourse = [] }) {
+  const [activeSkillModal, setActiveSkillModal] = useState(null);
+  const overlayRef = useRef(null);
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') setActiveSkillModal(null); }
+    if (activeSkillModal) {
+      document.addEventListener('keydown', onKey);
+    }
+    return () => document.removeEventListener('keydown', onKey);
+  }, [activeSkillModal]);
+
+  if (sortedSkills.length === 0) {
+    return (
+      <div className="bg-white border border-gray-100 rounded-2xl p-5">
+        <p className="text-[12px] text-gray-400 font-medium">No skill data available.</p>
+      </div>
+    );
+  }
+
+  // Group skills into the 11 categories based on the GRADING_SYSTEM ranges
+  const categorizedBoxes = GRADING_SYSTEM.map((level, idx) => {
+    const nextLevel = GRADING_SYSTEM[idx - 1]; // next higher level (since the array is sorted high to low)
+    const skills = sortedSkills.filter(([, val]) => {
+      const isAboveMin = val >= level.min;
+      const isBelowNextMin = nextLevel ? val < nextLevel.min : true;
+      return isAboveMin && isBelowNextMin;
+    });
+
+    // Calculate range text for student clarity
+    const rangeText = nextLevel
+      ? `${level.min}-${(nextLevel.min - 0.1).toFixed(1)}%`
+      : `${level.min}-100%`;
+
+    return { ...level, skills, rangeText };
+  }).filter(box => box.skills.length > 0);
+
+  const sourceCourses = activeSkillModal ? getCoursesForSkill(activeSkillModal.name, perCourse) : [];
+
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        {categorizedBoxes.map((box, idx) => (
+          <div key={idx} className={`rounded-2xl border ${box.border} ${box.bg} p-5 flex flex-col shadow-sm transition-all hover:shadow-md`}>
+            <div className="flex justify-between items-start mb-5">
+              <div className="flex flex-col">
+                <h4 className={`text-[13px] font-black ${box.text} tracking-tight`}>{box.label}</h4>
+                <span className={`text-[10px] font-bold ${box.text} opacity-50 tabular-nums`}>{box.rangeText}</span>
+              </div>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 ${box.text} border ${box.border}`}>{box.skills.length}</span>
+            </div>
+            <div className="flex-1 space-y-3.5">
+              {box.skills.map(([name, val]) => (
+                <div key={name} className="group">
+                  <div className="flex justify-between items-center mb-1 gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <span className={`text-[11px] font-bold truncate ${box.text} opacity-90`} title={name}>{name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSkillModal({ name, val })}
+                        className="shrink-0 p-0.5 hover:bg-black/5 rounded text-inherit opacity-75 hover:opacity-100 transition-opacity"
+                        title="View source subjects"
+                      >
+                        <AlertCircle size={12} className={box.text} />
+                      </button>
+                    </div>
+                    <span className={`text-[10px] font-black tabular-nums ${box.text}`}>{val.toFixed(1)}</span>
+                  </div>
+                  <div className="w-full h-1 bg-black/5 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${box.color} rounded-full transition-all duration-1000 ease-out`}
+                      style={{ width: animated ? `${val}%` : '0%' }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {activeSkillModal && (
+        <div
+          ref={overlayRef}
+          onMouseDown={(e) => { if (e.target === overlayRef.current) setActiveSkillModal(null); }}
+          className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div className="w-full max-w-md max-h-[85vh] bg-gradient-to-br from-white via-[#fffbfb] to-[#fcf4f2] border border-[#eed7d3] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-scale-up">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-[#f2dfdf] flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Skill Source Analysis</p>
+                <h3 className="text-[16px] font-bold text-gray-900 truncate" title={activeSkillModal.name}>
+                  {activeSkillModal.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSkillModal(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              <div className="flex justify-between items-center bg-[#fff8f8] border border-[#f3dada] rounded-xl p-3">
+                <span className="text-[12px] font-semibold text-[#70170f]">Overall Proficiency</span>
+                <span className="text-[14px] font-black text-[#70170f]">{activeSkillModal.val.toFixed(1)}%</span>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Contributing Subjects</p>
+                {sourceCourses.length === 0 ? (
+                  <p className="text-[12px] text-gray-500 italic text-center py-4 bg-gray-50 rounded-xl border border-gray-100">
+                    No academic subject has mapped score data for this skill.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {sourceCourses.map(c => {
+                      const level = GRADING_SYSTEM.find(l => c.score >= l.min) || GRADING_SYSTEM[GRADING_SYSTEM.length - 1];
+                      return (
+                        <div key={c.course} className="p-3 border border-gray-150 rounded-xl bg-white hover:border-[#eed7d3] hover:bg-[#fffcfc] transition-all flex flex-col gap-2 shadow-xs">
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-[12px] font-bold text-gray-800 leading-snug break-words max-w-[75%]" title={c.course}>
+                              {c.course}
+                            </span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded border shrink-0 ${level.bg} ${level.text} ${level.border}`}>
+                              {c.score.toFixed(1)}%
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center text-[10px] text-gray-400 font-medium">
+                            <span>Subject Average Grade:</span>
+                            <span className="font-bold text-gray-600">{c.avg_score.toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-[#eed7d3] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setActiveSkillModal(null)}
+                className="px-4 py-2 bg-white border border-[#eed7d3] hover:bg-gray-50 text-gray-700 text-[12px] font-bold rounded-xl transition-colors shadow-xs"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-/* ─── Proficiency Growth helpers ─── */
-function tierForIndex(idx, third) {
-  if (idx < third) return { name: 'text-green-800 font-medium', bar: 'bg-green-600', val: 'text-green-700' };
-  if (idx < third * 2) return { name: 'text-amber-800', bar: 'bg-amber-500', val: 'text-amber-700' };
-  return { name: 'text-red-800', bar: 'bg-red-600', val: 'text-red-700' };
-}
-
-function GrowthLegend() {
-  return (
-    <div className="flex items-center gap-3 shrink-0">
-      <span className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500">
-        <span className="w-2 h-2 rounded-full bg-green-600" /> Top third
-      </span>
-      <span className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500">
-        <span className="w-2 h-2 rounded-full bg-amber-500" /> Middle third
-      </span>
-      <span className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500">
-        <span className="w-2 h-2 rounded-full bg-red-600" /> Bottom third
-      </span>
-    </div>
-  );
-}
-
-function RankedSkillsChart({ sortedSkills, third, animated }) {
-  const maxScore = sortedSkills[0]?.[1] || 1;
-  return (
-    <div className="bg-white border border-gray-100 rounded-2xl h-full flex flex-col">
-      <div className="p-5 border-b border-gray-100">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <h4 className="text-[12px] font-bold text-gray-900">All skills — sorted highest to lowest</h4>
-          <span className="text-[10px] text-gray-400 font-medium">Bars scaled relative to top score</span>
-        </div>
-        <GrowthLegend />
-      </div>
-      <div className="flex-1 p-5 space-y-3.5">
-        {sortedSkills.length === 0 ? (
-          <p className="text-[12px] text-gray-400 font-medium">No skill data available.</p>
-        ) : sortedSkills.map(([name, val], i) => {
-          const cls = tierForIndex(i, third);
-          const target = maxScore > 0 ? (val / maxScore) * 100 : 0;
-          return (
-            <div key={name}>
-              <div className="flex justify-between items-center mb-1 gap-2">
-                <span className={`text-[12px] truncate ${cls.name}`} title={name}>{name}</span>
-                <span className={`text-[11px] font-bold tabular-nums ${cls.val}`}>{val.toFixed(1)}</span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${cls.bar} rounded-full transition-all duration-1000 ease-out`}
-                  style={{ width: animated ? `${target}%` : '0%' }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -528,37 +991,77 @@ function IloBreakdownCard({ iloScores }) {
   );
 }
 
-function topCoursesForSkill(skill, perCourse, mode) {
+function topCoursesForSkill(skill, perCourse, mode, latestSem = 0, isFiltered = false) {
   if (!skill || !Array.isArray(perCourse) || perCourse.length === 0) return [];
+
+  const getSemester = (courseName) => {
+    if (!courseName) return 0;
+    const normalized = courseName.trim();
+    if (COURSE_SEMESTER_MAP[normalized]) return COURSE_SEMESTER_MAP[normalized];
+    const key = Object.keys(COURSE_SEMESTER_MAP).find(
+      k => k.toLowerCase() === normalized.toLowerCase()
+    );
+    return key ? COURSE_SEMESTER_MAP[key] : 0;
+  };
+
   return perCourse
     .map(c => ({
       course: c.course,
       current: c.predicted_skills?.[skill] ?? 0,
       potential: c.scenario_high?.[skill] ?? 0,
+      avg_score: c.ilo_avg || 0, // Overall subject average
+      semester: getSemester(c.course)
     }))
-    .filter(r => r.current > 0.5 || r.potential > 0.5)
-    .sort((a, b) => mode === 'achieved'
-      ? b.current - a.current
-      : (b.potential - b.current) - (a.potential - a.current))
+    .filter(r => {
+      // CRITICAL: Only include courses that actually HAVE graded data.
+      if (!r.avg_score || r.avg_score <= 0) return false;
+
+      const base = r.current > 0.5 || r.potential > 0.5;
+
+      if (mode === 'achieved') {
+        // 'Achieved' mode shows courses where the student has reached the competency threshold (>= 75).
+        return base && r.avg_score >= 75;
+      }
+
+      if (mode === 'developing') {
+        // 'Developing' mode shows courses where there is room for growth.
+        // We include anything below 75%, OR courses above 75% that still have 
+        // a noticeable potential gap (> 1.0) to their predicted ceiling.
+        const growthGap = r.potential - r.current;
+        return base && (r.avg_score < 75 || growthGap > 1.0);
+      }
+      return base;
+    })
+    .sort((a, b) => {
+      const scoreA = mode === 'achieved' ? a.current : (a.potential - a.current);
+      const scoreB = mode === 'achieved' ? b.current : (b.potential - b.current);
+
+      if (Math.abs(scoreB - scoreA) > 1.0) {
+        return scoreB - scoreA;
+      }
+
+      return b.semester - a.semester;
+    })
     .slice(0, 3);
 }
 
-function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, barNode, divider }) {
-  const recs = topCoursesForSkill(skill, perCourse, mode);
+function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, barNode, divider, latestSem = 0, isFiltered = false }) {
+  const recs = topCoursesForSkill(skill, perCourse, mode, latestSem, isFiltered);
   return (
     <div className={divider ? 'border-b border-gray-100 pb-3' : ''}>
       <div className="flex justify-between items-center gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-[13px] font-semibold text-gray-800 truncate" title={skill}>{skill}</span>
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-label={`How to ${mode === 'achieved' ? 'maintain' : 'grow'} ${skill}`}
-            className={`shrink-0 transition-colors ${isOpen ? 'text-[#bc1313]' : 'text-gray-400 hover:text-[#bc1313]'}`}
-          >
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex items-center gap-1.5 min-w-0 group/skill"
+        >
+          <span className={`text-[13px] font-semibold truncate transition-colors ${isOpen ? 'text-[#70170f]' : 'text-gray-800 group-hover/skill:text-[#70170f]'}`} title={skill}>
+            {skill}
+          </span>
+          <div className={`shrink-0 transition-colors ${isOpen ? 'text-[#70170f]' : 'text-gray-400 group-hover/skill:text-[#70170f]'}`}>
             <AlertCircle size={13} />
-          </button>
-        </div>
+          </div>
+        </button>
         {valueNode}
       </div>
       {barNode}
@@ -574,9 +1077,25 @@ function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, bar
               {recs.map(r => (
                 <div key={r.course} className="flex justify-between items-center gap-2">
                   <span className="text-[11px] text-gray-700 truncate" title={r.course}>{r.course}</span>
-                  <span className="text-[10px] text-gray-500 tabular-nums shrink-0">
-                    {r.current.toFixed(1)} → <span className="text-green-700 font-bold">{r.potential.toFixed(1)}</span>
-                  </span>
+                  <div className="flex items-center gap-2 tabular-nums shrink-0">
+                    {(() => {
+                      const level = GRADING_SYSTEM.find(l => r.current >= l.min) || GRADING_SYSTEM[GRADING_SYSTEM.length - 1];
+                      const gain = r.potential - r.current;
+
+                      return (
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-bold ${level.bg} ${level.text} px-1.5 py-0.5 rounded border ${level.border}`}>
+                            {r.current.toFixed(1)}
+                          </span>
+                          {mode === 'developing' && gain > 0 && (
+                            <span className="text-[10px] text-emerald-600 font-black">
+                              +{gain.toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               ))}
             </div>
@@ -592,31 +1111,12 @@ function SkillHintRow({ skill, perCourse, mode, isOpen, onToggle, valueNode, bar
   );
 }
 
-function MlInsightCard({ topSkill, topVal, weakSkill, weakVal, target }) {
-  const aboveOrBelow = topVal != null && topVal >= target ? 'above' : 'below';
-  const fmt = (v) => (v != null ? v.toFixed(1) : '—');
-  return (
-    <div className="rounded-2xl p-5 text-white" style={{ backgroundColor: '#0d0101' }}>
-      <div className="flex items-center gap-2 mb-4">
-        <span className="w-2 h-2 rounded-full bg-[#bc1313]" />
-        <span className="text-[10px] font-bold text-[#bc1313] uppercase tracking-widest">ML Insight</span>
-      </div>
-      <p className="text-[13px] text-gray-100 leading-relaxed mb-3">
-        <span className="font-bold">{topSkill || 'No data'}</span> is your highest-scoring skill at{' '}
-        <span className="font-bold">{fmt(topVal)}</span> — {aboveOrBelow} course target.
-      </p>
-      <p className="text-[13px] text-gray-300 leading-relaxed">
-        <span className="font-bold">{weakSkill || 'No data'}</span> has the widest gap at{' '}
-        <span className="font-bold">{fmt(weakVal)}</span> — flagged as highest priority.
-      </p>
-    </div>
-  );
-}
 
 /* ─── View Main Component ─── */
-export default function StudentPerformanceView({ user }) {
+export default function StudentPerformanceView({ user, studentId = null }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [showAllActivities, setShowAllActivities] = useState(false);
   const [semester, setSemester] = useState('All Semesters');
   const [category, setCategory] = useState('All Subjects');
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -628,16 +1128,59 @@ export default function StudentPerformanceView({ user }) {
     return () => clearTimeout(t);
   }, []);
 
-  const { classes, predictions, iloCoverage, loading } = useStudentData();
-  const notifications = []; // Mock left empty as requested dynamically
-  const unreadCount = 0;
+  const getFilterParams = () => {
+    const params = {};
+    if (category !== 'All Subjects') params.category = category;
+    if (semester !== 'All Semesters') {
+      const match = semester.match(/(\d)(?:st|nd|rd|th)\sYear,\s(\d)(?:st|nd|rd|th)\sSem/);
+      if (match) {
+        params.year_level = parseInt(match[1]);
+        params.semester = parseInt(match[2]);
+      }
+    }
+    return params;
+  };
+
+  const { profile, classes, predictions, iloCoverage, loading, refetch: refetchPredictions } = useStudentData(getFilterParams(), studentId);
+  const { items: notifications, refetch: refetchActivity } = useActivityFeed(10, { disabled: !!studentId });
+  const unreadCount = notifications.filter(n => n.unread).length;
+  const lastGradeTs = useRef(null);
+
+  useEffect(() => {
+    if (studentId) return;
+    if (!notifOpen || unreadCount === 0) return;
+    studentService.markActivityRead()
+      .then(() => refetchActivity())
+      .catch(() => { });
+  }, [notifOpen, unreadCount, refetchActivity, studentId]);
+
+  // Refetch ML predictions whenever the instructor releases a new grade.
+  // Why: backend caches by hash(score_inputs); a new grade changes the hash,
+  // so a fetch returns fresh ML output. We trigger that fetch off the
+  // grade_released activity event the polling feed already surfaces.
+  useEffect(() => {
+    if (studentId) return;
+    const latestGrade = notifications.find(n => n.type === 'grade_released');
+    if (!latestGrade) return;
+    if (lastGradeTs.current !== latestGrade.created_at) {
+      if (lastGradeTs.current !== null) refetchPredictions();
+      lastGradeTs.current = latestGrade.created_at;
+    }
+  }, [notifications, refetchPredictions, studentId]);
 
   if (loading) {
     return <StudentPerformanceSkeleton />;
   }
 
   if (selectedCourse) {
-    return <StudentCourseDetailView courseName={selectedCourse} user={user} onBack={() => setSelectedCourse(null)} />;
+    return (
+      <StudentCourseDetailView
+        courseName={selectedCourse}
+        user={user}
+        studentId={studentId}
+        onBack={() => setSelectedCourse(null)}
+      />
+    );
   }
 
   const hasActiveFilters = semester !== 'All Semesters' || category !== 'All Subjects';
@@ -649,16 +1192,29 @@ export default function StudentPerformanceView({ user }) {
   const AtRisk = [];
 
   Object.entries(aggSkills).forEach(([key, val]) => {
-     if (val >= 90) HighPerforming.push({ name: key, val: `${Math.round(val)}%` });
-     else if (val >= 70) Satisfactory.push({ name: key, val: `${Math.round(val)}%` });
-     else AtRisk.push({ name: key, val: `${Math.round(val)}%` });
+    if (val >= 90) HighPerforming.push({ name: key, val: `${Math.round(val)}%` });
+    else if (val >= 70) Satisfactory.push({ name: key, val: `${Math.round(val)}%` });
+    else AtRisk.push({ name: key, val: `${Math.round(val)}%` });
   });
 
-  // Relative-thirds bucketing for Proficiency Growth Analysis
-  const sortedSkills = Object.entries(aggSkills).sort((a, b) => b[1] - a[1]);
+  // Relative-thirds bucketing for Proficiency Growth Analysis.
+  // When a semester/category filter is active, hide skills with no score yet —
+  // they represent competencies not present/attainable in the selected window,
+  // so showing them as a wall of zeros in "Needs to Focus" is noise. The
+  // `> 1.0` threshold matches `activeSkills` below, so the Skills Attained and
+  // Needs Attention cards share the same "introduced skills" denominator.
+  const allSortedSkills = Object.entries(aggSkills).sort((a, b) => b[1] - a[1]);
+  const sortedSkills = hasActiveFilters
+    ? allSortedSkills.filter(([, v]) => v > 1.0)
+    : allSortedSkills;
   const skillsTotal = sortedSkills.length;
   const skillsThird = Math.ceil(skillsTotal / 3) || 0;
-  const topThird = sortedSkills.slice(0, skillsThird);
+  // ACHIEVED requires reaching the Passing threshold (75). Below that the
+  // skill is "Needs to Focus", so it shouldn't be listed as achieved — and
+  // listing it would also produce an empty "Maintain through these courses"
+  // list because the per-course filter uses the same 75 threshold.
+  const ACHIEVED_THRESHOLD = 75;
+  const topThird = sortedSkills.slice(0, skillsThird).filter(([, v]) => v >= ACHIEVED_THRESHOLD);
   const midThird = sortedSkills.slice(skillsThird, skillsThird * 2);
   const botThird = sortedSkills.slice(skillsThird * 2);
 
@@ -679,14 +1235,139 @@ export default function StudentPerformanceView({ user }) {
     return out;
   })();
 
-  // ML insight values
+  // Global Latest Semester: The student's actual current standing in the program.
+  // We use this for the 'Achieved' vs 'Developing' logic, so that filtering
+  // doesn't hide signals.
+  const studentCurrentSem = (() => {
+    // We prioritize the official profile standing (e.g., Year 4, Sem 2 = Sem 8).
+    // This makes the logic immune to filters.
+    if (profile?.year_level && profile?.semester) {
+      return (profile.year_level - 1) * 2 + profile.semester;
+    }
+    // Fallback: We look at all classes (archived and active) to find the highest semester reached.
+    const all = [...(classes || [])];
+    if (!all.length) return 8; // Default to senior if no class data
+    const sems = all.map(c => c.semester || 0);
+    return Math.max(0, ...sems);
+  })();
+
+  // Latest Semester context for the filtered view (used in UI logic)
+  const latestSem = (() => {
+    const courses = predictions?.per_course || [];
+    if (!courses.length) return studentCurrentSem;
+    const sems = courses.map(c => COURSE_SEMESTER_MAP[c.course] || 0);
+    return Math.max(0, ...sems);
+  })();
+
+  // ML insight values — Smart Insights leans on the trained pipeline output
+  // for both ceilings (scenario_high) and outcome alignment (skill_so_map).
   const topSkillName = predictions?.top_skills?.[0];
-  const weakSkillName = predictions?.weak_skills?.[0];
   const topSkillVal = topSkillName != null ? aggSkills[topSkillName] : null;
-  const weakSkillVal = weakSkillName != null ? aggSkills[weakSkillName] : null;
-  const skillAvg = sortedSkills.length
-    ? sortedSkills.reduce((a, [, v]) => a + v, 0) / sortedSkills.length
-    : 0;
+
+  // Per-skill ML ceiling — mean scenario_high across courses that produce
+  // a non-zero scenario for the skill. Replaces the old "+8" placeholder.
+  const meanCeilingForSkill = (skill) => {
+    if (!skill) return 0;
+    const per = predictions?.per_course || [];
+    const vals = per
+      .map(c => c.scenario_high?.[skill])
+      .filter(v => typeof v === 'number' && isFinite(v) && v > 0);
+    if (!vals.length) return 0;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  };
+  // Primary SO each highlighted skill aligns to (from backend skill_so_map).
+  const skillSoMap = predictions?.skill_so_map || {};
+
+  const isTechnical = (skillName) => {
+    const techSkills = [
+      "Mathematics & Science Foundations",
+      "Programming & Software Development",
+      "Hardware & Circuit Design",
+      "Embedded & Microprocessor Systems",
+      "Networking & Communications",
+      "Operating Systems & Architecture",
+      "Signal Processing & Control Systems",
+      "Data Science & AI/ML",
+      "Engineering Design & Research",
+      "Modern Engineering Tools"
+    ];
+    return techSkills.includes(skillName);
+  };
+
+  const weakTechSkillName = Object.keys(aggSkills)
+    .filter(s => isTechnical(s) && aggSkills[s] > 0 && aggSkills[s] < 75)
+    .sort((a, b) => aggSkills[a] - aggSkills[b])[0] || null;
+
+  const weakProfessionalSkillName = Object.keys(aggSkills)
+    .filter(s => !isTechnical(s) && aggSkills[s] > 0 && aggSkills[s] < 75)
+    .sort((a, b) => aggSkills[a] - aggSkills[b])[0] || null;
+
+  // Top tech/non-tech strengths — surfaced in Priority Recommendations when
+  // the student has no weak skill, so the boost-branch can reference them.
+  const strongTechSkillName = Object.keys(aggSkills)
+    .filter(s => isTechnical(s) && aggSkills[s] >= 75)
+    .sort((a, b) => aggSkills[b] - aggSkills[a])[0] || null;
+  const strongProfessionalSkillName = Object.keys(aggSkills)
+    .filter(s => !isTechnical(s) && aggSkills[s] >= 75)
+    .sort((a, b) => aggSkills[b] - aggSkills[a])[0] || null;
+  const strongTechVal = strongTechSkillName != null ? aggSkills[strongTechSkillName] : null;
+  const strongProfessionalVal = strongProfessionalSkillName != null ? aggSkills[strongProfessionalSkillName] : null;
+
+  // Boost targets — the LOWEST passing skill in each category (≥75 but at the
+  // bottom of the high range). Only computed when there's no weak skill in
+  // that category, so the diagnostic and recommendations flip cleanly from
+  // "fix risk" to "push the next-weakest skill higher" without overlap.
+  const boostTechSkillName = !weakTechSkillName
+    ? Object.keys(aggSkills)
+        .filter(s => isTechnical(s) && aggSkills[s] >= 75)
+        .sort((a, b) => aggSkills[a] - aggSkills[b])[0] || null
+    : null;
+  const boostProfessionalSkillName = !weakProfessionalSkillName
+    ? Object.keys(aggSkills)
+        .filter(s => !isTechnical(s) && aggSkills[s] >= 75)
+        .sort((a, b) => aggSkills[a] - aggSkills[b])[0] || null
+    : null;
+  const boostTechVal = boostTechSkillName != null ? aggSkills[boostTechSkillName] : null;
+  const boostProfessionalVal = boostProfessionalSkillName != null ? aggSkills[boostProfessionalSkillName] : null;
+  const boostTechSO = boostTechSkillName ? skillSoMap[boostTechSkillName] : null;
+  const boostProfessionalSO = boostProfessionalSkillName ? skillSoMap[boostProfessionalSkillName] : null;
+
+  const weakTechVal = weakTechSkillName != null ? aggSkills[weakTechSkillName] : null;
+  const weakProfessionalVal = weakProfessionalSkillName != null ? aggSkills[weakProfessionalSkillName] : null;
+
+  const weakSkillName = weakTechSkillName || weakProfessionalSkillName;
+  const weakSkillVal = weakTechVal || weakProfessionalVal;
+
+  const topSkillCeiling = meanCeilingForSkill(topSkillName);
+  const weakSkillCeiling = meanCeilingForSkill(weakSkillName);
+
+  const weakTechSO = weakTechSkillName ? skillSoMap[weakTechSkillName] : null;
+  const weakProfessionalSO = weakProfessionalSkillName ? skillSoMap[weakProfessionalSkillName] : null;
+
+  const isFiltered = semester !== 'All Semesters';
+
+  const weakTechDriver = weakTechSkillName
+    ? topCoursesForSkill(weakTechSkillName, predictions?.per_course || [], 'developing', studentCurrentSem, isFiltered)[0] || null
+    : null;
+  const weakProfessionalDriver = weakProfessionalSkillName
+    ? topCoursesForSkill(weakProfessionalSkillName, predictions?.per_course || [], 'developing', studentCurrentSem, isFiltered)[0] || null
+    : null;
+
+  // Boost drivers — using 'developing' mode lets us find the course with the
+  // largest growth gap, which is the highest-leverage place to push a passing
+  // skill toward EXCELLENT.
+  const boostTechDriver = boostTechSkillName
+    ? topCoursesForSkill(boostTechSkillName, predictions?.per_course || [], 'developing', studentCurrentSem, isFiltered)[0] || null
+    : null;
+  const boostProfessionalDriver = boostProfessionalSkillName
+    ? topCoursesForSkill(boostProfessionalSkillName, predictions?.per_course || [], 'developing', studentCurrentSem, isFiltered)[0] || null
+    : null;
+
+  const weakSkillSO = weakTechSO || weakProfessionalSO;
+  const weakSkillDriver = weakTechDriver || weakProfessionalDriver;
+  const boostSkillName = boostTechSkillName || boostProfessionalSkillName;
+  const boostSkillVal = boostTechVal ?? boostProfessionalVal;
+  const boostSkillDriver = boostTechDriver || boostProfessionalDriver;
 
   // Predicted skillsets — biggest growth gap (current vs scenario_high) across courses
   const predictedPotential = (() => {
@@ -716,254 +1397,522 @@ export default function StudentPerformanceView({ user }) {
       .slice(0, 3);
   })();
 
-  return (
-    <div className="p-8 space-y-6 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(188,19,19,0.35)]">
+  // SO proficiency for the radar — sourced from the trained ML pipeline's
+  // skill→SO projection (predictions.so_scores, 0–100). Each grade upload
+  // invalidates the backend cache, so this re-fetches with fresh values.
+  const soScores = predictions?.so_scores || {};
+  const soValues = Array.from({ length: 13 }, (_, i) => {
+    const raw = soScores[`SO${i + 1}`];
+    if (typeof raw !== 'number' || !isFinite(raw)) return 0;
+    return Math.min(Math.max(raw / 100, 0), 1);
+  });
 
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">STUDENT OVERVIEW</p>
-          <h1 className="text-[2.2rem] font-extrabold text-gray-900 leading-tight">Performance Analytics</h1>
+  // ── Four ML-driven key metrics ─────────────────────────────────────────────
+  // All values are derived from the trained pipeline output returned by
+  // /api/student/predictions; refetched whenever a grade_released event fires.
+  const activeSkills = Object.entries(aggSkills).filter(([, v]) => v > 1.0);
+  const totalActive = activeSkills.length;
+
+  // 1. Competencies Attained — skills at or above the competency threshold (75).
+  const COMPETENT_THRESHOLD = 75;
+  const AT_RISK_THRESHOLD = 75; // Aligned with 'Needs to Focus' level in radar chart
+  const attainedCount = activeSkills.filter(([, v]) => v >= COMPETENT_THRESHOLD).length;
+  const attainedPct = totalActive ? Math.round((attainedCount / totalActive) * 100) : 0;
+
+  // 2. Skills at Risk — count below at-risk threshold; surface lowest by name.
+  const atRiskSkills = activeSkills
+    .filter(([, v]) => v < AT_RISK_THRESHOLD)
+    .sort((a, b) => a[1] - b[1]);
+  const lowestRiskSkill = atRiskSkills[0]?.[0] || null;
+
+  // 3. Growth Headroom — mean (scenario_high − predicted) across active skills,
+  // averaged per-skill across courses. The scenario_high field is the model's
+  // "if all ILOs hit 90%" output, so this is pure ML projection.
+  const headroom = (() => {
+    const per = predictions?.per_course || [];
+    let total = 0;
+    let count = 0;
+    per.forEach(c => {
+      const cur = c.predicted_skills || {};
+      const high = c.scenario_high || {};
+      Object.keys(cur).forEach(s => {
+        if (cur[s] > 1.0 && typeof high[s] === 'number') {
+          const gap = high[s] - cur[s];
+          if (gap > 0.1) {
+            total += gap;
+            count += 1;
+          }
+        }
+      });
+    });
+    return count ? total / count : 0;
+  })();
+
+  // 4. Highest-Leverage Course — course whose mean skill gap to scenario_high
+  // is largest; the single course where focus pays off most.
+  const topLeverage = (() => {
+    const per = predictions?.per_course || [];
+    let best = null;
+    per.forEach(c => {
+      const cur = c.predicted_skills || {};
+      const high = c.scenario_high || {};
+      const keys = Object.keys(cur).filter(k => cur[k] > 1.0 && typeof high[k] === 'number');
+      if (!keys.length) return;
+
+      const meanGap = keys.reduce((acc, k) => {
+        const g = high[k] - cur[k];
+        return acc + (g > 0 ? g : 0);
+      }, 0) / keys.length;
+
+      if (meanGap > 0 && (!best || meanGap > best.gap)) {
+        best = { course: c.course, gap: meanGap };
+      }
+    });
+    return best;
+  })();
+
+  const TOTAL_SKILLS = 20;
+  // When a year/semester filter is active, the Skills Attained denominator
+  // tracks only the skills introduced in that window — matching the count
+  // shown in Proficiency Growth Analysis and the Needs Attention card. Under
+  // "All Semesters" the denominator stays at the full program (20) so the
+  // student still sees overall progress against the whole curriculum.
+  const attainedDenominator = hasActiveFilters ? (totalActive || TOTAL_SKILLS) : TOTAL_SKILLS;
+  const overallAvg = totalActive
+    ? activeSkills.reduce((acc, [, v]) => acc + v, 0) / totalActive
+    : 0;
+
+  const containerClass = studentId
+    ? "space-y-4"
+    : "p-8 space-y-8 bg-linear-to-br from-[#fff8f8] via-[#fffdfd] to-[#fdf2f2] rounded-3xl border border-[#f2dfdf] shadow-[0_22px_55px_-35px_rgba(0,0,0,0.15)] min-h-screen";
+
+  return (
+    <>
+      <div className={containerClass}>
+        {studentId ? (
+          <div className="flex justify-end -mb-2">
+            <div className="relative">
+              <button
+                onClick={() => { setFilterOpen(!filterOpen); setNotifOpen(false); }}
+                className={`flex items-center gap-1.5 px-3 py-1 border rounded-lg text-xs font-bold transition-all cursor-pointer ${hasActiveFilters
+                  ? 'border-[#9f0707] bg-[#9f0707] text-white shadow-sm'
+                  : 'border-[#ead3d3] text-[#70170f] hover:bg-[#fff5f5]'
+                  }`}
+              >
+                <Filter size={12} /> Filter
+              </button>
+              <FilterDropdown
+                open={filterOpen}
+                onClose={() => setFilterOpen(false)}
+                semester={semester}
+                setSemester={setSemester}
+                category={category}
+                setCategory={setCategory}
+                classes={classes}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start justify-between">
+            {!studentId ? (
+              <div>
+                <p className="text-[10px] font-black text-[#70170f] uppercase tracking-[0.2em] mb-1">PERFORMANCE HUB</p>
+                <h1 className="text-[2.2rem] font-black text-gray-900 leading-tight">Academic Analytics</h1>
+              </div>
+            ) : <div />}
+            <div className="flex items-center gap-4 mt-2">
+              {/* Filter button */}
+              <div className="relative">
+                <button
+                  onClick={() => { setFilterOpen(!filterOpen); setNotifOpen(false); }}
+                  className={`flex items-center gap-2 px-5 py-2.5 border rounded-xl text-[13px] font-bold transition-all ${hasActiveFilters
+                    ? 'border-[#9f0707] bg-[#9f0707] text-white shadow-lg'
+                    : 'border-[#ead3d3] text-[#70170f] hover:bg-[#fff5f5]'
+                    }`}
+                >
+                  <Filter size={16} /> Filter
+                </button>
+                <FilterDropdown
+                  open={filterOpen}
+                  onClose={() => setFilterOpen(false)}
+                  semester={semester}
+                  setSemester={setSemester}
+                  category={category}
+                  setCategory={setCategory}
+                  classes={classes}
+                />
+              </div>
+
+              {!studentId && (
+                <div className="relative">
+                  <button
+                    onClick={() => { setNotifOpen(!notifOpen); setFilterOpen(false); }}
+                    className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
+                  >
+                    <Bell size={16} className="text-[#8b6363]" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#fffdfd]" />
+                    )}
+                  </button>
+                  <NotificationDropdown
+                    open={notifOpen}
+                    onClose={() => setNotifOpen(false)}
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                    onShowAll={() => setShowAllActivities(true)}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 4 Stat Cards — ML-driven, refetched on grade_released */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            label="SKILLS ATTAINED"
+            icon={Award}
+            main={`${attainedCount} of ${attainedDenominator}`}
+            sub={totalActive
+              ? `Overall score: ${overallAvg.toFixed(1)}%`
+              : 'awaiting graded scores'}
+            badge={totalActive ? `${Math.round((attainedCount / attainedDenominator) * 100)}%` : null}
+            badgeTone="green"
+          />
+          <StatCard
+            label="NEEDS ATTENTION"
+            icon={ShieldAlert}
+            main={totalActive
+              ? `${atRiskSkills.length} ${atRiskSkills.length === 1 ? 'skill' : 'skills'}`
+              : '—'}
+            sub={atRiskSkills.length > 0
+              ? `below ${AT_RISK_THRESHOLD}% — focusing on ${lowestRiskSkill}`
+              : totalActive
+                ? (hasActiveFilters
+                  ? `all ${totalActive} introduced skills above 75% — excellent!`
+                  : 'all skills above 75% — excellent!')
+                : 'awaiting graded scores'}
+            badge={atRiskSkills.length > 0 ? 'NEEDS TO FOCUS' : null}
+            badgeTone="red"
+          />
+          <StatCard
+            label="GROWTH POTENTIAL"
+            icon={Rocket}
+            main={headroom > 0 ? `+${headroom.toFixed(1)}%` : '—'}
+            sub={headroom > 0
+              ? 'average skill gain if your grades reach 90%'
+              : 'no projected growth available'}
+            badge={headroom >= 5 ? 'high' : headroom > 0 ? 'moderate' : null}
+            badgeTone="indigo"
+          />
+          <StatCard
+            label="TOP COURSE TO IMPROVE"
+            icon={Compass}
+            main={topLeverage ? `+${topLeverage.gap.toFixed(1)}%` : '—'}
+            sub={topLeverage
+              ? `boost from focusing on ${topLeverage.course}`
+              : 'awaiting course-level signal'}
+            badge={topLeverage && topLeverage.gap >= 5 ? 'focus here' : null}
+            badgeTone="amber"
+          />
         </div>
-        <div className="flex items-center gap-3 mt-2">
-          {/* Active filter pills */}
-          {hasActiveFilters && (
-            <div className="flex items-center gap-2">
-              {semester !== 'All Semesters' && (
-                <span className="flex items-center gap-1 px-2.5 py-1 bg-[#fff1f1] border border-[#efd7d7] rounded-lg text-[11px] font-semibold text-[#6e4b4b]">
-                  {semester}
-                  <button onClick={() => setSemester('All Semesters')} className="text-gray-400 hover:text-gray-600"><X size={12} /></button>
-                </span>
-              )}
-              {category !== 'All Subjects' && (
-                <span className="flex items-center gap-1 px-2.5 py-1 bg-[#fff1f1] border border-[#efd7d7] rounded-lg text-[11px] font-semibold text-[#6e4b4b]">
-                  {category}
-                  <button onClick={() => setCategory('All Subjects')} className="text-gray-400 hover:text-gray-600"><X size={12} /></button>
-                </span>
-              )}
+
+        {/* Row 2: Radar | Achieved Skills */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div className="lg:col-span-3">
+            <CompetencyRadar soValues={soValues} />
+          </div>
+
+          {/* Skills Lists — ML-driven */}
+          <div className={`${panelBase} p-8 flex flex-col h-full lg:col-span-2`}>
+            <div className="flex-1">
+              <p className="text-[10px] font-extrabold text-[#70170f] uppercase tracking-[0.2em] mb-6">ACHIEVED SKILLS</p>
+              <div className="space-y-5 mb-10">
+                {topThird.slice(0, 4).map(([name, val]) => {
+                  const key = `a-${name}`;
+                  return (
+                    <SkillHintRow
+                      key={key}
+                      skill={name}
+                      perCourse={predictions?.per_course || []}
+                      mode="achieved"
+                      latestSem={studentCurrentSem}
+                      isFiltered={isFiltered}
+                      isOpen={openHintSkill === key}
+                      onToggle={() => setOpenHintSkill(openHintSkill === key ? null : key)}
+                      valueNode={(() => {
+                        const level = GRADING_SYSTEM.find(l => val >= l.min) || GRADING_SYSTEM[GRADING_SYSTEM.length - 1];
+                        return (
+                          <span className={`text-[11px] font-black ${level.bg} ${level.text} px-2.5 py-1 rounded-lg tabular-nums border ${level.border}`}>
+                            {val.toFixed(1)}
+                          </span>
+                        );
+                      })()}
+                    />
+                  );
+                })}
+                {topThird.length === 0 && <p className="text-sm text-gray-400">None achieved yet.</p>}
+              </div>
+
+              <p className="text-[10px] font-extrabold text-[#70170f] uppercase tracking-[0.2em] mb-6">PREDICTED GROWTH</p>
+              <div className="space-y-6">
+                {predictedPotential.map(s => {
+                  const key = `p-${s.name}`;
+                  const fillPct = s.potential > 0 ? Math.min((s.current / s.potential) * 100, 100) : 0;
+                  return (
+                    <SkillHintRow
+                      key={key}
+                      skill={s.name}
+                      perCourse={predictions?.per_course || []}
+                      mode="developing"
+                      latestSem={studentCurrentSem}
+                      isFiltered={isFiltered}
+                      isOpen={openHintSkill === key}
+                      onToggle={() => setOpenHintSkill(openHintSkill === key ? null : key)}
+                      valueNode={
+                        <span className="text-[11px] text-emerald-600 font-bold tabular-nums">
+                          +{s.gap.toFixed(1)}
+                        </span>
+                      }
+                      barNode={
+                        <div className="w-full h-1.5 bg-gray-100 rounded-full mt-2.5 overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${fillPct}%` }} />
+                        </div>
+                      }
+                    />
+                  );
+                })}
+                {predictedPotential.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-6 border border-dashed border-gray-100 rounded-xl bg-gray-50/30">
+                    <p className="text-[12px] text-gray-400 font-medium italic text-center px-4">No predicted growth yet, Semester just started.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: Priority Recommendations | Smart Insights */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
+          <div className="lg:col-span-3 h-full">
+            <IntegratedInsights
+              tech={{
+                name: weakTechSkillName,
+                val: weakTechVal,
+                so: weakTechSO,
+                driver: weakTechDriver
+              }}
+              nonTech={{
+                name: weakProfessionalSkillName,
+                val: weakProfessionalVal,
+                so: weakProfessionalSO,
+                driver: weakProfessionalDriver
+              }}
+              techBoost={{
+                name: boostTechSkillName,
+                val: boostTechVal,
+                so: boostTechSO,
+                driver: boostTechDriver
+              }}
+              nonTechBoost={{
+                name: boostProfessionalSkillName,
+                val: boostProfessionalVal,
+                so: boostProfessionalSO,
+                driver: boostProfessionalDriver
+              }}
+              filterLabel={hasActiveFilters
+                ? [semester !== 'All Semesters' ? semester : null, category !== 'All Subjects' ? category : null]
+                  .filter(Boolean).join(' · ')
+                : null}
+              latestSem={studentCurrentSem}
+            />
+          </div>
+
+          <div className={`${panelBase} p-8 flex flex-col h-full lg:col-span-2`}>
+            <div className="mb-8">
+              <h3 className="text-[20px] font-black text-gray-900 leading-tight">Priority Recommendations</h3>
+              <p className="text-[11px] text-gray-500 font-medium mt-1">
+                {hasActiveFilters
+                  ? `Tailored to ${[semester !== 'All Semesters' ? semester : null, category !== 'All Subjects' ? category : null].filter(Boolean).join(' · ')}`
+                  : 'Across your whole program'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 flex-1">
+              {(() => {
+                // Build per-category candidates so the recommendations can draw
+                // from BOTH the technical and professional diagnostics, not just
+                // whichever one happened to surface first.
+                const techCand = weakTechSkillName
+                  ? { type: 'weak', cat: 'tech',  name: weakTechSkillName,         val: weakTechVal,         driver: weakTechDriver }
+                  : boostTechSkillName
+                    ? { type: 'boost', cat: 'tech', name: boostTechSkillName,      val: boostTechVal,        driver: boostTechDriver }
+                    : null;
+                const proCand = weakProfessionalSkillName
+                  ? { type: 'weak', cat: 'pro', name: weakProfessionalSkillName,  val: weakProfessionalVal, driver: weakProfessionalDriver }
+                  : boostProfessionalSkillName
+                    ? { type: 'boost', cat: 'pro', name: boostProfessionalSkillName, val: boostProfessionalVal, driver: boostProfessionalDriver }
+                    : null;
+
+                // Order: weak signals first, then by lowest score (most urgent on top).
+                const candidates = [techCand, proCand].filter(Boolean).sort((a, b) => {
+                  if (a.type !== b.type) return a.type === 'weak' ? -1 : 1;
+                  return (a.val ?? 0) - (b.val ?? 0);
+                });
+
+                if (candidates.length === 0) {
+                  return (
+                    <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161]">
+                        <Activity size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[12px] text-black leading-relaxed">
+                          No graded skills in this scope yet — recommendations will appear once your instructors release scores.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const Card = ({ tone, icon: Icon, children }) => {
+                  const palette = tone === 'weak'
+                    ? 'border-amber-100 bg-[#fffdfa] hover:border-amber-300 ring-1 ring-amber-50'
+                    : tone === 'boost'
+                      ? 'border-emerald-100 bg-emerald-50/40 hover:border-emerald-300 ring-1 ring-emerald-50'
+                      : 'border-[#f0dddd] bg-white/75 hover:border-[#e3bebe]';
+                  const iconBox = tone === 'weak'
+                    ? 'bg-amber-100/50 text-amber-700 group-hover:bg-amber-600 group-hover:text-white'
+                    : tone === 'boost'
+                      ? 'bg-emerald-100/60 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white'
+                      : 'bg-[#fff2f2] text-[#8a6161] group-hover:bg-[#70170f] group-hover:text-white';
+                  return (
+                    <div className={`p-4 border rounded-xl flex items-center gap-4 transition-all hover:shadow-sm cursor-pointer group ${palette}`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-sm ${iconBox}`}>
+                        <Icon size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[12px] text-black leading-relaxed">{children}</p>
+                      </div>
+                    </div>
+                  );
+                };
+
+                const recs = [];
+
+                // Card 1 — most-urgent signal (tech or professional).
+                const first = candidates[0];
+                if (first.type === 'weak') {
+                  recs.push(
+                    <Card key="c1" tone="weak" icon={GraduationCap}>
+                      <span className="font-bold">{first.name}</span> is at <span className="font-bold tabular-nums">{first.val.toFixed(1)}%</span> — {first.driver?.course
+                        ? <>concentrate your review time on <span className="font-bold">{first.driver.course}</span> to clear the 75% Passing threshold.</>
+                        : <>build it up steadily across your active coursework to clear the 75% Passing threshold.</>}
+                    </Card>
+                  );
+                } else {
+                  recs.push(
+                    <Card key="c1" tone="boost" icon={Target}>
+                      <span className="font-bold">{first.name}</span> is your lowest passing {first.cat === 'tech' ? 'technical' : 'professional'} skill at <span className="font-bold tabular-nums">{first.val.toFixed(1)}%</span> — {first.driver?.course
+                        ? <>advance it toward the Excellent band (90%) by going deeper into <span className="font-bold">{first.driver.course}</span>.</>
+                        : <>aim past 85% on your next assessments to lift it into the upper band.</>}
+                    </Card>
+                  );
+                }
+
+                // Card 2 — the OTHER category's signal, if it exists. This is
+                // the key change: the recommendations now span both diagnostics.
+                const second = candidates[1];
+                if (second) {
+                  if (second.type === 'weak') {
+                    recs.push(
+                      <Card key="c2" tone="weak" icon={GraduationCap}>
+                        <span className="font-bold">{second.name}</span> ({second.cat === 'tech' ? 'technical' : 'professional'}) is also at <span className="font-bold tabular-nums">{second.val.toFixed(1)}%</span> — {second.driver?.course
+                          ? <>strengthen it through <span className="font-bold">{second.driver.course}</span> alongside your primary focus.</>
+                          : <>address it in parallel so it doesn't widen the gap with the rest of your competencies.</>}
+                      </Card>
+                    );
+                  } else {
+                    recs.push(
+                      <Card key="c2" tone="boost" icon={Target}>
+                        On the {second.cat === 'tech' ? 'technical' : 'professional'} side, <span className="font-bold">{second.name}</span> sits at <span className="font-bold tabular-nums">{second.val.toFixed(1)}%</span> — {second.driver?.course
+                          ? <>advance it toward Excellent through deliberate practice in <span className="font-bold">{second.driver.course}</span>.</>
+                          : <>continue applying it in upcoming projects to consolidate the standing.</>}
+                      </Card>
+                    );
+                  }
+                }
+
+                // Card 3 — cross-cutting study action. Different framing depending
+                // on whether we have one signal or two, weak vs boost, so it
+                // doesn't repeat the first two cards.
+                const both = candidates.length === 2;
+                const allWeak = candidates.every(c => c.type === 'weak');
+                const allBoost = candidates.every(c => c.type === 'boost');
+
+                if (both && allWeak) {
+                  recs.push(
+                    <Card key="c3" tone="general" icon={Search}>
+                      Schedule a consultation with your instructors (or use the AI Chat) for targeted help on <span className="font-bold">{first.name}</span> and <span className="font-bold">{second.name}</span> — both fall below the Passing threshold, so coordinated support will move your standing fastest.
+                    </Card>
+                  );
+                } else if (both && allBoost) {
+                  recs.push(
+                    <Card key="c3" tone="general" icon={Microscope}>
+                      Take on capstone-level or stretch work that exercises both <span className="font-bold">{first.name}</span> and <span className="font-bold">{second.name}</span> — integrated projects convert passing standing into a signature strength across both categories.
+                    </Card>
+                  );
+                } else if (both) {
+                  // Mixed: one weak, one boost.
+                  const weakOne = candidates.find(c => c.type === 'weak');
+                  const boostOne = candidates.find(c => c.type === 'boost');
+                  recs.push(
+                    <Card key="c3" tone="general" icon={Zap}>
+                      Prioritize closing the gap in <span className="font-bold">{weakOne.name}</span> first, then channel the momentum into pushing <span className="font-bold">{boostOne.name}</span> toward Excellent — sequencing these two will lift your overall standing more than splitting effort evenly.
+                    </Card>
+                  );
+                } else {
+                  // Single-category case — still give a cross-cutting third action.
+                  recs.push(
+                    <Card key="c3" tone="general" icon={Zap}>
+                      Review the items where you lost points on recent <span className="font-bold">{first.name}</span> assessments — recurring error patterns are the fastest route to {first.type === 'weak' ? 'crossing 75%' : 'reaching the Excellent band'}.
+                    </Card>
+                  );
+                }
+
+                return recs;
+              })()}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 4: Proficiency Growth Analysis */}
+        <div className={`${panelBase} p-6 flex flex-col`}>
+          <div className="flex flex-col gap-1 mb-6">
+            <h3 className="text-[18px] font-black text-gray-900 leading-tight">Proficiency Growth Analysis</h3>
+            <p className="text-[11px] text-gray-500 font-medium">
+              {skillsTotal} categories ranked by score
+            </p>
+          </div>
+
+          {semester !== 'All Semesters' && (
+            <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#f3dada] bg-[#fff8f8] p-4">
+              <div className="shrink-0 mt-0.5 text-[#70170f]">
+                <AlertCircle size={16} />
+              </div>
+              <p className="text-[12px] text-[#70170f] leading-relaxed">
+                Scores reflect only courses in <span className="font-bold">{semester}</span>;
+                whole-program scores are under <span className="font-bold">&ldquo;All Semesters&rdquo;</span>.
+              </p>
             </div>
           )}
 
-          {/* Filter button */}
-          <div className="relative">
-            <button
-              onClick={() => { setFilterOpen(!filterOpen); setNotifOpen(false); }}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-[13px] font-semibold transition-colors ${
-                hasActiveFilters
-                  ? 'border-[#1a0505] bg-[#1a0505] text-white hover:bg-[#2a1010]'
-                    : 'border-[#ead3d3] text-[#7a5454] hover:bg-[#fff5f5]'
-              }`}
-            >
-              <Filter size={14} /> Filter
-              {hasActiveFilters && (
-                <span className="w-4 h-4 bg-white/20 rounded-full text-[9px] font-bold flex items-center justify-center">
-                  {(semester !== 'All Semesters' ? 1 : 0) + (category !== 'All Subjects' ? 1 : 0)}
-                </span>
-              )}
-            </button>
-            <FilterDropdown
-              open={filterOpen}
-              onClose={() => setFilterOpen(false)}
-              semester={semester}
-              setSemester={setSemester}
-              category={category}
-              setCategory={setCategory}
-            />
-          </div>
-
-          {/* Notification bell */}
-          <div className="relative">
-            <button
-              onClick={() => { setNotifOpen(!notifOpen); setFilterOpen(false); }}
-              className="relative w-9 h-9 border border-[#ead3d3] rounded-xl flex items-center justify-center hover:bg-[#fff5f5] transition-colors"
-            >
-              <Bell size={16} className="text-[#8b6363]" />
-            </button>
-            <NotificationDropdown
-              open={notifOpen}
-              onClose={() => setNotifOpen(false)}
-              notifications={notifications}
-            />
+          <div className="flex-1 pt-2">
+            <RankedSkillsChart sortedSkills={sortedSkills} animated={barsAnimated} perCourse={predictions?.per_course || []} />
           </div>
         </div>
       </div>
 
-      {/* 4 Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="GLOBAL RANK" main={predictions?.overall_outcome ? "Model Fit" : "N/A"} sub={predictions?.overall_outcome} />
-        <StatCard label="AVG. ILO MASTERY" main={`${iloCoverage.totalMastery || 0}%`} badge={null} sub="Current mastery" />
-        <StatCard label="SKILLS VELOCITY" main={HighPerforming.length} sub="High Momentum Skills" />
-        <StatCard label="COMPLETION STATUS" main="Enrolled" sub={`${classes.length} classes active`} progress="60%" />
-      </div>
-
-      {/* Row 2: Radar | Achieved Skills */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <CompetencyRadar skills={predictions?.aggregated_skills} />
-        </div>
-
-        {/* Skills Lists — ML-driven */}
-        <div className={`${panelBase} p-6 flex flex-col h-full`}>
-          <div>
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-5">ACHIEVED SKILLS</p>
-            <div className="space-y-4 mb-8">
-              {topThird.slice(0, 3).map(([name, val]) => {
-                const key = `a-${name}`;
-                return (
-                  <SkillHintRow
-                    key={key}
-                    skill={name}
-                    perCourse={predictions?.per_course || []}
-                    mode="achieved"
-                    isOpen={openHintSkill === key}
-                    onToggle={() => setOpenHintSkill(openHintSkill === key ? null : key)}
-                    divider
-                    valueNode={
-                      <span className="text-[10px] font-extrabold bg-[#1a0505] text-white px-2 py-0.5 rounded-full tracking-wider shrink-0 tabular-nums">
-                        {val.toFixed(1)}
-                      </span>
-                    }
-                  />
-                );
-              })}
-              {topThird.length === 0 && <p className="text-xs text-gray-400">None achieved yet.</p>}
-            </div>
-
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-5">PREDICTED SKILLSETS</p>
-            <div className="space-y-5">
-              {predictedPotential.map(s => {
-                const key = `p-${s.name}`;
-                const fillPct = s.potential > 0 ? Math.min((s.current / s.potential) * 100, 100) : 0;
-                return (
-                  <SkillHintRow
-                    key={key}
-                    skill={s.name}
-                    perCourse={predictions?.per_course || []}
-                    mode="developing"
-                    isOpen={openHintSkill === key}
-                    onToggle={() => setOpenHintSkill(openHintSkill === key ? null : key)}
-                    valueNode={
-                      <span className="text-[10px] text-gray-500 font-medium tabular-nums shrink-0">
-                        +{s.gap.toFixed(1)} potential
-                      </span>
-                    }
-                    barNode={
-                      <div className="w-full h-1 bg-gray-100 rounded-full mt-2 overflow-hidden">
-                        <div className="h-full bg-[#bc1313] rounded-full" style={{ width: `${fillPct}%` }} />
-                      </div>
-                    }
-                  />
-                );
-              })}
-              {predictedPotential.length === 0 && <p className="text-xs text-gray-400">Not enough data.</p>}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 3: Insight | Priority Recommendations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SmartInsight topSkills={predictions?.top_skills} weakSkills={predictions?.weak_skills} />
-        
-        <div className={`${panelBase} p-6 flex flex-col justify-center`}>
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-6">PRIORITY RECOMMENDATIONS</p>
-          <div className="space-y-4">
-            <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-colors cursor-pointer group">
-              <div className="w-10 h-10 rounded-full bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#bc1313] group-hover:text-white transition-colors duration-300">
-                <GraduationCap size={18} />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-[13px] font-bold text-gray-900 leading-snug">Focus on missing assignments</h4>
-                <p className="text-[11px] text-gray-500 mt-0.5">Improve grade consistency.</p>
-              </div>
-              <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-600 transition-colors" />
-            </div>
-
-            <div className="p-4 border border-[#f0dddd] bg-white/75 rounded-xl flex items-center gap-4 hover:border-[#e3bebe] transition-colors cursor-pointer group">
-              <div className="w-10 h-10 rounded-full bg-[#fff2f2] flex items-center justify-center shrink-0 text-[#8a6161] group-hover:bg-[#bc1313] group-hover:text-white transition-colors duration-300">
-                <Microscope size={18} />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-[13px] font-bold text-gray-900 leading-snug">Practice weak skills</h4>
-                <p className="text-[11px] text-gray-500 mt-0.5">Review the concepts you missed in midterms.</p>
-              </div>
-              <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-600 transition-colors" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 4: Proficiency Growth Analysis */}
-      <div className="space-y-4">
-        <div className="flex items-end justify-between gap-4 px-1">
-          <div>
-            <h3 className="text-[16px] font-bold text-gray-900 leading-tight">Proficiency Growth Analysis</h3>
-            <p className="text-[11px] text-gray-500 font-medium mt-1">
-              All {skillsTotal} skill categor{skillsTotal === 1 ? 'y' : 'ies'} · ranked by score · relative performance
-            </p>
-          </div>
-          <GrowthLegend />
-        </div>
-
-        {/* Summary tiles */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-baseline gap-2">
-            <span className="text-[26px] font-extrabold text-green-600 leading-none tabular-nums">{topThird.length}</span>
-            <span className="text-[12px] font-semibold text-gray-600">top performing</span>
-          </div>
-          <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-baseline gap-2">
-            <span className="text-[26px] font-extrabold text-amber-500 leading-none tabular-nums">{midThird.length}</span>
-            <span className="text-[12px] font-semibold text-gray-600">developing</span>
-          </div>
-          <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-baseline gap-2">
-            <span className="text-[26px] font-extrabold text-red-600 leading-none tabular-nums">{botThird.length}</span>
-            <span className="text-[12px] font-semibold text-gray-600">needs focus</span>
-          </div>
-        </div>
-
-        {/* Two-part layout: ranked chart left, ILO + ML insight right */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <RankedSkillsChart sortedSkills={sortedSkills} third={skillsThird} animated={barsAnimated} />
-          </div>
-          <div className="space-y-4">
-            <IloBreakdownCard iloScores={overallIlo} />
-            <MlInsightCard
-              topSkill={topSkillName}
-              topVal={topSkillVal}
-              weakSkill={weakSkillName}
-              weakVal={weakSkillVal}
-              target={skillAvg}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Row 5: Course Breakdown — expandable cards driven by predictions.per_course */}
-      <div className={`${panelBase} p-6`}>
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">PER-COURSE ANALYSIS</p>
-            <h3 className="text-[16px] font-bold text-gray-900">Course Breakdown</h3>
-          </div>
-          <span className="text-[11px] text-gray-400 font-medium">
-            {(predictions?.per_course?.length || 0)} course{(predictions?.per_course?.length || 0) === 1 ? '' : 's'}
-          </span>
-        </div>
-
-        {(!predictions?.per_course || predictions.per_course.length === 0) ? (
-          <div className="py-8 text-center text-gray-500 text-sm">
-            No course predictions available yet. Submit assessment scores to see your breakdown.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {predictions.per_course.map((course, i) => (
-              <CourseBreakdownCard key={course.course || i} course={course} onViewDetails={setSelectedCourse} />
-            ))}
-          </div>
-        )}
-      </div>
-
-    </div>
+      {showAllActivities && <AllActivitiesModal onClose={() => setShowAllActivities(false)} />}
+    </>
   );
 }

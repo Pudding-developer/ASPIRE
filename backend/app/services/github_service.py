@@ -13,6 +13,7 @@ import httpx
 from app.core.config import GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_REDIRECT_URI
 from app.models.github import RepositoryCache
 from app.repositories import github_repository
+from app.services import activity_service
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -324,14 +325,14 @@ async def connect_github_account(db, user_id: int, gh_user: dict, access_token: 
 
     github_username = gh_user.get("login", "")
 
-    # Check if GitHub account is linked to a different student
-    existing = await github_repository.get_profile_by_username(db, github_username)
-    if existing and existing.user_id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="This GitHub account is already connected to a different student.",
-            headers={"X-Error-Code": "GITHUB_ALREADY_LINKED"},
-        )
+    # Temporarily bypassed for thesis evaluation: allow multiple test students to link the same GitHub account.
+    # existing = await github_repository.get_profile_by_username(db, github_username)
+    # if existing and existing.user_id != user_id:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT,
+    #         detail="This GitHub account is already connected to a different student.",
+    #         headers={"X-Error-Code": "GITHUB_ALREADY_LINKED"},
+    #     )
 
     profile = await github_repository.get_profile(db, user_id)
     is_new = profile is None
@@ -663,6 +664,11 @@ async def run_analysis(job_id: str, user_id: int, session_factory) -> None:
                 db, job_id, status="completed", percentage=100,
                 completed_at=datetime.now(),
             )
+
+            await activity_service.emit_github_synced(
+                db, student_id=user_id, repo_count=len(repos),
+            )
+            await db.commit()
 
         except Exception as exc:
             await github_repository.update_job(

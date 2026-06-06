@@ -166,12 +166,12 @@ function SkillPill({ name, pct, dotColor }) {
 }
 
 /* ─── Main View ─── */
-export default function StudentGitHubView({ user }) {
+export default function StudentGitHubView({ user, studentId = null, isReadOnly = false }) {
   const {
     status, summary, repos, contributions,
     loading, runAnalysis, isAnalyzing,
     connectGithub, disconnectGithub, isDisconnecting,
-  } = useGithubData();
+  } = useGithubData(studentId);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -191,14 +191,20 @@ export default function StudentGitHubView({ user }) {
   /* ── Not connected ── */
   if (!isConnected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0d1117] text-center gap-4 p-8">
+      <div className={`flex flex-col items-center justify-center text-center gap-4 p-8 ${
+        isReadOnly ? 'bg-[#0d1117] rounded-3xl border border-[#30363d] py-16 text-[#c9d1d9]' : 'min-h-screen bg-[#0d1117]'
+      }`}>
         <Github size={52} className="text-[#8b949e]" />
         <h2 className="text-2xl font-extrabold text-[#c9d1d9]">GitHub Not Connected</h2>
-        <p className="text-sm text-[#8b949e] max-w-sm">Connect your GitHub account to analyze your repositories, commits, and detect your technical stack.</p>
-        <button onClick={connectGithub}
-          className="mt-2 px-6 py-2.5 bg-[#238636] hover:bg-[#2ea043] text-white rounded-xl font-bold flex items-center gap-2 transition-colors border border-[rgba(240,246,252,0.1)]">
-          <Github size={16} /> Connect GitHub
-        </button>
+        <p className="text-sm text-[#8b949e] max-w-sm">
+          {isReadOnly ? 'This student has not connected their GitHub account.' : 'Connect your GitHub account to analyze your repositories, commits, and detect your technical stack.'}
+        </p>
+        {!isReadOnly && (
+          <button onClick={connectGithub}
+            className="mt-2 px-6 py-2.5 bg-[#238636] hover:bg-[#2ea043] text-white rounded-xl font-bold flex items-center gap-2 transition-colors border border-[rgba(240,246,252,0.1)]">
+            <Github size={16} /> Connect GitHub
+          </button>
+        )}
       </div>
     );
   }
@@ -206,15 +212,23 @@ export default function StudentGitHubView({ user }) {
   /* ── Analysis required ── */
   if (!hasAnalysis) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0d1117] text-center gap-4 p-8">
+      <div className={`flex flex-col items-center justify-center text-center gap-4 p-8 ${
+        isReadOnly ? 'bg-[#0d1117] rounded-3xl border border-[#30363d] py-16 text-[#c9d1d9]' : 'min-h-screen bg-[#0d1117]'
+      }`}>
         <Github size={52} className="text-[#c9d1d9]" />
-        <h2 className="text-2xl font-extrabold text-[#c9d1d9]">Analysis Required</h2>
-        <p className="text-sm text-[#8b949e] max-w-sm">Your GitHub is connected. Run the first analysis to pull your repositories, skills, and contribution data.</p>
-        <button onClick={runAnalysis} disabled={isAnalyzing}
-          className="mt-2 px-6 py-2.5 bg-[#238636] hover:bg-[#2ea043] text-white rounded-xl font-bold flex items-center gap-2 transition-colors border border-[rgba(240,246,252,0.1)] disabled:opacity-50">
-          <RefreshCw size={16} className={isAnalyzing ? 'animate-spin' : ''} />
-          {isAnalyzing ? 'Analyzing…' : 'Run Analysis Now'}
-        </button>
+        <h2 className="text-2xl font-extrabold text-[#c9d1d9]">
+          {isReadOnly ? 'Analysis Pending' : 'Analysis Required'}
+        </h2>
+        <p className="text-sm text-[#8b949e] max-w-sm">
+          {isReadOnly ? 'No analysis has been run on this student\'s GitHub portfolio yet.' : 'Your GitHub is connected. Run the first analysis to pull your repositories, skills, and contribution data.'}
+        </p>
+        {!isReadOnly && (
+          <button onClick={runAnalysis} disabled={isAnalyzing}
+            className="mt-2 px-6 py-2.5 bg-[#238636] hover:bg-[#2ea043] text-white rounded-xl font-bold flex items-center gap-2 transition-colors border border-[rgba(240,246,252,0.1)] disabled:opacity-50">
+            <RefreshCw size={16} className={isAnalyzing ? 'animate-spin' : ''} />
+            {isAnalyzing ? 'Analyzing…' : 'Run Analysis Now'}
+          </button>
+        )}
       </div>
     );
   }
@@ -235,13 +249,16 @@ export default function StudentGitHubView({ user }) {
     dotColor: getLangColor(lang),
   }));
 
-  /* ── Connected dashboard ── */
+  const containerClass = isReadOnly
+    ? "p-6 bg-[#0d1117] rounded-3xl border border-[#30363d] text-[#c9d1d9] space-y-6"
+    : "p-6 lg:p-8 bg-[#0d1117] min-h-screen text-[#c9d1d9] space-y-6";
+
   return (
-    <div className="p-6 lg:p-8 bg-[#0d1117] min-h-screen text-[#c9d1d9] space-y-6">
+    <div className={containerClass}>
 
       {/* Error banner */}
       {urlError && (
-        <div className="p-4 bg-[#bc1313]/10 border border-[#bc1313]/50 rounded-xl flex items-start justify-between">
+        <div className="p-4 bg-[#70170f]/10 border border-[#70170f]/50 rounded-xl flex items-start justify-between">
           <div className="flex items-center gap-3">
             <AlertCircle size={18} className="text-[#ff7b72]" />
             <p className="text-sm font-semibold text-[#ff7b72]">{decodeURIComponent(urlError)}</p>
@@ -251,34 +268,43 @@ export default function StudentGitHubView({ user }) {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          {status.github_avatar_url && (
-            <img src={status.github_avatar_url} alt="avatar"
-              className="w-14 h-14 rounded-full border-2 border-[#30363d]" />
-          )}
-          <div>
-            <h1 className="text-[1.5rem] font-extrabold text-[#c9d1d9] leading-tight">{status.github_username}</h1>
-            <p className="text-[11px] text-[#8b949e] mt-0.5 flex items-center gap-1.5">
-              <Circle size={6} className="fill-[#2ea043] text-[#2ea043]" />
-              Synced {new Date(status.last_analyzed).toLocaleString()}
-            </p>
+      {isReadOnly ? (
+        <div className="flex justify-end">
+          <p className="text-[11px] text-[#8b949e] flex items-center gap-1.5 bg-[#161b22] px-3 py-1.5 rounded-lg border border-[#30363d]">
+            <Circle size={6} className="fill-[#2ea043] text-[#2ea043]" />
+            Synced {new Date(status.last_analyzed).toLocaleString()}
+          </p>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            {status.github_avatar_url && (
+              <img src={status.github_avatar_url} alt="avatar"
+                className="w-14 h-14 rounded-full border-2 border-[#30363d]" />
+            )}
+            <div>
+              <h1 className="text-[1.5rem] font-extrabold text-[#c9d1d9] leading-tight">{status.github_username}</h1>
+              <p className="text-[11px] text-[#8b949e] mt-0.5 flex items-center gap-1.5">
+                <Circle size={6} className="fill-[#2ea043] text-[#2ea043]" />
+                Synced {new Date(status.last_analyzed).toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button onClick={disconnectGithub} disabled={isAnalyzing || isDisconnecting}
+              className="flex items-center gap-2 px-4 py-2 bg-[#70170f]/10 text-[#ff7b72] border border-[#70170f]/50 rounded-xl text-[13px] font-bold hover:bg-[#70170f]/20 transition-all disabled:opacity-50">
+              {isDisconnecting ? <RefreshCw size={14} className="animate-spin" /> : <LogOut size={14} />}
+              {isDisconnecting ? 'Disconnecting…' : 'Disconnect'}
+            </button>
+            <button onClick={runAnalysis} disabled={isAnalyzing}
+              className="flex items-center gap-2 px-4 py-2 bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-xl text-[13px] font-bold hover:bg-[#30363d] hover:border-[#8b949e] transition-all disabled:opacity-50">
+              <RefreshCw size={14} className={isAnalyzing ? 'animate-spin' : ''} />
+              {isAnalyzing ? 'Running…' : 'Re-analyze'}
+            </button>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          <button onClick={disconnectGithub} disabled={isAnalyzing || isDisconnecting}
-            className="flex items-center gap-2 px-4 py-2 bg-[#bc1313]/10 text-[#ff7b72] border border-[#bc1313]/50 rounded-xl text-[13px] font-bold hover:bg-[#bc1313]/20 transition-all disabled:opacity-50">
-            {isDisconnecting ? <RefreshCw size={14} className="animate-spin" /> : <LogOut size={14} />}
-            {isDisconnecting ? 'Disconnecting…' : 'Disconnect'}
-          </button>
-          <button onClick={runAnalysis} disabled={isAnalyzing}
-            className="flex items-center gap-2 px-4 py-2 bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-xl text-[13px] font-bold hover:bg-[#30363d] hover:border-[#8b949e] transition-all disabled:opacity-50">
-            <RefreshCw size={14} className={isAnalyzing ? 'animate-spin' : ''} />
-            {isAnalyzing ? 'Running…' : 'Re-analyze'}
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">

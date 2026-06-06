@@ -27,6 +27,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from ml.config import (
     COURSE_PROFILES,
+    COURSE_SEMESTER,
     SKILL_CATEGORIES,
     compute_skill_scores,
     ilo_weighted_avg,
@@ -34,6 +35,12 @@ from ml.config import (
 
 ML_ROOT   = Path(__file__).resolve().parents[1]
 ARTIFACTS = ML_ROOT / "artifacts"
+
+# When the database has fewer than this many student-course observations,
+# synthesize a curriculum-wide dataset so the model has enough samples to
+# actually learn the (course, ILO) -> skill mapping.
+MIN_REAL_SAMPLES = 200
+SYNTHETIC_SAMPLES_PER_COURSE = 30
 
 # SQL to compute ILO percentages per student per course.
 # Aggregates across all assessments: AVG(score / max_score * 100) grouped by ILO number,
@@ -70,27 +77,58 @@ def _get_sync_url() -> str:
     return url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
 
 
-def _load_ilo_data() -> pd.DataFrame:
-    """Fetch ILO data from the database and return a DataFrame."""
+def _synthesize_ilo_data(rng: np.random.Generator, per_course: int) -> pd.DataFrame:
+    """
+    Build a synthetic curriculum-wide ILO dataset.
+
+    For each course in COURSE_PROFILES, sample `per_course` virtual students
+    whose ILO percentages follow a beta distribution centered around 80
+    (typical passing band for BSCpE). The model trained on this dataset
+    learns the new (course, ILO) -> skill mapping defined in targets.py.
+    """
+    rows: list[dict] = []
+    for course in COURSE_PROFILES.keys():
+        semester = COURSE_SEMESTER.get(course, 1)
+        # alpha=8, beta=2 -> mean ~80, mostly in [60, 95]
+        ilos = rng.beta(8.0, 2.0, size=(per_course, 4)) * 100.0
+        for ilo1, ilo2, ilo3, ilo4 in ilos:
+            rows.append({
+                "Course": course,
+                "Semester": semester,
+                "ILO1": round(float(ilo1), 1),
+                "ILO2": round(float(ilo2), 1),
+                "ILO3": round(float(ilo3), 1),
+                "ILO4": round(float(ilo4), 1),
+            })
+    return pd.DataFrame(rows)
+
+
+def _load_ilo_data(rng: np.random.Generator) -> pd.DataFrame:
+    """
+    Fetch ILO data from the database and return a DataFrame.
+    Augments with a synthetic curriculum-wide dataset when the DB has
+    too few rows to train a generalizable model.
+    """
     engine = create_engine(_get_sync_url(), echo=False)
     df = pd.read_sql(_ILO_QUERY, engine)
     engine.dispose()
 
-    if df.empty:
-        raise ValueError(
-            "No ILO data found in the database. "
-            "Instructors must enter assessment scores before the model can be trained."
-        )
+    if not df.empty:
+        df = df.drop(columns=["student_id"])
+        required = {"Course", "Semester", "ILO1", "ILO2", "ILO3", "ILO4"}
+        missing = required - set(df.columns)
+        if missing:
+            raise ValueError(f"Query result is missing columns: {sorted(missing)}")
 
-    # Drop the student_id column (not needed for training features)
-    df = df.drop(columns=["student_id"])
+    n_real = len(df)
+    print(f"Loaded {n_real} student-course records from database")
 
-    required = {"Course", "Semester", "ILO1", "ILO2", "ILO3", "ILO4"}
-    missing = required - set(df.columns)
-    if missing:
-        raise ValueError(f"Query result is missing columns: {sorted(missing)}")
+    if n_real < MIN_REAL_SAMPLES:
+        synth = _synthesize_ilo_data(rng, SYNTHETIC_SAMPLES_PER_COURSE)
+        print(f"Augmenting with {len(synth)} synthetic curriculum-wide samples "
+              f"({SYNTHETIC_SAMPLES_PER_COURSE} per course x {len(COURSE_PROFILES)} courses)")
+        df = pd.concat([df, synth], ignore_index=True) if n_real else synth
 
-    print(f"Loaded {len(df)} student-course records from database")
     return df
 
 
@@ -138,21 +176,21 @@ def _build_training_data(df: pd.DataFrame, rng: np.random.Generator) -> tuple[pd
 
 
 def _build_pipeline() -> Pipeline:
-    from sklearn.preprocessing import OrdinalEncoder
+    from sklearn.preprocessing import OneHotEncoder
 
     preprocessor = ColumnTransformer(
         transformers=[
-            ("course", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1), ["Course"]),
+            ("course", OneHotEncoder(handle_unknown="ignore", sparse_output=False), ["Course"]),
         ],
         remainder="passthrough",
     )
 
     base_gbr = GradientBoostingRegressor(
-        n_estimators=150,
-        max_depth=3,
+        n_estimators=250,
+        max_depth=4,
         learning_rate=0.08,
         subsample=0.8,
-        min_samples_leaf=15,
+        min_samples_leaf=10,
         random_state=42,
     )
     regressor = MultiOutputRegressor(base_gbr, n_jobs=-1)
@@ -167,8 +205,8 @@ def train_and_save() -> None:
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(42)
 
-    # ── Load data from database ───────────────────────────────────────────
-    df = _load_ilo_data()
+    # ── Load data from database (augmented with synthetic when sparse) ────
+    df = _load_ilo_data(rng)
 
     X, Y = _build_training_data(df, rng)
     y_arr = Y.to_numpy(dtype=float)

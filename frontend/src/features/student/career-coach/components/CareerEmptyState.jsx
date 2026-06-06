@@ -1,88 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Bot, Sparkles, Star, AlertCircle, Clock } from 'lucide-react';
+import { Loader2, Bot, Sparkles, Star } from 'lucide-react';
+import AnalysisLoadingCard from './AnalysisLoadingCard';
 
-const STEP_TIME_HINTS = {
-  'Analyzing GitHub repositories...': '~15 sec',
-  'Processing academic performance...': '~10 sec',
-  'Synthesizing skill profile...': '~10 sec',
-  'Mapping career paths...': '~15 sec',
-  'Analyzing skill gaps...': '~15 sec',
-  'Generating career report...': '~10 sec',
-  'Tracking your progress...': '~10 sec',
-};
-
-export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus, error }) {
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus, error, onCancel }) {
   const [buttonClicked, setButtonClicked] = useState(false);
-
-  useEffect(() => {
-    if (!isRunning) {
-      setShowTimeoutWarning(false);
-      return;
-    }
-    const timer = setTimeout(() => {
-      setShowTimeoutWarning(true);
-    }, 30000);
-    return () => clearTimeout(timer);
-  }, [isRunning]);
 
   useEffect(() => {
     if (isRunning || error) setButtonClicked(false);
   }, [isRunning, error]);
 
   if (isRunning) {
-    const pct  = pipelineStatus?.percentage    || 0;
-    const step = pipelineStatus?.current_step  || 'Starting pipeline...';
-    const timeHint = STEP_TIME_HINTS[step];
-
     return (
       <div className="p-8 flex items-center justify-center h-full">
-        <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm max-w-md w-full text-center">
-          <Loader2 size={32} className="text-[#bc1313] animate-spin mx-auto mb-4" />
-          <h2 className="text-[18px] font-bold text-gray-900 mb-2">Analyzing Your Profile</h2>
-          <p className="text-[12px] text-gray-500 mb-1">{step}</p>
-          {timeHint && (
-            <p style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '12px' }}>
-              Estimated: {timeHint}
-            </p>
-          )}
-          {!timeHint && <div style={{ marginBottom: '12px' }} />}
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
-            <div
-              className="h-2 bg-[#bc1313] rounded-full transition-all duration-500"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <p className="text-[11px] font-bold text-gray-400">{pct}%</p>
-
-          <div
-            style={{
-              opacity: showTimeoutWarning ? 1 : 0,
-              transition: 'opacity 0.3s ease',
-              pointerEvents: showTimeoutWarning ? 'auto' : 'none',
-              marginTop: '16px',
-              background: '#fef3c7',
-              border: '1px solid #f59e0b',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              textAlign: 'left',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-            }}
-          >
-            <Clock size={16} style={{ color: '#92400e', marginTop: '2px', flexShrink: 0 }} />
-            <div>
-              <p style={{ fontSize: '12px', fontWeight: 600, color: '#92400e', margin: 0 }}>
-                Career analysis is running...
-              </p>
-              <p style={{ fontSize: '11px', color: '#92400e', margin: '4px 0 0 0', lineHeight: 1.5 }}>
-                This may take 1–2 minutes while our AI analyzes your GitHub activity, academic
-                performance, and maps your career paths. Please keep this tab open.
-              </p>
-            </div>
-          </div>
-        </div>
+        <AnalysisLoadingCard isRunning={isRunning} pipelineStatus={pipelineStatus} onCancel={onCancel} />
       </div>
     );
   }
@@ -95,8 +25,8 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
   return (
     <div className="p-8 flex items-center justify-center h-full">
       <div className="bg-white border border-gray-100 rounded-2xl p-10 shadow-sm max-w-lg w-full text-center">
-        <div className="w-16 h-16 rounded-2xl bg-[#bc1313]/10 flex items-center justify-center mx-auto mb-5">
-          <Bot size={28} className="text-[#bc1313]" />
+        <div className="w-16 h-16 rounded-2xl bg-[#70170f]/10 flex items-center justify-center mx-auto mb-5">
+          <Bot size={28} className="text-[#70170f]" />
         </div>
         <h2 className="text-[22px] font-bold text-gray-900 mb-2">AI Career Intelligence</h2>
         <p className="text-[12px] text-gray-500 leading-relaxed mb-6 max-w-sm mx-auto">
@@ -104,22 +34,14 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
           activity to map personalized career trajectories.
         </p>
 
-        {error && (
-          <div className="mb-6 bg-red-50 text-red-700 text-[11px] p-3 rounded-lg border border-red-200 flex items-start text-left gap-2 shadow-sm">
-            <AlertCircle size={14} className="mt-0.5 shrink-0" />
-            <p className="font-medium leading-relaxed">{error.includes('RESOURCE_EXHAUSTED') ? 'The AI Pipeline is currently experiencing heavy traffic (Google API Quota reached). Please try again in exactly one minute.' : error}</p>
-          </div>
-        )}
-
         <div className="text-left bg-gray-50 rounded-xl p-4 mb-6 space-y-2">
           {[
             'Career path matching with compatibility scores',
             'Skill gap analysis and learning recommendations',
-            'Market trends aligned with your profile',
             'AI-powered career guidance chat',
           ].map(f => (
             <div key={f} className="flex items-center gap-2 text-[11px] text-gray-600">
-              <Sparkles size={12} className="text-[#bc1313] shrink-0" />
+              <Sparkles size={12} className="text-[#70170f] shrink-0" />
               {f}
             </div>
           ))}
@@ -130,8 +52,8 @@ export default function CareerEmptyState({ onGenerate, isRunning, pipelineStatus
           disabled={buttonClicked}
           className={`px-8 py-3 rounded-xl text-[13px] font-bold transition-colors inline-flex items-center gap-2 ${
             buttonClicked
-              ? 'bg-[#bc1313]/70 text-white cursor-not-allowed'
-              : 'bg-[#bc1313] hover:bg-[#890E0E] text-white'
+              ? 'bg-[#70170f]/70 text-white cursor-not-allowed'
+              : 'bg-[#70170f] hover:bg-[#4a0e09] text-white'
           }`}
         >
           {buttonClicked ? (

@@ -1,17 +1,17 @@
 const BADGE = {
-  pending:  'bg-amber-500/15 text-amber-300 border-amber-500/25',
-  used:     'bg-emerald-500/15 text-emerald-300 border-emerald-500/25',
-  expired:  'bg-red-500/15 text-red-300 border-red-500/25',
-  active:   'bg-emerald-500/15 text-emerald-300 border-emerald-500/25',
-  inactive: 'bg-red-500/15 text-red-300 border-red-500/25',
+  pending: 'bg-amber-50 text-amber-900 border-amber-200',
+  used: 'bg-emerald-50 text-emerald-900 border-emerald-200',
+  expired: 'bg-red-50 text-[#70170f] border-red-200',
+  active: 'bg-emerald-50 text-emerald-900 border-emerald-200',
+  inactive: 'bg-red-50 text-[#70170f] border-red-200',
 };
 
 const DOT = {
-  pending: 'bg-amber-400',
-  used: 'bg-emerald-400',
-  expired: 'bg-red-400',
-  active: 'bg-emerald-400',
-  inactive: 'bg-red-400',
+  pending: 'bg-amber-600',
+  used: 'bg-emerald-600',
+  expired: 'bg-[#70170f]',
+  active: 'bg-emerald-600',
+  inactive: 'bg-[#70170f]',
 };
 
 export default function StatusBadge({ status }) {

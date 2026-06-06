@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { studentService } from '../../../../services/studentService';
+import { request } from '../../../../services/api';
 
-export default function useStudentData() {
+export default function useStudentData(filters = {}, studentId = null) {
   const [profile, setProfile] = useState(null);
   const [classes, setClasses] = useState([]);
+  const [archivedClasses, setArchivedClasses] = useState([]);
   const [scores, setScores] = useState([]);
   const [predictions, setPredictions] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -12,67 +14,90 @@ export default function useStudentData() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
+    const qs = new URLSearchParams(filters).toString();
     try {
-      const [profileRes, classesRes, scoresRes, predictionsRes] = await Promise.allSettled([
-        studentService.getProfile(),
-        studentService.getClasses(),
-        studentService.getScores(),
-        studentService.getPredictions(),
-      ]);
+      if (studentId) {
+        const [infoRes, classesRes, scoresRes, predictionsRes] = await Promise.allSettled([
+          request('GET', `/api/instructor/advisees`),
+          request('GET', `/api/instructor/advisees/${studentId}/classes`),
+          request('GET', `/api/instructor/advisees/${studentId}/scores`),
+          request('GET', `/api/instructor/advisees/${studentId}/predictions${qs ? '?' + qs : ''}`),
+        ]);
 
-      if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
-      else throw new Error('Failed to load profile');
+        if (infoRes.status === 'fulfilled') {
+          const current = (infoRes.value.data || []).find(s => s.id === Number(studentId));
+          if (current) setProfile(current);
+          else throw new Error('Advisee not found');
+        } else throw new Error('Failed to load advisees');
 
-      if (classesRes.status === 'fulfilled') setClasses(classesRes.value.data || []);
-      if (scoresRes.status === 'fulfilled') setScores(scoresRes.value.data || []);
-      
-      // Predictions might fail if no scores exist yet
-      if (predictionsRes.status === 'fulfilled') {
-        setPredictions(predictionsRes.value.data);
+        if (classesRes.status === 'fulfilled') setClasses(classesRes.value.data || []);
+        setArchivedClasses([]);
+        if (scoresRes.status === 'fulfilled') setScores(scoresRes.value.data || []);
+        if (predictionsRes.status === 'fulfilled') setPredictions(predictionsRes.value.data);
+      } else {
+        const [profileRes, classesRes, archivedClassesRes, scoresRes, predictionsRes] = await Promise.allSettled([
+          studentService.getProfile(),
+          studentService.getClasses(),
+          studentService.getArchivedClasses(),
+          studentService.getScores(),
+          studentService.getPredictions(filters),
+        ]);
+
+        if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
+        else throw new Error('Failed to load profile');
+
+        if (classesRes.status === 'fulfilled') setClasses(classesRes.value.data || []);
+        if (archivedClassesRes.status === 'fulfilled') setArchivedClasses(archivedClassesRes.value.data || []);
+        if (scoresRes.status === 'fulfilled') setScores(scoresRes.value.data || []);
+        
+        if (predictionsRes.status === 'fulfilled') {
+          setPredictions(predictionsRes.value.data);
+        }
       }
     } catch (e) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [studentId, JSON.stringify(filters)]);
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
 
-  // Derived calculations
-  const globalRank = 'Top 5%'; // Placeholder or require an aggregation backend API
-  
-  // ILO Coverage
+  // ILO Coverage — derived from ML pipeline's SO scores (predictions.so_scores, 0–100).
+  // The 13 Student Outcomes are grouped into 3 meaningful domains per the EE Curriculum Map:
+  //   Technical Competency   → SO1, SO2, SO3, SO5, SO11
+  //   Professional Practice  → SO4, SO6, SO7, SO8, SO9, SO12
+  //   Social Responsibility  → SO10, SO13
   const calculateILO = () => {
-    if (!scores.length) return { tech: 0, analytical: 0, ethics: 0, total: 0 };
-    // MOCK MAPPING: We'll map ILO 1 to Tech, 2 to Analytical, 3 to Ethics for the donut
-    const ilos = [1, 2, 3];
-    const grouped = { 1: [], 2: [], 3: [] };
-    scores.forEach(s => {
-      if (grouped[s.ilo_number]) grouped[s.ilo_number].push(s.percentage);
-    });
-    
-    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-    const tech = avg(grouped[1]);
-    const analytical = avg(grouped[2]);
-    const ethics = avg(grouped[3]);
-    const total = (tech + analytical + ethics) / 3;
+    const so = predictions?.so_scores || {};
 
-    // Normalise to 100% for the donut chart (the segments need to sum to 100)
-    const sum = tech + analytical + ethics || 1;
+    const avg = (...keys) => {
+      const vals = keys.map(k => so[k]).filter(v => typeof v === 'number' && isFinite(v));
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+    };
+
+    const tech       = avg('SO1', 'SO2', 'SO3', 'SO5', 'SO11');
+    const prof       = avg('SO4', 'SO6', 'SO7', 'SO8', 'SO9', 'SO12');
+    const social     = avg('SO10', 'SO13');
+
+    const total = (tech + prof + social) / 3;
+
     return {
-      techPct: Math.round((tech / sum) * 100),
-      analyticalPct: Math.round((analytical / sum) * 100),
-      ethicsPct: Math.round((ethics / sum) * 100),
-      totalMastery: Math.round(total)
+      techPct:        Math.round(tech),
+      analyticalPct:  Math.round(prof),
+      ethicsPct:      Math.round(social),
+      totalMastery:   Math.round(total),
     };
   };
+
+  const globalRank = 'Top 5%';
 
   return {
     profile,
     classes,
+    archivedClasses,
     scores,
     predictions,
     loading,

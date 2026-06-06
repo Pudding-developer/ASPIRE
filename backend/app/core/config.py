@@ -11,11 +11,27 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 # JWT / Security
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 120
+
+# Pseudonymization key — independent of SECRET_KEY so JWT rotation does not
+# break cross-report pseudonym stability. Falls back to SECRET_KEY only for
+# dev so the app still boots; production should set PSEUDONYM_KEY explicitly.
+PSEUDONYM_KEY = os.getenv("PSEUDONYM_KEY", SECRET_KEY)
+if PSEUDONYM_KEY == SECRET_KEY:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(
+        "PSEUDONYM_KEY not set — falling back to SECRET_KEY. "
+        "Set PSEUDONYM_KEY in .env for production."
+    )
+
+# CORS Origins
+_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:5175")
+ALLOWED_ORIGINS = [o.strip() for o in _origins.split(",") if o.strip()]
 
 # Allowed institution email domain
 ALLOWED_EMAIL_DOMAIN = os.getenv("ALLOWED_EMAIL_DOMAIN", "")
@@ -29,7 +45,30 @@ GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:8000/ap
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "ASPIRE <onboarding@resend.dev>")
 
-# Gemini AI (for CrewAI pipeline)
+# Gemini AI — supports two auth modes:
+#   1. AI Studio API key   → set GEMINI_API_KEY in .env (simpler, separate quota)
+#   2. Vertex AI service account → set GOOGLE_APPLICATION_CREDENTIALS (legacy)
+# If GEMINI_API_KEY is present, the codebase prefers AI Studio across LiteLLM,
+# google-genai embeddings, and the chat client.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini/gemini-2.0-flash")
+USE_GEMINI_API_KEY = bool(GEMINI_API_KEY)
+
+# Default model name depends on the active provider — litellm uses different prefixes.
+_default_model = "gemini/gemini-2.5-flash" if USE_GEMINI_API_KEY else "vertex_ai/gemini-2.5-flash"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", _default_model)
+
+VERTEX_AI_PROJECT = os.getenv("VERTEX_AI_PROJECT", "aspire-494019")
+VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "asia-southeast1")
+1
+if USE_GEMINI_API_KEY:
+    # LiteLLM and google-genai both read these.
+    os.environ["GEMINI_API_KEY"] = GEMINI_API_KEY
+    os.environ["GOOGLE_API_KEY"] = GEMINI_API_KEY
+else:
+    # Vertex AI path — service account auth.
+    _sa_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    if _sa_path:
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = _sa_path
+    os.environ["VERTEXAI_PROJECT"] = VERTEX_AI_PROJECT
+    os.environ["VERTEXAI_LOCATION"] = VERTEX_AI_LOCATION
 

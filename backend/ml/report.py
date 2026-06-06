@@ -16,6 +16,8 @@ from ml.config import (
     SKILL_CATEGORIES,
     get_course_code,
     get_course_ilo_count,
+    compute_so_scores,
+    SO_NAMES,
 )
 from ml.predictor import SkillsPredictor
 
@@ -89,6 +91,10 @@ def build_course_report(
     scenario_low   = {s: round(float(v), 2) for s, v in result.scenario_low.items()}
     scenario_high  = {s: round(float(v), 2) for s, v in result.scenario_high.items()}
 
+    # Map skill scenarios to SO scenarios for the course breakdown view
+    so_scenario_low = compute_so_scores(result.scenario_low)
+    so_scenario_high = compute_so_scores(result.scenario_high)
+
     return {
         "student_name": student_name,
         "course": course,
@@ -118,11 +124,17 @@ def build_course_report(
         "trend": {
             "scenario_low":  scenario_low,
             "scenario_high": scenario_high,
+            "so_scenario_low":  so_scenario_low,
+            "so_scenario_high": so_scenario_high,
         },
 
         "model": {
             "cv_r2_mean":   round(float(metrics.get("cv_r2_mean",   0.0)), 4),
             "cv_mae_mean":  round(float(metrics.get("cv_mae_mean",  0.0)), 3),
             "cv_rmse_mean": round(float(metrics.get("cv_rmse_mean", 0.0)), 3),
+        },
+        "so": {
+            "scores": compute_so_scores(predicted),
+            "names": SO_NAMES,
         },
     }

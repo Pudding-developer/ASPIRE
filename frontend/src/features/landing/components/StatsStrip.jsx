@@ -53,31 +53,31 @@ export default function StatsStrip() {
   }, { scope: containerRef });
 
   return (
-    <section ref={containerRef} className="py-20 border-y border-white/5 bg-[#0a0101]">
+    <section ref={containerRef} className="py-20 border-y border-[#bc1313]/10 bg-[#FFFFFF]">
       <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
         <div className="stat-item opacity-0">
           <div className="text-4xl md:text-5xl font-light text-[#bc1313] mb-3">
             <AnimatedCounter target={680} suffix="+" />
           </div>
-          <div className="text-sm text-gray-400">Students</div>
+          <div className="text-sm text-[#430202]/70">Students</div>
         </div>
         <div className="stat-item opacity-0">
           <div className="text-4xl md:text-5xl font-light text-[#bc1313] mb-3">
             <AnimatedCounter target={64} />
           </div>
-          <div className="text-sm text-gray-400">Courses</div>
+          <div className="text-sm text-[#430202]/70">Courses</div>
         </div>
         <div className="stat-item opacity-0">
           <div className="text-4xl md:text-5xl font-light text-[#bc1313] mb-3">
             <AnimatedCounter target={12} />
           </div>
-          <div className="text-sm text-gray-400">Student Outcomes</div>
+          <div className="text-sm text-[#430202]/70">Student Outcomes</div>
         </div>
         <div className="stat-item opacity-0">
           <div className="text-4xl md:text-5xl font-light text-[#bc1313] mb-3">
             <AnimatedCounter target={95} suffix="%" />
           </div>
-          <div className="text-sm text-gray-400">Accuracy</div>
+          <div className="text-sm text-[#430202]/70">Accuracy</div>
         </div>
       </div>
     </section>

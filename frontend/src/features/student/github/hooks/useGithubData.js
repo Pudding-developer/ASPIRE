@@ -6,8 +6,9 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { githubApi } from '../../../../services/githubApi';
+import { request } from '../../../../services/api';
 
-export default function useGithubData() {
+export default function useGithubData(studentId = null) {
   const [status, setStatus]             = useState(null);   // { connected, github_username, ... }
   const [summary, setSummary]           = useState(null);   // profile stats, top languages
   const [repos, setRepos]               = useState([]);
@@ -25,27 +26,52 @@ export default function useGithubData() {
     setLoading(true);
     setError(null);
     try {
-      const statusRes = await githubApi.getStatus();
-      const statusData = statusRes.data;
-      setStatus(statusData);
+      if (studentId) {
+        // Fetch via instructor endpoints
+        const summaryRes = await request('GET', `/api/instructor/advisees/${studentId}/github/summary`).catch(() => null);
+        
+        if (summaryRes && summaryRes.data) {
+          setStatus({
+            connected: true,
+            github_username: summaryRes.data.github_username,
+            github_avatar_url: summaryRes.data.github_avatar_url,
+            last_analyzed: summaryRes.cached_at || new Date().toISOString(),
+            has_analysis: true
+          });
+          setSummary(summaryRes.data);
+          
+          const [reposRes, contribRes] = await Promise.all([
+            request('GET', `/api/instructor/advisees/${studentId}/github/repositories`),
+            request('GET', `/api/instructor/advisees/${studentId}/github/contributions`),
+          ]);
+          setRepos(reposRes.data || []);
+          setContributions(contribRes.data || null);
+        } else {
+          setStatus({ connected: false });
+        }
+      } else {
+        const statusRes = await githubApi.getStatus();
+        const statusData = statusRes.data;
+        setStatus(statusData);
 
-      // Only fetch details if connected and has analysis
-      if (statusData.connected && statusData.has_analysis) {
-        const [summaryRes, reposRes, contribRes] = await Promise.all([
-          githubApi.getSummary(),
-          githubApi.getRepositories(),
-          githubApi.getContributions(),
-        ]);
-        setSummary(summaryRes.data);
-        setRepos(reposRes.data);
-        setContributions(contribRes.data);
+        // Only fetch details if connected and has analysis
+        if (statusData.connected && statusData.has_analysis) {
+          const [summaryRes, reposRes, contribRes] = await Promise.all([
+            githubApi.getSummary(),
+            githubApi.getRepositories(),
+            githubApi.getContributions(),
+          ]);
+          setSummary(summaryRes.data);
+          setRepos(reposRes.data);
+          setContributions(contribRes.data);
+        }
       }
     } catch (e) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [studentId]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 

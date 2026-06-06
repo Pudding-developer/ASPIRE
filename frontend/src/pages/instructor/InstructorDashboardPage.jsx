@@ -8,13 +8,17 @@ import ArchivedClassesView from '../../features/instructor/views/ArchivedClasses
 import ClassDetailView from '../../features/instructor/views/ClassDetailView';
 import { CreateClassModal, ClassCodeModal, ConfirmationModal } from '../../features/instructor/components/InstructorModals';
 import { useInstructorClasses } from '../../features/instructor/hooks/useInstructorClasses';
+import MyAdviseesView from '../../features/instructor/views/MyAdviseesView';
+import AdviseeProfileView from '../../features/instructor/views/AdviseeProfileView';
 
 const InstructorDashboard = () => {
   const { token, logout } = useAuth();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('instructor-portal');
+  const [selectedYear, setSelectedYear] = useState('All');
+  const [selectedSemester, setSelectedSemester] = useState('All');
 
-  const { classes, archivedClasses, stats, loading, error, createClass, archiveClass, deleteClass, refetch } = useInstructorClasses();
+  const { classes, archivedClasses, stats, loading, error, createClass, archiveClass, restoreClass, deleteClass, refetch } = useInstructorClasses();
 
   // Validate session against DB (catches deactivated accounts)
   useEffect(() => {
@@ -22,7 +26,8 @@ const InstructorDashboard = () => {
       navigate('/');
       return;
     }
-    fetch('http://localhost:8000/api/instructor/profile', {
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    fetch(`${apiBase}/api/instructor/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(r => {
@@ -56,7 +61,7 @@ const InstructorDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-[#bc1313] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#70170f] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -65,7 +70,7 @@ const InstructorDashboard = () => {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4">
         <p className="text-red-600 font-medium">{error}</p>
-        <button onClick={refetch} className="px-4 py-2 bg-[#bc1313] text-white rounded-lg hover:bg-[#890E0E] transition-colors">
+        <button onClick={refetch} className="px-4 py-2 bg-[#70170f] text-white rounded-lg hover:bg-[#4a0e09] transition-colors">
           Retry
         </button>
       </div>
@@ -84,18 +89,36 @@ const InstructorDashboard = () => {
           />
         )}
 
+        {activeView === 'my-advisees' && (
+          <MyAdviseesView onSelectAdvisee={(id) => setActiveView(`advisee-${id}`)} />
+        )}
+
+        {activeView.startsWith('advisee-') && (() => {
+          const studentId = parseInt(activeView.replace('advisee-', ''));
+          return (
+            <AdviseeProfileView 
+              studentId={studentId} 
+              onBack={() => setActiveView('my-advisees')} 
+            />
+          );
+        })()}
+
         {activeView === 'my-classes' && (
           <MyClassesView
             classes={classes}
             onSelectClass={setActiveView}
             onCreateClass={() => setIsCreateOpen(true)}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            selectedSemester={selectedSemester}
+            setSelectedSemester={setSelectedSemester}
           />
         )}
 
         {activeView === 'archived' && (
           <ArchivedClassesView
             classes={archivedClasses}
-            onRestore={() => {}}
+            onRestore={(id) => triggerConfirm('Restore Class', 'This class will be moved back to active classes and become visible to enrolled students.', 'Restore', 'default', async () => { await restoreClass(id); })}
             onDelete={(id) => triggerConfirm('Permanently Delete', 'This action cannot be undone. All student records will be destroyed.', 'Delete Forever', 'danger', () => deleteClass(id))}
           />
         )}
@@ -109,6 +132,7 @@ const InstructorDashboard = () => {
               classData={classObj}
               onBack={() => setActiveView('my-classes')}
               onShowCode={() => { setNewClassCode(classObj?.class_code || ''); setIsCodeOpen(true); }}
+              onClassRepChanged={refetch}
               onArchive={() => {
                 triggerConfirm('Archive Class', 'This class will be moved to archives and no longer active.', 'Archive', 'danger', async () => {
                   await archiveClass(classId);

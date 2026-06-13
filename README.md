@@ -74,19 +74,30 @@ This uses Google Cloud Platform's enterprise Vertex AI endpoint.
    VERTEX_AI_LOCATION=your-gcp-location-zone (e.g. asia-southeast1)
    ```
 
+## Prerequisites
+
+Before starting, make sure you have the following installed on your machine:
+- **Python:** Version 3.10 or higher (recommended: 3.12)
+- **Node.js:** Version 18 or higher
+- **PostgreSQL:** Version 12 or higher with the **pgvector** extension installed.
+
 ---
 
 ## Local Development Setup
 
 ### 1. Database Setup
 
-Ensure PostgreSQL is installed and running. Open your `psql` console:
+Ensure PostgreSQL is installed and running, along with the `pgvector` extension. Open your `psql` console:
 
 ```sql
 CREATE DATABASE aspire_db;
 CREATE USER aspire_user WITH ENCRYPTED PASSWORD 'aspire123';
 GRANT ALL PRIVILEGES ON DATABASE aspire_db TO aspire_user;
 ALTER DATABASE aspire_db OWNER TO aspire_user;
+
+-- Connect to the database and enable the vector extension:
+\c aspire_db
+CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
 ### 2. Backend (FastAPI)
@@ -165,6 +176,8 @@ In a separate terminal:
 
 ```bash
 cd frontend
+# Create the environment file:
+cp .env.example .env
 npm install
 npm run dev
 ```

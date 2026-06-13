@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leylan Andre D. Dimayacyac - Resume</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0f172a;
+      --primary-light: #38bdf8;
+      --secondary: #0284c7;
+      --text: #334155;
+      --text-light: #64748b;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .resume-container {
+      background-color: var(--card-bg);
+      width: 100%;
+      max-width: 900px;
+      padding: 50px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    header {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 25px;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .title {
+      font-size: 18px;
+      color: var(--secondary);
+      font-weight: 600;
+      margin-bottom: 15px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .contact-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px 25px;
+      font-size: 14px;
+      color: var(--text-light);
+    }
+
+    .contact-info a {
+      color: var(--text-light);
+      text-decoration: none;
+      transition: color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .contact-info a:hover {
+      color: var(--secondary);
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      color: var(--primary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background-color: var(--border);
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .edu-item, .project-item {
+      margin-bottom: 20px;
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 5px;
+    }
+
+    .item-title {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 15px;
+    }
+
+    .item-org {
+      font-weight: 500;
+      color: var(--secondary);
+      font-size: 14px;
+    }
+
+    .item-date {
+      font-size: 13px;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    .item-desc {
+      font-size: 13.5px;
+      color: var(--text);
+      margin-top: 5px;
+      padding-left: 15px;
+    }
+
+    .item-desc li {
+      margin-bottom: 4px;
+    }
+
+    .skills-category {
+      margin-bottom: 12px;
+      font-size: 13.5px;
+    }
+
+    .skills-category strong {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .skills-category span {
+      color: var(--text);
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background-color: #fff;
+        padding: 0;
+        color: #000;
+      }
+      .resume-container {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      h1 {
+        font-size: 26px;
+      }
+      h2 {
+        font-size: 15px;
+        margin-top: 20px;
+      }
+      .item-title, .item-org {
+        font-size: 13.5px;
+      }
+      .item-desc {
+        font-size: 12px;
+      }
+      .skills-category {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="resume-container">
+    <header>
+      <h1>Leylan Andre D. Dimayacyac</h1>
+      <div class="title">Computer Engineering Student</div>
+      <div class="contact-info">
+        <span>📍 Victoria, Oriental Mindoro</span>
+        <a href="tel:+63920713526">📞 +63 920 713 526</a>
+        <a href="mailto:leylandimayacyac@gmail.com">✉️ leylandimayacyac@gmail.com</a>
+        <a href="https://github.com/Pudding-developer" target="_blank">🐙 Pudding-developer</a>
+      </div>
+    </header>
+
+    <div class="section">
+      <h2>Education</h2>
+      
+      <div class="edu-item">
+        <div class="item-header">
+          <div>
+            <span class="item-title">BS Computer Engineering</span>
+            <span class="item-org"> | Batangas State University</span>
+          </div>
+          <span class="item-date">2022 – Present</span>
+        </div>
+        <ul class="item-desc">
+          <li><strong>Relevant Coursework:</strong> Object-Oriented Programming, Computer Programming 1, Programming Logic and Design, Operating Systems, Software Design, Calculus 1 & 2, Cognates 1, 2, and 3.</li>
+        </ul>
+      </div>
+
+      <div class="edu-item">
+        <div class="item-header">
+          <div>
+            <span class="item-title">High School Diploma (With Honors)</span>
+            <span class="item-org"> | Good Shepherd Academy</span>
+          </div>
+          <span class="item-date">2009 – 2021</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Technical Skills</h2>
+      
+      <div class="skills-category">
+        <strong>Programming Languages:</strong> <span>Python, JavaScript, HTML5, CSS3, SQL</span>
+      </div>
+      <div class="skills-category">
+        <strong>Frameworks & Libraries:</strong> <span>FastAPI, Flask, Django, Next.js / NestJS, CrewAI</span>
+      </div>
+      <div class="skills-category">
+        <strong>Database & Analytics:</strong> <span>MySQL, PostgreSQL, MS Access, Power BI</span>
+      </div>
+      <div class="skills-category">
+        <strong>Engineering Tools:</strong> <span>AutoCAD, Tinkercad, PCBWiz, PyCharm, NetBeans IDE, MATLAB, EasyEDA, Jupyter Notebook</span>
+      </div>
+      <div class="skills-category">
+        <strong>Collaboration & Tools:</strong> <span>Google Workspace, Microsoft Office (Word, Excel, PowerPoint), Git / GitHub</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Projects & Experience</h2>
+
+      <div class="project-item">
+        <div class="item-header">
+          <div>
+            <span class="item-title">Predictive Skill Assessment System (ASPIRE)</span>
+            <span class="item-org"> | Thesis Project</span>
+          </div>
+          <span class="item-date">Ongoing</span>
+        </div>
+        <ul class="item-desc">
+          <li>Developed an AI-driven academic advising and performance tracking system that automates performance mapping to Intended Learning Outcomes (ILOs) and Student Outcomes (SOs).</li>
+          <li>Optimized predictive models utilizing <strong>Random Forest</strong> and <strong>KNN</strong> algorithms for high-accuracy performance forecasting.</li>
+          <li>Designed and implemented an <strong>Apache Airflow ETL pipeline</strong> for seamless, automated data integration and ingestion.</li>
+          <li>Built a real-time visualization dashboard using <strong>Power BI</strong> to present key performance indicators (KPIs) to academic administrators.</li>
+          <li>Integrated an automated resume generator tool within the web platform to translate academic achievements into exportable professional profiles.</li>
+        </ul>
+      </div>
+
+      <div class="project-item">
+        <div class="item-header">
+          <div>
+            <span class="item-title">AcadSync (Academic Management System)</span>
+            <span class="item-org"> | CpE 418: Final Project</span>
+          </div>
+          <span class="item-date">Completed</span>
+        </div>
+        <ul class="item-desc">
+          <li>Built a full-stack academic management system in <strong>Python (Flask)</strong> to aggregate real-time student data from Google Classroom.</li>
+          <li>Implemented secure <strong>OAuth 2.0 (GSuite)</strong> authentication and engineered a local caching strategy using <strong>SQLAlchemy</strong> and <strong>SQLite</strong> to optimize API response times.</li>
+          <li>Designed a responsive, modern front-end dashboard using <strong>HTML5, CSS3, and JavaScript</strong> to visualize student analytics.</li>
+        </ul>
+      </div>
+
+      <div class="project-item">
+        <div class="item-header">
+          <div>
+            <span class="item-title">Cogitate (Web-Based Study Companion)</span>
+            <span class="item-org"> | CpE 404: Final Project</span>
+          </div>
+          <span class="item-date">Completed</span>
+        </div>
+        <ul class="item-desc">
+          <li>Designed and deployed a collaborative web application to boost student productivity and peer interaction featuring study rooms, peer forums, calendars, and to-do lists.</li>
+          <li>Implemented secure user authentication (Login/Registration) and robust CRUD capabilities for calendar events, tasks, and message boards.</li>
+        </ul>
+      </div>
+
+      <div class="project-item">
+        <div class="item-header">
+          <div>
+            <span class="item-title">Student Cooperative Financial System</span>
+            <span class="item-org"> | Cooperative Management System</span>
+          </div>
+          <span class="item-date">Completed</span>
+        </div>
+        <ul class="item-desc">
+          <li>Created a cooperative management application tracking student capital using <strong>MS Access</strong> for secure transaction logs.</li>
+          <li>Programmed a dynamic interest calculation algorithm that leverages the system clock to compute compound returns based on deposit duration and principal.</li>
+          <li>Automated financial record-keeping by integrating a script that generates and dispatches digital transaction receipts directly to student GSuite accounts.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,4 +1,4 @@
-# ASPIRE Project Appendices
+# ASPIRE Project Appendices 
 
 This document serves as the technical appendix for the ASPIRE (Academic Student Performance and Intelligence for Retention and Enrollment) system codebase.
 

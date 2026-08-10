@@ -4,8 +4,7 @@ knowledge.py — SQLModel for storing RAG knowledge chunks with pgvector embeddi
 from datetime import datetime
 from typing import Optional
 from sqlmodel import SQLModel, Field
-from sqlalchemy import Column, Text
-from pgvector.sqlalchemy import Vector
+from sqlalchemy import Column, Text, JSON
 
 EMBEDDING_DIM = 768  # gemini-embedding-001 output dimension (reduced)
 
@@ -27,7 +26,7 @@ class KnowledgeChunk(SQLModel, table=True):
     # The vector embedding (768-dim from gemini-embedding-001)
     embedding: list = Field(
         default=None,
-        sa_column=Column(Vector(EMBEDDING_DIM), nullable=True)
+        sa_column=Column(JSON, nullable=True)
     )
 
 
@@ -41,5 +40,6 @@ class EmbeddingCache(SQLModel, table=True):
     __tablename__ = "embedding_cache"
 
     query_hash: str = Field(primary_key=True, max_length=64)
-    vector: list = Field(sa_column=Column(Vector(EMBEDDING_DIM), nullable=False))
+    vector: list = Field(sa_column=Column(JSON, nullable=False))
     created_at: datetime = Field(default_factory=datetime.utcnow)
+

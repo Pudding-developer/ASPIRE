@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vite *)",
+      "Bash(cp .env .env.bak)",
+      "Bash(sed -i '/^[[:space:]]*GEMINI_API_KEY=/d' .env)",
+      "Bash(sed -i '/^Top PH employers:/d' scripts/seed_knowledge.py)",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('scripts/seed_knowledge.py'\\).read\\(\\)\\); print\\('parses OK'\\)\")",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

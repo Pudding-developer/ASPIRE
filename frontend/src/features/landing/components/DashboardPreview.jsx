@@ -83,8 +83,7 @@ export default function DashboardPreview() {
                playsInline
                preload="auto"
              >
-               <source src="/preview.mp4" type="video/mp4" />
-               <source src="/preview.mov" type="video/quicktime" />
+               <source src="/ASPIRE_WT.mp4" type="video/mp4" />
                Your browser does not support the video tag.
              </video>
 

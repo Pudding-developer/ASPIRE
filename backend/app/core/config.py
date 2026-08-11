@@ -8,20 +8,20 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Google OAuth 2.0 (will be used later)
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback").strip()
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").strip()
 
 # JWT / Security
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production").strip()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 # Pseudonymization key — independent of SECRET_KEY so JWT rotation does not
 # break cross-report pseudonym stability. Falls back to SECRET_KEY only for
 # dev so the app still boots; production should set PSEUDONYM_KEY explicitly.
-PSEUDONYM_KEY = os.getenv("PSEUDONYM_KEY", SECRET_KEY)
+PSEUDONYM_KEY = os.getenv("PSEUDONYM_KEY", SECRET_KEY).strip()
 if PSEUDONYM_KEY == SECRET_KEY:
     import logging as _logging
     _logging.getLogger(__name__).warning(
@@ -34,12 +34,12 @@ _origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:
 ALLOWED_ORIGINS = [o.strip() for o in _origins.split(",") if o.strip()]
 
 # Allowed institution email domain
-ALLOWED_EMAIL_DOMAIN = os.getenv("ALLOWED_EMAIL_DOMAIN", "")
+ALLOWED_EMAIL_DOMAIN = os.getenv("ALLOWED_EMAIL_DOMAIN", "").strip()
 
 # GitHub OAuth
-GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
-GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
-GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:8000/api/github/callback")
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "").strip()
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "").strip()
+GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:8000/api/github/callback").strip()
 
 # Resend Email Configuration
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")

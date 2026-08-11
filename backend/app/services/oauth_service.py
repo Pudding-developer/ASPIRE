@@ -18,6 +18,8 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 _oauth_states: set[str] = set()
 
 
+from urllib.parse import quote
+
 def build_google_auth_url(flow: str = "login", token: str | None = None) -> tuple[str, str]:
     """Build Google OAuth URL with CSRF state. Returns (url, state)."""
     random_part = secrets.token_urlsafe(32)
@@ -26,9 +28,10 @@ def build_google_auth_url(flow: str = "login", token: str | None = None) -> tupl
     else:
         state = f"{flow}:{random_part}"
     _oauth_states.add(state)
+    encoded_redirect = quote(GOOGLE_REDIRECT_URI, safe="")
     params = "&".join([
         f"client_id={GOOGLE_CLIENT_ID}",
-        f"redirect_uri={GOOGLE_REDIRECT_URI}",
+        f"redirect_uri={encoded_redirect}",
         "response_type=code",
         "scope=openid%20email%20profile",
         "access_type=offline",

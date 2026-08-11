@@ -1,7 +1,8 @@
 /**
  * api.js — Shared fetch helper with JWT auth for all API calls.
  */
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = rawBase.replace(/\/+$/, '');
 const TOKEN_KEY = 'aspire_token';
 
 function getToken() {

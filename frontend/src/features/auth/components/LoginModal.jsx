@@ -6,7 +6,8 @@ import { Button } from '../../../components/ui/button';
 import useAuth from '../hooks/useAuth';
 import aspireLogo from '../../../assets/aspire-logo.png';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = rawBase.replace(/\/+$/, '');
 const GOOGLE_AUTH_URL = `${API_BASE}/auth/login/google?flow=login`;
 
 export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {

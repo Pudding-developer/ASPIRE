@@ -320,16 +320,16 @@ function CompetencyRadar({ soValues }) {
   const dataPolygon = dataPts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ') + ' Z';
 
   return (
-    <div className={`${panelBase} p-8 h-full relative overflow-hidden`}>
-      <div className="mb-8">
+    <div className={`${panelBase} p-6 sm:p-8 h-full relative overflow-hidden`}>
+      <div className="mb-6 sm:mb-8">
         <p className="text-[10px] font-extrabold text-[#70170f] uppercase tracking-[0.2em] mb-2">STUDENT OUTCOME PROFICIENCY</p>
         <h3 className="text-[24px] font-black text-gray-900 leading-tight"> Core Competencies</h3>
       </div>
 
-      <div className="max-w-[1000px] mx-auto flex flex-col lg:flex-row items-start justify-center gap-12">
+      <div className="w-full mx-auto flex flex-col 2xl:flex-row items-center 2xl:items-start justify-center gap-8 2xl:gap-12">
         {/* Left: Radar Chart */}
-        <div className="relative flex-shrink-0">
-          <svg width={size} height={size} className="overflow-visible">
+        <div className="relative w-full max-w-[440px] flex flex-col items-center shrink-0">
+          <svg viewBox="-90 -55 600 530" className="w-full h-auto block overflow-visible max-w-[420px] mx-auto">
             {/* Web Levels */}
             {levels.map((level, i) => (
               <path
@@ -440,9 +440,8 @@ function CompetencyRadar({ soValues }) {
             })}
           </svg>
 
-
           {/* Legend */}
-          <div className="flex items-center gap-6 mt-8 ml-4">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-6">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-[#9f0707] rounded-sm" />
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Student proficiency</span>
@@ -454,13 +453,8 @@ function CompetencyRadar({ soValues }) {
           </div>
         </div>
 
-
-
         {/* Right: SO List */}
-        <div className="flex-1 w-full max-w-md">
-
-
-
+        <div className="flex-1 w-full min-w-0 max-w-full 2xl:max-w-md">
           <div className="space-y-1">
             {SO_INFO.map((so, i) => {
               const val = Math.round(soValues[i] * 100);
@@ -469,15 +463,15 @@ function CompetencyRadar({ soValues }) {
               const textClass = level.text;
 
               return (
-                <div key={so.id} className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0 group hover:bg-gray-50/50 px-2 transition-colors">
-                  <div className="w-10 text-[9px] font-black text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded text-center shrink-0">
+                <div key={so.id} className="flex items-center gap-2 sm:gap-3 py-1.5 border-b border-gray-50 last:border-0 group hover:bg-gray-50/50 px-1 sm:px-2 transition-colors w-full">
+                  <div className="w-9 text-[9px] font-black text-gray-400 bg-gray-100 px-1 py-0.5 rounded text-center shrink-0">
                     {so.id}
                   </div>
-                  <div className="w-[170px] shrink-0">
-                    <p className="text-[11px] font-bold text-gray-700 truncate">{so.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-bold text-gray-700 truncate" title={so.name}>{so.name}</p>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden relative">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-20 sm:w-28 h-1.5 bg-gray-100 rounded-full overflow-hidden relative">
                       {/* 75% mark */}
                       <div className="absolute left-[75%] top-0 bottom-0 w-px bg-gray-300 z-10" />
                       <div className={`h-full ${colorClass} rounded-full transition-all duration-1000`} style={{ width: `${val}%` }} />
@@ -491,9 +485,9 @@ function CompetencyRadar({ soValues }) {
             })}
           </div>
 
-          {/* Full 11-level Grading Legend - 6 top, 5 bottom */}
+          {/* Full 11-level Grading Legend */}
           <div className="mt-8">
-            <div className="grid grid-cols-6 gap-y-4 gap-x-1">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-y-3 gap-x-2">
               {GRADING_SYSTEM.map((level) => (
                 <div key={level.label} className="flex flex-col items-center gap-1.5 text-center group">
                   <div className={`w-2 h-2 ${level.color} rounded-full shadow-sm group-hover:scale-125 transition-transform`} />

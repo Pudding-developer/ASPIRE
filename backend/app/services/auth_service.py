@@ -69,14 +69,17 @@ async def google_login_flow(
 
     found_roles = []
 
-    # Admin
+    # Admin (takes precedence for instant login)
     admin = await admin_repository.get_by_email(session, email)
     if admin:
         admin.google_id = google_id
         admin.avatar_url = avatar_url
         admin.full_name = full_name
         session.add(admin)
-        found_roles.append({"role": "admin", "redirect": "/admin/dashboard", "entity": admin, "table_source": "admin"})
+        await session.commit()
+        await session.refresh(admin)
+        token = build_jwt(admin, "admin")
+        return token, "/admin/dashboard"
 
     # Instructor
     instructor = await instructor_repository.get_by_email(session, email)

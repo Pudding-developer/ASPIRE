@@ -32,12 +32,14 @@ export default function SelectRoleModal({ isOpen, onClose, token }) {
   
   const [loadingRole, setLoadingRole] = useState(null);
   const [error, setError] = useState(null);
+
+  const activeToken = token || sessionStorage.getItem('aspire_role_selection_token');
   
   // Parse payload from token safely
   const payload = (() => {
-    if (!token) return null;
+    if (!activeToken) return null;
     try {
-      const base64Url = token.split('.')[1];
+      const base64Url = activeToken.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(
         atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
@@ -74,21 +76,22 @@ export default function SelectRoleModal({ isOpen, onClose, token }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${activeToken}`
         },
         body: JSON.stringify({ role: roleObj.role })
       });
       
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.detail || 'Failed to select role');
+        throw new Error(data.detail || 'Role selection token expired. Please sign in again.');
       }
       
+      sessionStorage.removeItem('aspire_role_selection_token');
       login(data.access_token);
       onClose(); // close the modal
       navigate(data.redirect || '/', { replace: true });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to connect. Please try again.');
       setLoadingRole(null);
     }
   };

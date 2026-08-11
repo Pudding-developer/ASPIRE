@@ -32,6 +32,7 @@ export default function LandingPage() {
   useEffect(() => {
     if (location.state?.showRoleSelection && location.state?.token) {
       setRoleSelectionToken(location.state.token);
+      sessionStorage.setItem('aspire_role_selection_token', location.state.token);
       setIsSelectRoleModalOpen(true);
       navigate('/', { replace: true, state: {} });
     }

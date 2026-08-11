@@ -105,13 +105,18 @@ app.include_router(roadmap_router, prefix="/api")
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
+    headers = dict(exc.headers) if exc.headers else {}
+    origin = request.headers.get("origin")
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
     return JSONResponse(
         status_code=exc.status_code,
         content={
             "detail": exc.detail,
             "code": getattr(exc, "code", "ERROR"),
         },
-        headers=exc.headers,
+        headers=headers,
     )
 
 

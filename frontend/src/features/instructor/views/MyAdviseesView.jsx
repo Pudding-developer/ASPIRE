@@ -10,7 +10,8 @@ export default function MyAdviseesView({ onSelectAdvisee }) {
 
   useEffect(() => {
     async function fetchAdvisees() {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiBase = rawBase.replace(/\/+$/, '');
       try {
         const res = await fetch(`${apiBase}/api/instructor/advisees`, {
           headers: { Authorization: `Bearer ${token}` }

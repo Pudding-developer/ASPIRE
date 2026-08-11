@@ -13,7 +13,8 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import aspireLogo from '../../assets/aspire-logo.png';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = rawBase.replace(/\/+$/, '');
 
 const ERROR_MESSAGES = {
   EMAIL_NOT_ALLOWED:

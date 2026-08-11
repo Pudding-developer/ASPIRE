@@ -40,7 +40,13 @@ async def seed():
         print("Error: Full name is required.")
         sys.exit(1)
 
-    engine = create_async_engine(DATABASE_URL, echo=False, future=True)
+    db_url = DATABASE_URL or ""
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+
+    engine = create_async_engine(db_url, echo=False, future=True)
     SessionFactory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with SessionFactory() as session:

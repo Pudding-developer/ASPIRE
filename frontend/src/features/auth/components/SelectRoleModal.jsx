@@ -68,7 +68,8 @@ export default function SelectRoleModal({ isOpen, onClose, token }) {
     setLoadingRole(roleObj.role);
     setError(null);
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiBase = rawBase.replace(/\/+$/, '');
       const res = await fetch(`${apiBase}/auth/login/select-role`, {
         method: 'POST',
         headers: {

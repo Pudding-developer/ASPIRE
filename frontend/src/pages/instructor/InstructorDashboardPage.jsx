@@ -26,7 +26,8 @@ const InstructorDashboard = () => {
       navigate('/');
       return;
     }
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const apiBase = rawBase.replace(/\/+$/, '');
     fetch(`${apiBase}/api/instructor/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })

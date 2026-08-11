@@ -12,7 +12,8 @@ export default function AdvisingTab({ token, instructors = [], onAssignAdvisor }
   useEffect(() => {
     async function loadStudents() {
       setLoadingStudents(true);
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiBase = rawBase.replace(/\/+$/, '');
       try {
         const res = await fetch(`${apiBase}/admin/students?limit=1000`, {
           headers: { Authorization: `Bearer ${token}` }

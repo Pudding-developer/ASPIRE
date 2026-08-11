@@ -122,7 +122,8 @@ export default function CurriculumTab() {
       formData.append('file', file);
       
       const token = localStorage.getItem('aspire_token');
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const API_BASE = rawBase.replace(/\/+$/, '');
       
       // Build upload URL with custom name if specified
       const uploadUrl = new URL(`${API_BASE}/admin/curriculum/upload`);

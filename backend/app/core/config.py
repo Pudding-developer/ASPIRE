@@ -30,7 +30,7 @@ if PSEUDONYM_KEY == SECRET_KEY:
     )
 
 # CORS Origins
-_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:5175")
+_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:5175,https://aspire-eight-nu.vercel.app")
 ALLOWED_ORIGINS = [o.strip() for o in _origins.split(",") if o.strip()]
 
 # Allowed institution email domain

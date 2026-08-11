@@ -3,7 +3,7 @@ auth_routes.py — All authentication endpoints.
 
 Routes call services only — no direct DB queries or business logic.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 from app.core.database import get_session
 from app.core.config import FRONTEND_URL
+from app.core.limiter import limiter
 from app.api.deps import security_scheme
 from app.schemas.user import TokenResponse, UserRead, RoleSelectionRequest, LocalRegisterRequest, LocalLoginRequest
 from app.services.token_service import build_jwt, verify_access_token
@@ -40,7 +41,8 @@ FRONTEND_REGISTER_URL = f"{FRONTEND_URL}/instructor/register"
 
 
 @router.get("/login/google")
-async def google_login(flow: str = "login", token: str | None = None):
+@limiter.limit("10/minute")
+async def google_login(request: Request, flow: str = "login", token: str | None = None):
     if flow not in ("register", "login", "instructor_register"):
         flow = "login"
     google_url, _ = build_google_auth_url(flow=flow, token=token)
@@ -48,22 +50,26 @@ async def google_login(flow: str = "login", token: str | None = None):
 
 
 @router.post("/register")
+@limiter.limit("5/minute")
 async def register_local(
-    request: LocalRegisterRequest,
+    request: Request,
+    body: LocalRegisterRequest,
     session: AsyncSession = Depends(get_session)
 ):
     """Local registration endpoint for students."""
-    jwt_token = await local_register_student(session, request)
+    jwt_token = await local_register_student(session, body)
     return {"access_token": jwt_token, "redirect": "/student/dashboard"}
 
 
 @router.post("/login")
+@limiter.limit("10/minute")
 async def login_local(
-    request: LocalLoginRequest,
+    request: Request,
+    body: LocalLoginRequest,
     session: AsyncSession = Depends(get_session)
 ):
     """Local login endpoint for students."""
-    jwt_token, redirect_path = await local_login_flow(session, request)
+    jwt_token, redirect_path = await local_login_flow(session, body)
     return {"access_token": jwt_token, "redirect": redirect_path}
 
 

@@ -59,7 +59,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", _default_model)
 
 VERTEX_AI_PROJECT = os.getenv("VERTEX_AI_PROJECT", "aspire-494019")
 VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "asia-southeast1")
-1
+
 if USE_GEMINI_API_KEY:
     # LiteLLM and google-genai both read these.
     os.environ["GEMINI_API_KEY"] = GEMINI_API_KEY

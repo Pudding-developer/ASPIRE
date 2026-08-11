@@ -2,7 +2,7 @@
 class_service.py — Business logic for class management.
 """
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +16,7 @@ from app.services import activity_service
 
 
 def _get_school_year() -> str:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if now.month >= 8:
         return f"{now.year}-{now.year + 1}"
     return f"{now.year - 1}-{now.year}"

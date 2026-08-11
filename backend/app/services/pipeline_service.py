@@ -9,7 +9,7 @@ import hashlib
 import hmac
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.core.config import SECRET_KEY
 
@@ -688,7 +688,7 @@ async def run_pipeline_job(
 
                 days_since = None
                 if previous_report:
-                    days_since = (datetime.utcnow() - previous_report.created_at).days
+                    days_since = (datetime.now(timezone.utc) - previous_report.created_at).days
 
                 # ── Step 1 progress label ─────────────────────────────────────────
                 await _update_job(
@@ -724,7 +724,7 @@ async def run_pipeline_job(
                                 status="completed",
                                 current_step="No new data — returning previous report",
                                 percentage=100,
-                                completed_at=datetime.utcnow(),
+                                completed_at=datetime.now(timezone.utc),
                             )
                             return
                     except (json.JSONDecodeError, AttributeError):
@@ -779,7 +779,7 @@ async def run_pipeline_job(
                         db, job_id,
                         status="failed",
                         error=f"AI Pipeline error: {crew_error}",
-                        completed_at=datetime.utcnow(),
+                        completed_at=datetime.now(timezone.utc),
                     )
                     return
 
@@ -819,7 +819,7 @@ async def run_pipeline_job(
                     job_id=job_id,
                     report_json=json.dumps(pipeline_result, default=str),
                     summary=pipeline_result.get("summary", ""),
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
                     chosen_career=chosen,
                     progression_json=json.dumps(progress_data, default=str),
                 )
@@ -861,7 +861,7 @@ async def run_pipeline_job(
                     status="completed",
                     current_step="Career report ready",
                     percentage=100,
-                    completed_at=datetime.utcnow(),
+                    completed_at=datetime.now(timezone.utc),
                 )
 
             except asyncio.CancelledError:
@@ -874,7 +874,7 @@ async def run_pipeline_job(
                             current_step="Cancelled",
                             percentage=100,
                             error="Cancelled by user",
-                            completed_at=datetime.utcnow(),
+                            completed_at=datetime.now(timezone.utc),
                         )
                 await asyncio.shield(cleanup())
                 raise
@@ -887,14 +887,14 @@ async def run_pipeline_job(
                         status="completed",
                         current_step="Career report ready",
                         percentage=100,
-                        completed_at=datetime.utcnow(),
+                        completed_at=datetime.now(timezone.utc),
                     )
                 else:
                     await _update_job(
                         db, job_id,
                         status="failed",
                         error=error_str,
-                        completed_at=datetime.utcnow(),
+                        completed_at=datetime.now(timezone.utc),
                     )
     finally:
         _running_tasks.pop(student_id, None)
@@ -916,7 +916,7 @@ async def cancel_running_job(db: AsyncSession, student_id: int) -> bool:
     if job:
         job.status = "failed"
         job.error = "Cancelled by user"
-        job.completed_at = datetime.utcnow()
+        job.completed_at = datetime.now(timezone.utc)
         await db.commit()
 
     if task:
@@ -935,7 +935,7 @@ async def create_job(db: AsyncSession, student_id: int) -> PipelineJob:
         id=str(uuid.uuid4()),
         student_id=student_id,
         status="pending",
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(timezone.utc),
     )
     db.add(job)
     await db.commit()
@@ -963,10 +963,10 @@ async def get_running_job(db: AsyncSession, student_id: int) -> PipelineJob | No
         return None
     # Auto-fail orphans: a real crew run completes well under 10 min, so anything
     # older was almost certainly killed by a server restart or crash.
-    if job.started_at and datetime.utcnow() - job.started_at > ORPHAN_THRESHOLD:
+    if job.started_at and datetime.now(timezone.utc) - job.started_at > ORPHAN_THRESHOLD:
         job.status = "failed"
         job.error = "Job orphaned (server restart or crash)"
-        job.completed_at = datetime.utcnow()
+        job.completed_at = datetime.now(timezone.utc)
         db.add(job)
         await db.commit()
         return None

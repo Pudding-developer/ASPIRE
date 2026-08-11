@@ -6,11 +6,12 @@ Routes call services only — no direct DB queries or business logic.
 import asyncio
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session, async_session_factory
 from app.core.config import FRONTEND_URL
+from app.core.limiter import limiter
 from app.api.deps import get_current_student
 from app.models.user import User
 from app.repositories import github_repository
@@ -82,7 +83,8 @@ async def github_disconnect(current_user: User = Depends(get_current_student), d
 
 
 @router.post("/analyze", status_code=202)
-async def github_analyze(current_user: User = Depends(get_current_student), db: AsyncSession = Depends(get_session)):
+@limiter.limit("10/hour")
+async def github_analyze(request: Request, current_user: User = Depends(get_current_student), db: AsyncSession = Depends(get_session)):
     profile = await github_repository.get_profile(db, current_user.id)
     if not profile:
         raise HTTPException(status_code=404, detail="GitHub account is not connected.")

@@ -12,7 +12,7 @@ Sync helpers only — crew.py runs in a thread via asyncio.to_thread().
 import hashlib
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -107,7 +107,7 @@ def save_academic_skills(
     Upserts the cache row with Agent 2's raw output string after a fresh run.
     """
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         row = db.execute(
             select(AcademicSkillCache).where(AcademicSkillCache.student_id == student_id)

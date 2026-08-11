@@ -11,6 +11,9 @@ from app.api.roadmap_routes import router as roadmap_router
 from app.core.database import init_db
 import app.models  # noqa: F401
 from app.core.config import ALLOWED_ORIGINS
+from app.core.limiter import limiter
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 
 @asynccontextmanager
@@ -55,6 +58,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="ASPIRE API", version="1.0.0", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

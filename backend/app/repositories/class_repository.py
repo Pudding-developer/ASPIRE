@@ -60,7 +60,7 @@ async def archive_class(session: AsyncSession, class_id: int) -> Class:
     if not cls:
         raise ValueError(f"Class {class_id} not found")
     cls.is_archived = True
-    cls.archived_at = datetime.utcnow()
+    cls.archived_at = datetime.now(timezone.utc)
     session.add(cls)
     await session.commit()
     await session.refresh(cls)

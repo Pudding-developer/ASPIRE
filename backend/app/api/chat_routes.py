@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 # Database timestamps remain in UTC.
 PH_TZ = timezone(timedelta(hours=8))
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +22,7 @@ from google.genai import errors as genai_errors
 
 from sqlalchemy import create_engine, text as sql_text
 
+from app.core.limiter import limiter
 from app.api.deps import get_current_student
 from app.ai.embeddings import embed_query
 from app.core.config import (
@@ -480,7 +481,9 @@ async def delete_session(
 
 
 @router.post("/career", response_model=SendMessageResponse)
+@limiter.limit("20/minute")
 async def send_career_message(
+    request: Request,
     body: SendMessageRequest,
     current_user: User = Depends(get_current_student),
 ):
@@ -544,7 +547,7 @@ async def send_career_message(
             content=reply
         )
         db.add(assistant_msg)
-        session.updated_at = datetime.utcnow()
+        session.updated_at = datetime.now(timezone.utc)
 
         # Auto-title the session from the first exchange (Claude/ChatGPT-style)
         if not history:

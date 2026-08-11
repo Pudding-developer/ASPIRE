@@ -1,7 +1,7 @@
 """
 activity_repository.py — Persistence for user-facing activity feed events.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,6 +59,6 @@ async def mark_all_read(session: AsyncSession, user_id: int) -> None:
     await session.execute(
         update(ActivityEvent)
         .where(ActivityEvent.user_id == user_id, ActivityEvent.read_at.is_(None))
-        .values(read_at=datetime.utcnow())
+        .values(read_at=datetime.now(timezone.utc))
     )
     await session.commit()

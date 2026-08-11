@@ -12,7 +12,7 @@ Sync helpers only — crew.py runs in a thread via asyncio.to_thread().
 import hashlib
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -103,7 +103,7 @@ def save_github_skills(
     """
     try:
         skills_json = json.dumps(skills, default=str)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         row = db.execute(
             select(GithubSkillCache).where(GithubSkillCache.student_id == student_id)

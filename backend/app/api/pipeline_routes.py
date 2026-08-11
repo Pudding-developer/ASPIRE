@@ -4,20 +4,26 @@ pipeline_routes.py — Endpoints for the AI career-mapping pipeline.
 import asyncio
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session, async_session_factory
+from app.core.limiter import limiter
 from app.api.deps import get_current_student
 from app.models.user import User
 from app.services import pipeline_service
 
 router = APIRouter(prefix="/pipeline", tags=["AI Pipeline"])
 
+# Set to retain strong references to background pipeline tasks so GC doesn't drop them
+_background_tasks = set()
+
 
 @router.post("/run/{student_id}", status_code=202)
+@limiter.limit("5/hour")
 async def run_pipeline(
+    request: Request,
     student_id: int,
     force: bool = False,
     current_user: User = Depends(get_current_student),
@@ -36,9 +42,11 @@ async def run_pipeline(
         raise HTTPException(status_code=409, detail="A pipeline job is already running.")
 
     job = await pipeline_service.create_job(db, student_id)
-    asyncio.create_task(
+    task = asyncio.create_task(
         pipeline_service.run_pipeline_job(job.id, student_id, async_session_factory, force=force)
     )
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
     return {"data": {"job_id": job.id, "message": "Pipeline started."}}
 
 

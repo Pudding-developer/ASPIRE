@@ -6,7 +6,7 @@ and career goal selection (PATCH/GET /career).
 """
 import asyncio
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from hashlib import sha256
 
 from typing import Optional
@@ -458,7 +458,7 @@ async def set_chosen_career(
         raise HTTPException(status_code=404, detail="Student not found.")
 
     user.chosen_career = payload.career
-    user.career_chosen_at = datetime.utcnow()
+    user.career_chosen_at = datetime.now(timezone.utc)
     db.add(user)
     await db.commit()
     await db.refresh(user)

@@ -36,6 +36,9 @@ coverage.xml
 # Artifacts / Student Career Reports #
 artifacts/
 
+# Backend Documents #
+backend/Documents/
+
 # ML generated outputs #
 backend/ml/artifacts/png/
 backend/ml/artifacts/dataframes/

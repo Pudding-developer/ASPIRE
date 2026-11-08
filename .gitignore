@@ -33,6 +33,9 @@ coverage.xml
 # Render / Vercel Specific #
 .vercel/
 
+# Artifacts / Student Career Reports #
+artifacts/
+
 # ML generated outputs #
 backend/ml/artifacts/png/
 backend/ml/artifacts/dataframes/
